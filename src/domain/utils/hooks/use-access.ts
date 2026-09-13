@@ -22,8 +22,25 @@ export const useAccess = () => {
     }
 
     // Check specific permission in user permissions array or menuAccess
-    const hasPerm = user.permissions?.includes(requiredPermission);
-    const hasMenu = user.menuAccess?.includes(requiredPermission);
+    const normalize = (p: string) => p.replace(':', '.').toLowerCase();
+    const reqNormalized = normalize(requiredPermission);
+
+    // Map common aliases
+    const aliases: Record<string, string[]> = {
+      'material.read': ['inventory.read', 'inventory_item.read'],
+      'material.create': ['inventory.create'],
+      'stock.read': ['inventory.read', 'inventory_stock.read'],
+      'category.read': ['product.read', 'category.read'],
+      'order_type.read': ['order_type.read', 'settings.read'],
+      'tax.read': ['tax.read', 'settings.read'],
+      'discount.read': ['discount.read', 'settings.read'],
+      'printer.read': ['printer.read', 'settings.read'],
+    };
+
+    const targetList = [reqNormalized, ...(aliases[reqNormalized] || [])];
+
+    const hasPerm = user.permissions?.some((p) => targetList.includes(normalize(p)));
+    const hasMenu = user.menuAccess?.some((m) => targetList.includes(normalize(m)));
 
     return !!(hasPerm || hasMenu);
   };

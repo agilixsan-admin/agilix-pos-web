@@ -23,16 +23,19 @@ export const AdjustmentsScreen: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [adjData, matData, packData] = await Promise.all([
+      const [adjRes, matRes, packRes] = await Promise.allSettled([
         inventoryService.getAdjustments({ outletId: currentOutlet?.id }),
         inventoryService.getRawMaterials({ outletId: currentOutlet?.id }),
         inventoryService.getPackagingItems({ outletId: currentOutlet?.id }),
       ]);
-      setAdjustments(adjData);
-      setMaterials(matData);
-      setPackagings(packData);
+      setAdjustments(adjRes.status === 'fulfilled' && Array.isArray(adjRes.value) ? adjRes.value : []);
+      setMaterials(matRes.status === 'fulfilled' && Array.isArray(matRes.value) ? matRes.value : []);
+      setPackagings(packRes.status === 'fulfilled' && Array.isArray(packRes.value) ? packRes.value : []);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load adjustments data:', err);
+      setAdjustments([]);
+      setMaterials([]);
+      setPackagings([]);
     } finally {
       setLoading(false);
     }

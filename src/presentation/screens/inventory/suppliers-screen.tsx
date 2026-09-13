@@ -24,12 +24,15 @@ export const SuppliersScreen: React.FC = () => {
     loadData();
   }, []);
 
-  const filtered = suppliers.filter(
-    (s) =>
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.contactPerson?.toLowerCase().includes(search.toLowerCase()) ||
-      s.phone?.toLowerCase().includes(search.toLowerCase())
-  );
+  const rawList = Array.isArray(suppliers) ? suppliers : [];
+  const filtered = rawList.filter((s) => {
+    if (!s) return false;
+    const nameStr = (s.name || '').toLowerCase();
+    const picStr = (s.contactPerson || '').toLowerCase();
+    const phoneStr = (s.phone || '').toLowerCase();
+    const q = (search || '').toLowerCase();
+    return nameStr.includes(q) || picStr.includes(q) || phoneStr.includes(q);
+  });
 
   return (
     <div className="space-y-6">

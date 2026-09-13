@@ -14,14 +14,16 @@ export const StockScreen: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [mat, pack] = await Promise.all([
+      const [matRes, packRes] = await Promise.allSettled([
         inventoryService.getRawMaterials({ outletId: currentOutlet?.id }),
         inventoryService.getPackagingItems({ outletId: currentOutlet?.id }),
       ]);
-      setMaterials(mat);
-      setPackagings(pack);
+      setMaterials(matRes.status === 'fulfilled' && Array.isArray(matRes.value) ? matRes.value : []);
+      setPackagings(packRes.status === 'fulfilled' && Array.isArray(packRes.value) ? packRes.value : []);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load stock data:', err);
+      setMaterials([]);
+      setPackagings([]);
     } finally {
       setLoading(false);
     }
@@ -31,10 +33,19 @@ export const StockScreen: React.FC = () => {
     loadData();
   }, [currentOutlet?.id]);
 
+  const rawList = Array.isArray(materials) ? materials : [];
+  const packList = Array.isArray(packagings) ? packagings : [];
+
   const allItems = [
-    ...materials.map((m) => ({ ...m, type: 'Bahan Baku' })),
-    ...packagings.map((p) => ({ ...p, type: 'Packaging' })),
-  ].filter((item) => item.name.toLowerCase().includes(search.toLowerCase()) || item.code?.toLowerCase().includes(search.toLowerCase()));
+    ...rawList.map((m) => ({ ...m, type: 'Bahan Baku' })),
+    ...packList.map((p) => ({ ...p, type: 'Packaging' })),
+  ].filter((item) => {
+    if (!item) return false;
+    const nameStr = (item.name || '').toLowerCase();
+    const codeStr = ((item as { sku?: string }).sku || item.code || '').toLowerCase();
+    const q = (search || '').toLowerCase();
+    return nameStr.includes(q) || codeStr.includes(q);
+  });
 
   return (
     <div className="space-y-6">
