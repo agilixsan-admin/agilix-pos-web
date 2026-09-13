@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import type { Order, PaymentMethod } from '@model/Order';
 import { posService } from '@domain/services/pos-service';
-import { X, Banknote, QrCode, Loader2, Check, Delete, ArrowRight } from 'lucide-react';
+import { Banknote, QrCode, Delete, ArrowRight, AlertCircle } from 'lucide-react';
+import { Button, Modal, Badge } from '@presentation/components/ui';
 
 interface PaymentModalProps {
   order: Order;
@@ -91,156 +92,138 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
-      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-bold text-slate-800">Pembayaran Kasir</h3>
-            <p className="text-xs text-slate-500">Order: {order.orderNumber || order.id.slice(0, 8)}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="p-6 overflow-y-auto space-y-5">
-          {/* Total Box */}
-          <div className="bg-[#E6F4F1] border border-[#0D5C53]/20 rounded-2xl p-4 text-center">
-            <span className="text-xs font-semibold text-[#0D5C53] uppercase tracking-wider">Total Tagihan</span>
-            <div className="text-3xl font-extrabold text-[#0D5C53] mt-0.5">
-              Rp {totalAmount.toLocaleString('id-ID')}
-            </div>
-          </div>
-
-          {/* Payment Method Selector */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setMethod('CASH')}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
-                method === 'CASH'
-                  ? 'border-[#0D5C53] bg-[#0D5C53] text-white shadow-xs'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              <Banknote className="w-4 h-4" />
-              <span>Tunai (Cash)</span>
-            </button>
-
-            <button
-              onClick={() => setMethod('QRIS')}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
-                method === 'QRIS'
-                  ? 'border-[#0D5C53] bg-[#0D5C53] text-white shadow-xs'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              <QrCode className="w-4 h-4" />
-              <span>QRIS</span>
-            </button>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl p-3">
-              {error}
-            </div>
-          )}
-
-          {/* Content by Method */}
-          {method === 'CASH' ? (
-            <div className="space-y-4">
-              {/* Cash input & presets */}
-              <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase mb-2">
-                  Uang Diterima
-                </label>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-right text-2xl font-bold text-slate-800">
-                  Rp {cashGiven.toLocaleString('id-ID')}
-                </div>
-              </div>
-
-              {/* Quick Presets */}
-              <div className="grid grid-cols-4 gap-2">
-                {PRESET_AMOUNTS.map((preset) => (
-                  <button
-                    key={preset.label}
-                    onClick={() => setCashGiven(preset.value)}
-                    className="py-2 px-1 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-xl text-xs font-semibold text-center transition-colors cursor-pointer truncate"
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Touch Numpad Grid */}
-              <div className="grid grid-cols-3 gap-2 pt-1">
-                {['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0'].map((num) => (
-                  <button
-                    key={num}
-                    onClick={() => handleNumpadPress(num)}
-                    className="py-3 bg-white border border-slate-200 hover:bg-slate-50 active:bg-slate-100 rounded-xl text-lg font-bold text-slate-800 transition-colors cursor-pointer"
-                  >
-                    {num}
-                  </button>
-                ))}
-                <button
-                  onClick={handleNumpadBackspace}
-                  className="py-3 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-xl flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
-                >
-                  <Delete className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Change calculation */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-600">Kembalian:</span>
-                <span
-                  className={`text-lg font-bold ${
-                    isCashSufficient ? 'text-emerald-600' : 'text-slate-400'
-                  }`}
-                >
-                  Rp {changeAmount.toLocaleString('id-ID')}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-6 space-y-4">
-              <div className="w-48 h-48 mx-auto bg-white border-2 border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center shadow-xs">
-                <QrCode className="w-36 h-36 text-slate-900" />
-                <span className="text-[10px] font-bold text-slate-600 mt-1 uppercase tracking-widest">QRIS STANDAR</span>
-              </div>
-              <p className="text-xs text-slate-500">
-                Arahkan pelanggan untuk memindai QRIS melalui GoPay, OVO, Dana, ShopeePay, atau Mobile Banking.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer Submit */}
-        <div className="p-4 bg-slate-50 border-t border-slate-100">
-          <button
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Pembayaran Kasir"
+      subtitle={`Order: ${order.orderNumber || order.id.slice(0, 8)}`}
+      maxWidth="lg"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>
+            Batal
+          </Button>
+          <Button
+            variant="primary"
+            size="lg"
+            isLoading={loading}
+            rightIcon={<ArrowRight className="w-4 h-4" />}
             onClick={handleProcessPayment}
-            disabled={loading || (method === 'CASH' && !isCashSufficient)}
-            className="w-full bg-[#0D5C53] hover:bg-[#094740] active:scale-[0.99] text-white py-3.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Memproses Pembayaran...</span>
-              </>
-            ) : (
-              <>
-                <span>Selesaikan Transaksi (Rp {totalAmount.toLocaleString('id-ID')})</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
+            Selesaikan Transaksi
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {error && (
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Total Due Banner */}
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
+          <span className="text-xs text-slate-500 block mb-1">Total Tagihan</span>
+          <div className="text-2xl font-bold text-[#0D5C53]">
+            Rp {totalAmount.toLocaleString('id-ID')}
+          </div>
+        </div>
+
+        {/* Payment Methods */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setMethod('CASH')}
+            className={`flex items-center gap-3 p-3.5 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
+              method === 'CASH'
+                ? 'border-[#0D5C53] bg-teal-50 text-[#0D5C53]'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <Banknote className="w-5 h-5" />
+            <span>Uang Tunai (Cash)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMethod('QRIS')}
+            className={`flex items-center gap-3 p-3.5 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
+              method === 'QRIS'
+                ? 'border-[#0D5C53] bg-teal-50 text-[#0D5C53]'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <QrCode className="w-5 h-5" />
+            <span>QRIS / E-Wallet</span>
           </button>
         </div>
+
+        {/* Method = CASH Form & Numpad */}
+        {method === 'CASH' ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+              <span className="text-slate-600 font-semibold">Uang Diterima:</span>
+              <span className="text-base font-bold text-slate-900 font-mono">
+                Rp {cashGiven.toLocaleString('id-ID')}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs">
+              <span className="text-emerald-800 font-semibold">Kembalian:</span>
+              <span className="text-base font-bold text-emerald-800 font-mono">
+                Rp {changeAmount.toLocaleString('id-ID')}
+              </span>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="grid grid-cols-4 gap-2">
+              {PRESET_AMOUNTS.map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setCashGiven(preset.value)}
+                  className="py-2 px-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Numpad */}
+            <div className="grid grid-cols-3 gap-2">
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '000'].map((btn) => (
+                <button
+                  key={btn}
+                  type="button"
+                  onClick={() => handleNumpadPress(btn)}
+                  className="py-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl font-bold text-sm text-slate-800 cursor-pointer shadow-xs active:scale-95 transition-all"
+                >
+                  {btn}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={handleNumpadBackspace}
+                className="py-3 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 rounded-xl font-bold text-sm flex items-center justify-center cursor-pointer shadow-xs active:scale-95 transition-all"
+              >
+                <Delete className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-8 border border-dashed border-slate-200 rounded-2xl text-center space-y-3">
+            <QrCode className="w-20 h-20 mx-auto text-slate-700" />
+            <div className="text-xs text-slate-600 font-medium">
+              Arahkan pelanggan untuk scan QRIS statis / dinamis di kasir.
+            </div>
+            <Badge variant="success">
+              Rp {totalAmount.toLocaleString('id-ID')}
+            </Badge>
+          </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 };
-

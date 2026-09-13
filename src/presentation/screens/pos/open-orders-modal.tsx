@@ -3,7 +3,14 @@ import type { Order } from '@model/Order';
 import { posService } from '@domain/services/pos-service';
 import { useAuthStore } from '@domain/state/auth-store';
 import { useCartStore } from '@domain/state/cart-store';
-import { X, Clock, PlusCircle, CreditCard, Loader2, RefreshCw } from 'lucide-react';
+import { Clock, PlusCircle, CreditCard, RefreshCw } from 'lucide-react';
+import {
+  Button,
+  Badge,
+  Modal,
+  LoadingState,
+  EmptyState,
+} from '@presentation/components/ui';
 
 interface OpenOrdersModalProps {
   isOpen: boolean;
@@ -77,133 +84,99 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
-      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[85vh]">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600">
-              <Clock className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-800">Daftar Pesanan Berjalan (Open Orders)</h3>
-              <p className="text-xs text-slate-500">
-                {currentOutlet?.name || 'Outlet'} • {openOrders.length} pesanan aktif
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchOrders}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-              title="Refresh"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1">
-          {loading ? (
-            <div className="py-12 flex flex-col items-center justify-center text-slate-400">
-              <Loader2 className="w-8 h-8 animate-spin text-[#0D5C53] mb-2" />
-              <p className="text-xs">Memuat pesanan berjalan...</p>
-            </div>
-          ) : error ? (
-            <div className="bg-red-50 text-red-700 text-xs p-4 rounded-xl text-center">{error}</div>
-          ) : openOrders.length === 0 ? (
-            <div className="py-16 text-center text-slate-400">
-              <Clock className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p className="font-semibold text-slate-600 text-sm">Tidak ada pesanan berjalan</p>
-              <p className="text-xs text-slate-400 mt-0.5">Seluruh transaksi saat ini telah selesai dibayar.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {openOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="bg-slate-50 hover:bg-white border border-slate-200 hover:border-[#0D5C53]/40 rounded-xl p-4 transition-all shadow-xs flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-bold text-slate-800 text-sm">
-                        {order.tableName ? `Meja ${order.tableName}` : order.orderNumber || order.id.slice(0, 8)}
-                      </span>
-                      <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        {order.orderType}
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-slate-500 mb-1">
-                      Pelanggan: <strong className="text-slate-700">{order.customerName || 'Tamu'}</strong>
-                    </p>
-
-                    <div className="text-xs text-slate-600 space-y-0.5 my-2 bg-white p-2.5 rounded-lg border border-slate-100">
-                      {order.items?.slice(0, 3).map((item, idx) => (
-                        <div key={idx} className="flex justify-between">
-                          <span className="truncate pr-2">
-                            {item.quantity}x {item.productName}
-                          </span>
-                          <span className="font-medium">
-                            Rp {(Number(item.price) * item.quantity).toLocaleString('id-ID')}
-                          </span>
-                        </div>
-                      ))}
-                      {(order.items?.length || 0) > 3 && (
-                        <p className="text-[10px] text-slate-400 italic">
-                          + {order.items.length - 3} item lainnya...
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex justify-between items-center text-xs pt-1">
-                      <span className="text-slate-500">Total Sementara:</span>
-                      <span className="font-bold text-[#0D5C53] text-sm">
-                        Rp {Number(order.totalAmount || 0).toLocaleString('id-ID')}
-                      </span>
-                    </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Daftar Pesanan Berjalan (Open Orders)"
+      subtitle={`${currentOutlet?.name || 'Outlet'} • ${openOrders.length} pesanan aktif`}
+      maxWidth="2xl"
+      footer={
+        <Button variant="outline" onClick={onClose}>
+          Tutup
+        </Button>
+      }
+    >
+      <div className="space-y-4">
+        {loading ? (
+          <LoadingState message="Memuat pesanan aktif..." />
+        ) : openOrders.length === 0 ? (
+          <EmptyState
+            icon={<Clock className="w-10 h-10 opacity-30 text-amber-500 mx-auto" />}
+            title="Tidak Ada Pesanan Aktif"
+            description="Semua pesanan saat ini telah diselesaikan pembayarannya."
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1">
+            {openOrders.map((order) => (
+              <div
+                key={order.id}
+                className="border border-slate-200 rounded-xl p-4 bg-white hover:border-[#0D5C53]/40 transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-slate-900 text-sm">
+                      {order.orderNumber || order.id.slice(0, 8)}
+                    </span>
+                    <Badge variant="warning" dot>
+                      {order.tableName ? `Meja ${order.tableName}` : order.orderType}
+                    </Badge>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-200/60">
-                    <button
-                      onClick={() => handleAppendItems(order)}
-                      disabled={actionLoading === order.id}
-                      className="flex items-center justify-center gap-1.5 py-2 px-3 bg-white border border-slate-300 hover:border-[#0D5C53] hover:text-[#0D5C53] text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                    >
-                      {actionLoading === order.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <PlusCircle className="w-3.5 h-3.5" />
-                      )}
-                      <span>+ Tambah Menu</span>
-                    </button>
+                  <div className="text-xs text-slate-500 mb-3">
+                    Pelanggan: <span className="text-slate-800 font-semibold">{order.customerName || 'Umum'}</span>
+                  </div>
 
-                    <button
+                  {/* Order Items Preview */}
+                  <div className="bg-slate-50 rounded-lg p-2.5 space-y-1 mb-3 text-xs">
+                    {order.items?.map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-slate-600">
+                        <span>
+                          {item.quantity}x {item.productName}
+                        </span>
+                        <span className="font-mono">
+                          Rp {(Number(item.price) * item.quantity).toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center py-2 border-t border-slate-100 text-xs font-bold mb-3">
+                    <span className="text-slate-700">Total Tagihan:</span>
+                    <span className="text-sm text-[#0D5C53]">
+                      Rp {Number(order.totalAmount).toLocaleString('id-ID')}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      isLoading={actionLoading === order.id}
+                      leftIcon={<PlusCircle className="w-3.5 h-3.5" />}
+                      onClick={() => handleAppendItems(order)}
+                    >
+                      + Tambah Menu
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<CreditCard className="w-3.5 h-3.5" />}
                       onClick={() => {
                         onClose();
                         onSelectForPayment(order);
                       }}
-                      className="flex items-center justify-center gap-1.5 py-2 px-3 bg-[#0D5C53] hover:bg-[#094740] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer"
                     >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      <span>Bayar</span>
-                    </button>
+                      Bayar
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 };
-

@@ -10,20 +10,25 @@ import { PaymentModal } from './payment-modal';
 import { ReceiptModal } from './receipt-modal';
 import { OpenOrdersModal } from './open-orders-modal';
 import {
-  Search,
   Plus,
   Minus,
   Trash2,
   Utensils,
   ShoppingBag,
   Clock,
-  ArrowRight,
-  Loader2,
   CreditCard,
   Edit2,
-  X,
   Coffee,
 } from 'lucide-react';
+import {
+  Button,
+  Badge,
+  SearchInput,
+  Modal,
+  FormTextarea,
+  LoadingState,
+  EmptyState,
+} from '@presentation/components/ui';
 
 export const PosScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
@@ -99,108 +104,124 @@ export const PosScreen: React.FC = () => {
     if (product.variants && product.variants.length > 0) {
       setVariantModalProduct(product);
     } else {
-      addItem(product);
+      addItem({
+        productId: product.id,
+        productName: product.name,
+        price: product.price,
+        image: product.image,
+      });
     }
   };
 
   const handleSelectVariant = (product: Product, variant: Variant) => {
-    addItem(product, variant);
+    addItem({
+      productId: product.id,
+      productName: product.name,
+      variantId: variant.id,
+      variantName: variant.name,
+      price: variant.price,
+      image: product.image,
+    });
     setVariantModalProduct(null);
   };
 
+  // Direct Instant Checkout
   const handleCheckoutDirect = async () => {
     if (cartItems.length === 0) return;
     if (orderType === 'DINE_IN' && !tableId) {
-      alert('Silakan pilih nomor meja untuk pesanan Dine-In.');
+      alert('Silakan pilih nomor meja untuk pesanan Dine In.');
       return;
     }
 
     setOrderProcessing(true);
     try {
+      const payloadItems = cartItems.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        notes: item.notes,
+      }));
+
       const createdOrder = await posService.createOrder({
-        outletId: currentOutlet?.id || '',
+        outletId: currentOutlet?.id,
+        orderType: orderType as OrderType,
         tableId: tableId || undefined,
-        orderType,
         customerName: customerName || undefined,
-        items: cartItems.map((item) => ({
-          productId: item.productId,
-          variantId: item.variantId,
-          quantity: item.quantity,
-          notes: item.notes,
-        })),
+        items: payloadItems,
       });
 
       clearCart();
       setActivePaymentOrder(createdOrder);
     } catch (err: unknown) {
-      alert(
+      const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Gagal membuat pesanan.'
-      );
+        'Gagal membuat order transaksi.';
+      alert(errorMsg);
     } finally {
       setOrderProcessing(false);
     }
   };
 
+  // Save as Open Order
   const handleSaveOpenOrder = async () => {
     if (cartItems.length === 0) return;
     if (orderType === 'DINE_IN' && !tableId) {
-      alert('Silakan pilih nomor meja untuk pesanan Dine-In.');
+      alert('Silakan pilih nomor meja untuk pesanan Dine In.');
       return;
     }
 
     setOrderProcessing(true);
     try {
+      const payloadItems = cartItems.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        notes: item.notes,
+      }));
+
       await posService.createOrder({
-        outletId: currentOutlet?.id || '',
+        outletId: currentOutlet?.id,
+        orderType: orderType as OrderType,
         tableId: tableId || undefined,
-        orderType,
         customerName: customerName || undefined,
-        items: cartItems.map((item) => ({
-          productId: item.productId,
-          variantId: item.variantId,
-          quantity: item.quantity,
-          notes: item.notes,
-        })),
+        items: payloadItems,
       });
 
       clearCart();
       alert('Pesanan berhasil disimpan ke Pesanan Berjalan (Open Orders).');
     } catch (err: unknown) {
-      alert(
+      const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Gagal menyimpan pesanan.'
-      );
+        'Gagal menyimpan open order.';
+      alert(errorMsg);
     } finally {
       setOrderProcessing(false);
     }
   };
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] gap-6 select-none">
-      {/* Left: Catalog & Menu Grid */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-        {/* Top Controls: Search, Category Filter, and Open Orders Button */}
+    <div className="flex gap-4 h-[calc(100vh-6rem)] overflow-hidden">
+      {/* Left: Product Catalog & Category Tabs */}
+      <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+        {/* Top Filter Bar */}
         <div className="p-4 border-b border-slate-100 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 max-w-md">
+              <SearchInput
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari menu makanan atau minuman..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                onChange={setSearchQuery}
+                placeholder="Cari menu, kopi, makanan..."
               />
             </div>
 
-            <button
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Clock className="w-4 h-4 text-amber-600" />}
               onClick={() => setIsOpenOrdersOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex-shrink-0"
             >
-              <Clock className="w-4 h-4 text-amber-600" />
-              <span>Pesanan Berjalan</span>
-            </button>
+              Pesanan Berjalan
+            </Button>
           </div>
 
           {/* Category Filter Pills */}
@@ -234,16 +255,14 @@ export const PosScreen: React.FC = () => {
         {/* Product Grid */}
         <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400">
-              <Loader2 className="w-8 h-8 animate-spin text-[#0D5C53] mb-2" />
-              <p className="text-xs">Memuat daftar menu...</p>
-            </div>
+            <LoadingState message="Memuat daftar menu..." className="h-full" />
           ) : filteredProducts.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400">
-              <Coffee className="w-12 h-12 stroke-[1.5] mb-2 opacity-40" />
-              <p className="font-semibold text-slate-600 text-sm">Menu tidak ditemukan</p>
-              <p className="text-xs text-slate-400">Coba ubah kata kunci pencarian atau kategori.</p>
-            </div>
+            <EmptyState
+              icon={<Coffee className="w-12 h-12 stroke-[1.5] mb-2 opacity-40 mx-auto" />}
+              title="Menu tidak ditemukan"
+              description="Coba ubah kata kunci pencarian atau kategori."
+              className="h-full"
+            />
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3.5">
               {filteredProducts.map((product) => (
@@ -273,16 +292,13 @@ export const PosScreen: React.FC = () => {
                       Rp {Number(product.price).toLocaleString('id-ID')}
                     </span>
                     {product.variants && product.variants.length > 0 ? (
-                      <span className="text-[10px] bg-emerald-50 text-[#0D5C53] font-semibold px-2 py-0.5 rounded-md">
+                      <Badge variant="info" size="sm">
                         {product.variants.length} Varian
-                      </span>
+                      </Badge>
                     ) : (
-                      <button
-                        title="Tambah ke Keranjang"
-                        className="w-7 h-7 bg-[#E6F4F1] hover:bg-[#0D5C53] text-[#0D5C53] hover:text-white rounded-lg flex items-center justify-center transition-colors cursor-pointer"
-                      >
+                      <div className="w-7 h-7 bg-teal-50 hover:bg-[#0D5C53] text-[#0D5C53] hover:text-white rounded-lg flex items-center justify-center transition-colors">
                         <Plus className="w-4 h-4" />
-                      </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -304,7 +320,7 @@ export const PosScreen: React.FC = () => {
             {cartItems.length > 0 && (
               <button
                 onClick={clearCart}
-                className="text-[11px] font-semibold text-red-500 hover:text-red-700 cursor-pointer"
+                className="text-[11px] font-semibold text-rose-500 hover:text-rose-700 cursor-pointer"
               >
                 Reset
               </button>
@@ -351,84 +367,96 @@ export const PosScreen: React.FC = () => {
                     const sel = tables.find((t) => t.id === e.target.value);
                     setTable(sel ? sel.id : null, sel ? sel.name : null);
                   }}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
                 >
-                  <option value="">Pilih Meja</option>
+                  <option value="">Pilih Meja...</option>
                   {tables.map((t) => (
                     <option key={t.id} value={t.id}>
-                      Meja {t.name}
+                      Meja {t.name} ({t.capacity} Kursi)
                     </option>
                   ))}
                 </select>
               </div>
             )}
 
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Nama Tamu (Opsional)"
-              className={`bg-slate-50 border border-slate-200 text-slate-800 text-xs font-medium rounded-xl px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] ${
-                orderType !== 'DINE_IN' ? 'col-span-2' : ''
-              }`}
-            />
+            <div className={orderType === 'DINE_IN' ? '' : 'col-span-2'}>
+              <input
+                type="text"
+                placeholder="Nama Pelanggan (Opsional)"
+                value={customerName || ''}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Cart Item Rows */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {/* Cart Item List */}
+        <div className="flex-1 overflow-y-auto p-4 divide-y divide-slate-100">
           {cartItems.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 py-12">
+            <div className="h-full flex flex-col items-center justify-center text-slate-300 py-8">
               <ShoppingBag className="w-10 h-10 stroke-[1.5] mb-2 opacity-30" />
-              <p className="font-medium text-xs">Keranjang masih kosong</p>
-              <p className="text-[11px] text-slate-400">Pilih menu di sebelah kiri untuk memesan.</p>
+              <p className="text-xs font-semibold text-slate-400">Keranjang Kosong</p>
+              <p className="text-[11px] text-slate-300 text-center mt-0.5">
+                Klik menu di sebelah kiri untuk menambahkan pesanan.
+              </p>
             </div>
           ) : (
             cartItems.map((item) => (
-              <div
-                key={item.id}
-                className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 space-y-2"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h5 className="font-bold text-slate-800 text-xs leading-tight">{item.name}</h5>
+              <div key={item.id} className="py-3 first:pt-0 last:pb-0 flex flex-col gap-1.5">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 pr-2">
+                    <h5 className="font-semibold text-slate-800 text-xs leading-tight">{item.productName}</h5>
                     {item.variantName && (
-                      <span className="text-[10px] text-slate-500 font-medium">({item.variantName})</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Varian: {item.variantName}</span>
+                    )}
+                    {item.notes && (
+                      <p className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                        {item.notes}
+                      </p>
                     )}
                   </div>
+
                   <span className="font-bold text-slate-800 text-xs">
                     Rp {(item.price * item.quantity).toLocaleString('id-ID')}
                   </span>
                 </div>
 
-                {item.notes && (
-                  <p className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60 inline-block italic">
-                    Catatan: {item.notes}
-                  </p>
-                )}
-
+                {/* Counter & Action Buttons */}
                 <div className="flex items-center justify-between pt-1">
                   <button
-                    onClick={() => setNotesModalItem({ id: item.id, name: item.name, notes: item.notes || '' })}
-                    className="text-[10px] font-semibold text-[#0D5C53] hover:underline flex items-center gap-1 cursor-pointer"
+                    onClick={() =>
+                      setNotesModalItem({
+                        id: item.id,
+                        name: item.productName,
+                        notes: item.notes || '',
+                      })
+                    }
+                    className="text-[11px] text-slate-400 hover:text-[#0D5C53] flex items-center gap-1 cursor-pointer"
                   >
                     <Edit2 className="w-3 h-3" />
-                    <span>{item.notes ? 'Ubah Catatan' : '+ Catatan'}</span>
+                    <span>Catatan</span>
                   </button>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-6 h-6 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-700 cursor-pointer"
+                      className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
                     >
-                      {item.quantity === 1 ? <Trash2 className="w-3 h-3 text-red-500" /> : <Minus className="w-3 h-3" />}
+                      <Minus className="w-3 h-3" />
                     </button>
-                    <span className="text-xs font-bold text-slate-800 w-4 text-center">{item.quantity}</span>
+                    <span className="w-6 text-center text-xs font-bold text-slate-800">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="w-6 h-6 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-700 cursor-pointer"
+                      className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="w-6 h-6 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded ml-1 cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
@@ -437,9 +465,9 @@ export const PosScreen: React.FC = () => {
           )}
         </div>
 
-        {/* Calculation Totals & Actions */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
-          <div className="space-y-1.5 text-xs text-slate-600">
+        {/* Cart Calculation & Action Footer */}
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3">
+          <div className="space-y-1.5 text-xs text-slate-500">
             <div className="flex justify-between">
               <span>Subtotal</span>
               <span className="font-semibold text-slate-800">Rp {getSubtotal().toLocaleString('id-ID')}</span>
@@ -461,99 +489,86 @@ export const PosScreen: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-1">
-            <button
+            <Button
+              variant="outline"
+              disabled={cartItems.length === 0 || orderProcessing}
+              leftIcon={<Clock className="w-3.5 h-3.5" />}
               onClick={handleSaveOpenOrder}
-              disabled={cartItems.length === 0 || orderProcessing}
-              className="py-3 px-3 bg-white border border-slate-300 hover:border-slate-400 active:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             >
-              <Clock className="w-3.5 h-3.5" />
-              <span>Simpan Pesanan</span>
-            </button>
+              Simpan Pesanan
+            </Button>
 
-            <button
-              onClick={handleCheckoutDirect}
+            <Button
+              variant="primary"
               disabled={cartItems.length === 0 || orderProcessing}
-              className="py-3 px-4 bg-[#0D5C53] hover:bg-[#094740] active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              isLoading={orderProcessing}
+              leftIcon={<CreditCard className="w-4 h-4" />}
+              onClick={handleCheckoutDirect}
             >
-              {orderProcessing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <CreditCard className="w-4 h-4" />
-                  <span>Bayar Sekarang</span>
-                </>
-              )}
-            </button>
+              Bayar Sekarang
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Variant Selection Modal */}
-      {variantModalProduct && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="font-bold text-slate-800 text-sm">Pilih Varian {variantModalProduct.name}</h4>
-              <button
-                onClick={() => setVariantModalProduct(null)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {(variantModalProduct.variants || []).map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => handleSelectVariant(variantModalProduct, v)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-[#0D5C53] hover:bg-[#E6F4F1]/30 transition-all cursor-pointer text-left"
-                >
-                  <span className="font-semibold text-slate-800 text-xs">{v.name}</span>
-                  <span className="font-bold text-[#0D5C53] text-xs">
-                    Rp {Number(v.price).toLocaleString('id-ID')}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Reusable Variant Selection Modal */}
+      <Modal
+        isOpen={!!variantModalProduct}
+        onClose={() => setVariantModalProduct(null)}
+        title={`Pilih Varian ${variantModalProduct?.name || ''}`}
+        maxWidth="sm"
+      >
+        <div className="space-y-2">
+          {(variantModalProduct?.variants || []).map((v) => (
+            <button
+              key={v.id}
+              onClick={() => handleSelectVariant(variantModalProduct!, v)}
+              className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-[#0D5C53] hover:bg-teal-50/40 transition-all cursor-pointer text-left"
+            >
+              <span className="font-semibold text-slate-800 text-xs">{v.name}</span>
+              <span className="font-bold text-[#0D5C53] text-xs">
+                Rp {Number(v.price).toLocaleString('id-ID')}
+              </span>
+            </button>
+          ))}
         </div>
-      )}
+      </Modal>
 
-      {/* Item Notes Modal */}
-      {notesModalItem && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 select-none">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
-            <h4 className="font-bold text-slate-800 text-sm mb-1">Catatan Menu</h4>
-            <p className="text-xs text-slate-500 mb-3">{notesModalItem.name}</p>
-            <textarea
-              rows={3}
-              value={notesModalItem.notes}
-              onChange={(e) =>
-                setNotesModalItem({ ...notesModalItem, notes: e.target.value })
-              }
-              placeholder="Contoh: Kurang manis, tanpa es batu, dll."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] mb-4"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setNotesModalItem(null)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => {
+      {/* Reusable Item Notes Modal */}
+      <Modal
+        isOpen={!!notesModalItem}
+        onClose={() => setNotesModalItem(null)}
+        title="Catatan Menu"
+        subtitle={notesModalItem?.name}
+        maxWidth="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setNotesModalItem(null)}>
+              Batal
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (notesModalItem) {
                   updateNotes(notesModalItem.id, notesModalItem.notes);
                   setNotesModalItem(null);
-                }}
-                className="flex-1 py-2.5 bg-[#0D5C53] hover:bg-[#094740] text-white rounded-xl text-xs font-semibold cursor-pointer"
-              >
-                Simpan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                }
+              }}
+            >
+              Simpan
+            </Button>
+          </>
+        }
+      >
+        <FormTextarea
+          value={notesModalItem?.notes || ''}
+          onChange={(e) =>
+            setNotesModalItem((prev) => (prev ? { ...prev, notes: e.target.value } : null))
+          }
+          placeholder="Contoh: Kurang manis, tanpa es batu, dll."
+          rows={3}
+        />
+      </Modal>
 
       {/* Payment Modal */}
       {activePaymentOrder && (
@@ -590,4 +605,3 @@ export const PosScreen: React.FC = () => {
     </div>
   );
 };
-

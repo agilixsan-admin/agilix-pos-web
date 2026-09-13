@@ -21,6 +21,15 @@ import {
   Image as ImageIcon,
   X,
 } from 'lucide-react';
+import {
+  Button,
+  Badge,
+  Card,
+  FormInput,
+  FormSelect,
+  FormTextarea,
+  LoadingState,
+} from '@presentation/components/ui';
 
 interface VariantFormItem {
   id: string;
@@ -961,45 +970,38 @@ export const ProductCreateWizardScreen: React.FC = () => {
 
         {/* Wizard Footer Controls */}
         <div className="pt-6 border-t border-slate-100 flex items-center justify-between mt-8">
-          <button
+          <Button
             type="button"
+            variant="outline"
             disabled={currentStep === 1}
             onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
-            className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            leftIcon={<ChevronLeft className="w-4 h-4" />}
           >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Sebelumnya</span>
-          </button>
+            Sebelumnya
+          </Button>
 
           {currentStep < 6 ? (
-            <button
+            <Button
               type="button"
+              variant="primary"
               disabled={currentStep === 1 && !name.trim()}
               onClick={() => setCurrentStep((prev) => Math.min(6, prev + 1))}
-              className="flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-[#0D5C53] hover:bg-[#094740] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              rightIcon={<ChevronRight className="w-4 h-4" />}
             >
-              <span>Lanjut</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
+              Lanjut
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="lg"
               disabled={submitting}
+              isLoading={submitting}
               onClick={handlePublish}
-              className="flex items-center gap-2 px-8 py-3 rounded-xl bg-[#0D5C53] hover:bg-[#094740] active:scale-[0.98] text-white text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+              leftIcon={<Check className="w-4 h-4" />}
             >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Menerbitkan Menu...</span>
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4" />
-                  <span>Konfirmasi & Terbitkan Menu ke Kasir</span>
-                </>
-              )}
-            </button>
+              Konfirmasi & Terbitkan Menu ke Kasir
+            </Button>
           )}
         </div>
       </div>
