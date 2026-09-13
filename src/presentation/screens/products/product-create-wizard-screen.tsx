@@ -17,6 +17,9 @@ import {
   Box,
   Sparkles,
   Loader2,
+  Upload,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react';
 
 interface VariantFormItem {
@@ -55,7 +58,29 @@ export const ProductCreateWizardScreen: React.FC = () => {
   const [sku, setSku] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Ukuran file maksimal adalah 5MB.');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
 
   // Step 2: Has Variants toggle
   const [hasVariants, setHasVariants] = useState<boolean>(false);
@@ -239,29 +264,50 @@ export const ProductCreateWizardScreen: React.FC = () => {
     setSubmitting(true);
     try {
       const primaryVariant = variants[0];
-      const primaryCOGS = calculateVariantCOGS(primaryVariant);
 
-      await productService.createProduct({
+      // Map variants to backend CreateVariantDto schema
+      const formattedVariants = hasVariants
+        ? variants.map((v) => ({
+            name: v.name,
+            sku: v.sku || `${sku}-${v.name}`,
+            price: v.price,
+            status: 'ACTIVE',
+            recipes: v.recipes.length > 0
+              ? v.recipes.map((r) => ({
+                  inventoryItemId: r.materialId,
+                  quantity: r.quantity,
+                  unit: r.unit,
+                }))
+              : undefined,
+          }))
+        : undefined;
+
+      const formattedRecipes = !hasVariants && primaryVariant.recipes.length > 0
+        ? primaryVariant.recipes.map((r) => ({
+            inventoryItemId: r.materialId,
+            quantity: r.quantity,
+            unit: r.unit,
+          }))
+        : undefined;
+
+      const created = await productService.createProduct({
         name,
-        sku: sku || `PRD-${Date.now().toString().slice(-4)}`,
-        categoryId,
-        description,
+        sku: sku || undefined,
+        categoryId: categoryId || undefined,
+        description: description || undefined,
         price: primaryVariant.price,
-        costPrice: primaryCOGS,
-        image: imageUrl || undefined,
-        isActive: true,
-        variants: hasVariants
-          ? variants.map((v) => ({
-              id: '',
-              productId: '',
-              name: v.name,
-              sku: v.sku || `${sku}-${v.name}`,
-              price: v.price,
-              costPrice: calculateVariantCOGS(v),
-              isActive: true,
-            }))
-          : [],
+        status: 'ACTIVE',
+        recipes: formattedRecipes,
+        variants: formattedVariants,
       });
+
+      if (imageFile && created?.id) {
+        try {
+          await productService.uploadProductImage(created.id, imageFile);
+        } catch (uploadErr) {
+          console.error('Image upload failed:', uploadErr);
+        }
+      }
 
       navigate('/products');
     } catch (err: unknown) {
@@ -384,14 +430,44 @@ export const ProductCreateWizardScreen: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">URL Foto Produk (Opsional)</label>
-                <input
-                  type="text"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-                />
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Foto Produk (Opsional)</label>
+                {imagePreview ? (
+                  <div className="flex items-center gap-4 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200">
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">{imageFile?.name || 'Foto Produk'}</p>
+                      <p className="text-[11px] text-slate-500">
+                        {imageFile ? `${(imageFile.size / 1024).toFixed(1)} KB` : 'Gambar terpilih'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                      title="Hapus foto"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="border-2 border-dashed border-slate-200 hover:border-[#0D5C53]/50 hover:bg-emerald-50/20 rounded-2xl p-5 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg, image/webp"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                    <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-[#0D5C53]/10 flex items-center justify-center text-slate-400 group-hover:text-[#0D5C53] mb-2 transition-colors">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-700 group-hover:text-[#0D5C53]">
+                      Klik untuk upload atau seret file gambar
+                    </span>
+                    <span className="text-[11px] text-slate-400 mt-0.5">PNG, JPG, WebP (Maks. 5MB)</span>
+                  </label>
+                )}
               </div>
             </div>
           )}
@@ -813,9 +889,9 @@ export const ProductCreateWizardScreen: React.FC = () => {
 
               <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 shadow-xs">
                 <div className="flex gap-4">
-                  <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {imageUrl ? (
-                      <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+                  <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt={name} className="w-full h-full object-cover" />
                     ) : (
                       <Coffee className="w-8 h-8 text-slate-400" />
                     )}

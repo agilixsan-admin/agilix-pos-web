@@ -8,7 +8,7 @@ export const CategoriesScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [formData, setFormData] = useState({ name: '' });
 
   const loadData = async () => {
     setLoading(true);
@@ -28,13 +28,13 @@ export const CategoriesScreen: React.FC = () => {
 
   const handleOpenAdd = () => {
     setEditingCategory(null);
-    setFormData({ name: '', description: '' });
+    setFormData({ name: '' });
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (cat: Category) => {
     setEditingCategory(cat);
-    setFormData({ name: cat.name, description: cat.description || '' });
+    setFormData({ name: cat.name });
     setIsModalOpen(true);
   };
 
@@ -42,9 +42,15 @@ export const CategoriesScreen: React.FC = () => {
     e.preventDefault();
     try {
       if (editingCategory) {
-        await productService.updateCategory(editingCategory.id, formData);
+        await productService.updateCategory(editingCategory.id, {
+          name: formData.name,
+          status: (editingCategory as { status?: string }).status || 'ACTIVE',
+        });
       } else {
-        await productService.createCategory(formData);
+        await productService.createCategory({
+          name: formData.name,
+          status: 'ACTIVE',
+        });
       }
       setIsModalOpen(false);
       loadData();
@@ -85,7 +91,7 @@ export const CategoriesScreen: React.FC = () => {
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
             <tr>
               <th className="py-3.5 px-4">Nama Kategori</th>
-              <th className="py-3.5 px-4">Deskripsi</th>
+              <th className="py-3.5 px-4">Status</th>
               <th className="py-3.5 px-4 text-right">Aksi</th>
             </tr>
           </thead>
@@ -108,7 +114,11 @@ export const CategoriesScreen: React.FC = () => {
               categories.map((c) => (
                 <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="py-3.5 px-4 font-bold text-slate-900">{c.name}</td>
-                  <td className="py-3.5 px-4 text-slate-500">{c.description || '-'}</td>
+                  <td className="py-3.5 px-4">
+                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                      AKTIF
+                    </span>
+                  </td>
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
@@ -152,18 +162,7 @@ export const CategoriesScreen: React.FC = () => {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Contoh: Kopi, Makanan Berat"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Deskripsi (Opsional)</label>
-                <textarea
-                  rows={2}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Deskripsi kategori..."
+                  placeholder="Contoh: Kopi, Makanan Berat, Snack"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
                 />
               </div>

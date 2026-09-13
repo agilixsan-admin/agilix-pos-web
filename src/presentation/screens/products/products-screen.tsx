@@ -69,22 +69,20 @@ export const ProductsScreen: React.FC = () => {
       if (editingProduct) {
         await productService.updateProduct(editingProduct.id, {
           name: formData.name,
-          sku: formData.sku,
-          categoryId: formData.categoryId,
+          sku: formData.sku || undefined,
+          categoryId: formData.categoryId || undefined,
           price: Number(formData.price),
-          costPrice: Number(formData.costPrice || 0),
-          description: formData.description,
+          description: formData.description || undefined,
+          status: 'ACTIVE',
         });
       } else {
         await productService.createProduct({
           name: formData.name,
-          sku: formData.sku,
-          categoryId: formData.categoryId,
+          sku: formData.sku || undefined,
+          categoryId: formData.categoryId || undefined,
           price: Number(formData.price),
-          costPrice: Number(formData.costPrice || 0),
-          description: formData.description,
-          isActive: true,
-          variants: [],
+          description: formData.description || undefined,
+          status: 'ACTIVE',
         });
       }
       setIsModalOpen(false);
