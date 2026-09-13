@@ -8,13 +8,24 @@ export const useAccess = () => {
     if (!requiredPermission) return true;
     if (!user) return false;
 
-    // Super Admin / Owner bypass
-    if (user.roleName?.toUpperCase() === 'OWNER' || user.permissions?.includes('*') || user.permissions?.includes('ALL')) {
+    // Super Admin / Owner bypass (Matching Backend PermissionGuard)
+    if (
+      user.isSuperAdmin === true ||
+      user.roleName?.toUpperCase() === 'SUPER_ADMIN' ||
+      user.roleName?.toUpperCase() === 'SUPER ADMIN' ||
+      user.roleName?.toUpperCase() === 'OWNER' ||
+      user.permissions?.includes('*') ||
+      user.permissions?.includes('ALL') ||
+      user.menuAccess?.includes('*')
+    ) {
       return true;
     }
 
-    // Check specific permission in user permissions array
-    return user.permissions?.includes(requiredPermission) || false;
+    // Check specific permission in user permissions array or menuAccess
+    const hasPerm = user.permissions?.includes(requiredPermission);
+    const hasMenu = user.menuAccess?.includes(requiredPermission);
+
+    return !!(hasPerm || hasMenu);
   };
 
   const hasAnyAccess = (permissions: string[]): boolean => {
@@ -34,4 +45,3 @@ export const useAccess = () => {
     hasAllAccess,
   };
 };
-

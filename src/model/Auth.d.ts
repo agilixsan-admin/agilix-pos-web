@@ -4,9 +4,11 @@ export interface User {
   email: string;
   roleId: string;
   roleName: string;
+  isSuperAdmin?: boolean;
   outletId?: string;
   tenantId: string;
   permissions: string[];
+  menuAccess?: string[];
 }
 
 export interface Outlet {

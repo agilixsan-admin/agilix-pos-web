@@ -16,6 +16,49 @@ export interface OrderTypeSetting {
   isActive: boolean;
 }
 
+export interface TaxSetting {
+  id: string;
+  name: string;
+  code: string;
+  rate: number; // e.g. 10 for 10%
+  type: 'PERCENTAGE' | 'FIXED';
+  isIncludedInPrice: boolean;
+  isActive: boolean;
+}
+
+export interface DiscountSetting {
+  id: string;
+  name: string;
+  code?: string;
+  type: 'PERCENTAGE' | 'FIXED';
+  value: number; // e.g. 10 (%) or 15000 (Rp)
+  minPurchase?: number;
+  maxDiscount?: number;
+  isActive: boolean;
+}
+
+export interface PrinterSetting {
+  id: string;
+  name: string;
+  type: 'BLUETOOTH' | 'NETWORK' | 'USB';
+  paperWidth: '58mm' | '80mm';
+  ipAddress?: string;
+  targetRole: 'RECEIPT' | 'KITCHEN' | 'BAR';
+  autoCut: boolean;
+  isActive: boolean;
+}
+
+export interface AuditLogItem {
+  id: string;
+  tenantId: string;
+  actorType: string;
+  actorId: string | null;
+  actorName?: string;
+  action: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
 export interface Role {
   id: string;
   tenantId: string;
@@ -37,4 +80,3 @@ export interface UserManagementItem {
   isActive: boolean;
   createdAt: string;
 }
-

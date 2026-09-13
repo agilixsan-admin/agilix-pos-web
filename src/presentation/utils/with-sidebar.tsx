@@ -18,7 +18,11 @@ import {
   Building2,
   LayoutGrid,
   ConciergeBell,
+  Receipt,
+  BadgePercent,
+  Printer,
   ShieldCheck,
+  ShieldAlert,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -77,8 +81,12 @@ const MENU_GROUPS: MenuGroup[] = [
       { title: 'Outlet', path: '/settings/outlets', icon: Building2, permission: 'outlet:read' },
       { title: 'Meja', path: '/settings/tables', icon: LayoutGrid, permission: 'table:read' },
       { title: 'Order Type', path: '/settings/order-types', icon: ConciergeBell, permission: 'order_type:read' },
+      { title: 'Pajak & Biaya', path: '/settings/taxes', icon: Receipt, permission: 'tax:read' },
+      { title: 'Diskon & Promo', path: '/settings/discounts', icon: BadgePercent, permission: 'discount:read' },
+      { title: 'Printer Struk', path: '/settings/printers', icon: Printer, permission: 'printer:read' },
       { title: 'Role', path: '/settings/roles', icon: ShieldCheck, permission: 'role:read' },
       { title: 'User', path: '/settings/users', icon: Users, permission: 'user:read' },
+      { title: 'Audit Log', path: '/settings/audit-logs', icon: ShieldAlert, permission: 'audit_log.read' },
     ],
   },
 ];
@@ -149,4 +157,3 @@ export const WithSidebar: React.FC = () => {
     </aside>
   );
 };
-

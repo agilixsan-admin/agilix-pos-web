@@ -22,8 +22,12 @@ import { InventoryReportScreen } from '@presentation/screens/reports/inventory-r
 import { OutletsScreen } from '@presentation/screens/settings/outlets-screen';
 import { TablesScreen } from '@presentation/screens/settings/tables-screen';
 import { OrderTypesScreen } from '@presentation/screens/settings/order-types-screen';
+import { TaxesScreen } from '@presentation/screens/settings/taxes-screen';
+import { DiscountsScreen } from '@presentation/screens/settings/discounts-screen';
+import { PrintersScreen } from '@presentation/screens/settings/printers-screen';
 import { RolesScreen } from '@presentation/screens/settings/roles-screen';
 import { UsersScreen } from '@presentation/screens/settings/users-screen';
+import { AuditLogsScreen } from '@presentation/screens/settings/audit-logs-screen';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -189,6 +193,30 @@ export const AppRoutes: React.FC = () => {
           }
         />
         <Route
+          path="settings/taxes"
+          element={
+            <ProtectedRoute requiredPermission="tax:read">
+              <TaxesScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="settings/discounts"
+          element={
+            <ProtectedRoute requiredPermission="discount:read">
+              <DiscountsScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="settings/printers"
+          element={
+            <ProtectedRoute requiredPermission="printer:read">
+              <PrintersScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="settings/roles"
           element={
             <ProtectedRoute requiredPermission="role:read">
@@ -204,6 +232,14 @@ export const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="settings/audit-logs"
+          element={
+            <ProtectedRoute requiredPermission="audit_log.read">
+              <AuditLogsScreen />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* Fallback */}
@@ -211,4 +247,3 @@ export const AppRoutes: React.FC = () => {
     </Routes>
   );
 };
-
