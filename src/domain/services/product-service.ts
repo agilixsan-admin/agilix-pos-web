@@ -28,7 +28,7 @@ export const productService = {
 
   getCategories: async (): Promise<Category[]> => {
     const res = await httpClient.get('/categories');
-    return res.data?.data || res.data || [];
+    return res.data?.data || res.data?.items || (Array.isArray(res.data) ? res.data : []);
   },
 
   createCategory: async (categoryData: Partial<Category>): Promise<Category> => {
