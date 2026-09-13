@@ -1,17 +1,37 @@
 export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT' | 'SALE' | 'VOID' | 'WASTE';
 
+export interface InventoryCategory {
+  id: string;
+  tenantId: string;
+  name: string;
+  description?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  itemCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface RawMaterial {
   id: string;
   tenantId: string;
-  outletId: string;
+  outletId?: string;
   name: string;
-  code: string;
-  category: string;
+  sku?: string;
+  code?: string;
+  categoryId?: string;
+  category?: string | InventoryCategory;
+  categoryName?: string;
   unit: string;
-  currentStock: number;
-  minimumStock: number;
-  costPrice: number;
-  updatedAt: string;
+  currentStock?: number;
+  minimumStock?: number;
+  minStock?: number;
+  unitCost?: number;
+  costPrice?: number;
+  description?: string;
+  status?: 'ACTIVE' | 'INACTIVE';
+  createdAt?: string;
+  updatedAt?: string;
+  stocks?: { outletId: string; quantity: number }[];
 }
 
 export interface PackagingItem {

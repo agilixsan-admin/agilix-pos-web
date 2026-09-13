@@ -5,26 +5,31 @@ export interface Category {
   description?: string;
   icon?: string;
   itemCount?: number;
+  status?: 'ACTIVE' | 'INACTIVE' | string;
+  isActive?: boolean;
 }
 
 export interface Variant {
-  id: string;
-  productId: string;
+  id?: string;
+  productId?: string;
   name: string;
   sku: string;
   price: number;
   costPrice?: number;
   stock?: number;
-  isActive: boolean;
+  status?: string;
+  isActive?: boolean;
+  recipes?: any[];
 }
 
 export interface RecipeItem {
-  id: string;
-  materialId: string;
-  materialName: string;
+  id?: string;
+  inventoryItemId?: string;
+  materialId?: string;
+  materialName?: string;
   quantity: number;
   unit: string;
-  cost: number;
+  cost?: number;
 }
 
 export interface Product {
@@ -38,8 +43,8 @@ export interface Product {
   costPrice?: number;
   image?: string;
   description?: string;
-  isActive: boolean;
-  variants: Variant[];
+  status?: 'ACTIVE' | 'INACTIVE' | string;
+  isActive?: boolean;
+  variants?: Variant[];
   recipes?: RecipeItem[];
 }
-
