@@ -103,17 +103,26 @@ export const ProductCreateWizardScreen: React.FC = () => {
     const loadInitial = async () => {
       setLoadingData(true);
       try {
-        const [cats, mats, pkgs] = await Promise.all([
+        const [catsRes, matsRes, pkgsRes] = await Promise.allSettled([
           productService.getCategories(),
           inventoryService.getRawMaterials({ outletId: currentOutlet?.id }),
           inventoryService.getPackagingItems({ outletId: currentOutlet?.id }),
         ]);
-        setCategories(cats);
-        if (cats.length > 0) setCategoryId(cats[0].id);
-        setAvailableMaterials(mats);
-        setAvailablePackagings(pkgs);
+
+        if (catsRes.status === 'fulfilled' && Array.isArray(catsRes.value)) {
+          setCategories(catsRes.value);
+          if (catsRes.value.length > 0 && !categoryId) {
+            setCategoryId(catsRes.value[0].id);
+          }
+        }
+        if (matsRes.status === 'fulfilled' && Array.isArray(matsRes.value)) {
+          setAvailableMaterials(matsRes.value);
+        }
+        if (pkgsRes.status === 'fulfilled' && Array.isArray(pkgsRes.value)) {
+          setAvailablePackagings(pkgsRes.value);
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Failed to load initial wizard data:', err);
       } finally {
         setLoadingData(false);
       }
@@ -399,6 +408,9 @@ export const ProductCreateWizardScreen: React.FC = () => {
                     onChange={(e) => setCategoryId(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
                   >
+                    <option value="">
+                      {categories.length === 0 ? '-- Belum ada kategori --' : '-- Pilih Kategori Menu --'}
+                    </option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
