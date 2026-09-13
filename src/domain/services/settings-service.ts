@@ -1,6 +1,6 @@
 import { httpClient } from './http-client';
 import type { Outlet } from '@model/Auth';
-import type { Table, Role, UserManagementItem } from '@model/Settings';
+import type { Table, Role, UserManagementItem, AuditLogItem } from '@model/Settings';
 
 export const settingsService = {
   getOutlets: async (): Promise<Outlet[]> => {
@@ -56,5 +56,26 @@ export const settingsService = {
     const res = await httpClient.put(`/users/${id}`, userData);
     return res.data?.data || res.data;
   },
-};
 
+  getAuditLogs: async (params?: {
+    action?: string;
+    actorType?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ items: AuditLogItem[]; total: number }> => {
+    const res = await httpClient.get('/audit-logs', { params });
+    const data = res.data;
+    if (Array.isArray(data?.data)) {
+      return { items: data.data, total: data.total || data.data.length };
+    }
+    if (Array.isArray(data?.items)) {
+      return { items: data.items, total: data.total || data.items.length };
+    }
+    if (Array.isArray(data)) {
+      return { items: data, total: data.length };
+    }
+    return { items: [], total: 0 };
+  },
+};
