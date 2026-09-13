@@ -918,3 +918,4 @@ export const ProductCreateWizardScreen: React.FC = () => {
     </div>
   );
 };
+
