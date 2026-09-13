@@ -12,6 +12,9 @@ import { ProductCreateWizardScreen } from '@presentation/screens/products/produc
 import { CategoriesScreen } from '@presentation/screens/products/categories-screen';
 import { StockScreen } from '@presentation/screens/inventory/stock-screen';
 import { RawMaterialsScreen } from '@presentation/screens/inventory/raw-materials-screen';
+import { RawMaterialCreateScreen } from '@presentation/screens/inventory/raw-material-create-screen';
+import { RawMaterialDetailScreen } from '@presentation/screens/inventory/raw-material-detail-screen';
+import { RawMaterialEditScreen } from '@presentation/screens/inventory/raw-material-edit-screen';
 import { PackagingScreen } from '@presentation/screens/inventory/packaging-screen';
 import { SuppliersScreen } from '@presentation/screens/inventory/suppliers-screen';
 import { PurchasesScreen } from '@presentation/screens/inventory/purchases-screen';
@@ -106,6 +109,30 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute requiredPermission="material:read">
               <RawMaterialsScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="inventory/raw-materials/create"
+          element={
+            <ProtectedRoute requiredPermission="material:create">
+              <RawMaterialCreateScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="inventory/raw-materials/:id"
+          element={
+            <ProtectedRoute requiredPermission="material:read">
+              <RawMaterialDetailScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="inventory/raw-materials/:id/edit"
+          element={
+            <ProtectedRoute requiredPermission="material:update">
+              <RawMaterialEditScreen />
             </ProtectedRoute>
           }
         />

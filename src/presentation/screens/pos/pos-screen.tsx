@@ -502,7 +502,7 @@ export const PosScreen: React.FC = () => {
               </button>
             </div>
             <div className="space-y-2">
-              {variantModalProduct.variants.map((v) => (
+              {(variantModalProduct.variants || []).map((v) => (
                 <button
                   key={v.id}
                   onClick={() => handleSelectVariant(variantModalProduct, v)}
