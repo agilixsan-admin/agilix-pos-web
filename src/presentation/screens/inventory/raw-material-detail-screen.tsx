@@ -13,13 +13,19 @@ import {
   ShoppingCart,
   ChefHat,
   Info,
-  Loader2,
   ArrowUpRight,
   ArrowDownLeft,
-  Calendar,
   CheckCircle2,
-  XCircle,
 } from 'lucide-react';
+import {
+  Button,
+  Badge,
+  KpiCard,
+  Tabs,
+  Card,
+  EmptyState,
+  LoadingState,
+} from '@presentation/components/ui';
 
 export const RawMaterialDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,9 +34,8 @@ export const RawMaterialDetailScreen: React.FC = () => {
   const [material, setMaterial] = useState<RawMaterial | null>(null);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
-  const [recipes, setRecipes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'recipes' | 'movements' | 'purchases'>('overview');
+  const [activeTab, setActiveTab] = useState<string>('overview');
 
   const loadDetail = async () => {
     if (!id) return;
@@ -68,30 +73,25 @@ export const RawMaterialDetailScreen: React.FC = () => {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0D5C53] mb-2" />
-        <p className="text-xs font-medium">Memuat detail bahan baku...</p>
-      </div>
-    );
+    return <LoadingState message="Memuat detail bahan baku..." className="min-h-[400px]" />;
   }
 
   if (!material) {
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center max-w-md mx-auto my-8">
-        <Package className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-        <h3 className="text-base font-bold text-slate-800">Bahan Baku Tidak Ditemukan</h3>
-        <p className="text-xs text-slate-500 mt-1 mb-6">
-          Bahan baku yang Anda cari tidak tersedia atau telah dihapus.
-        </p>
-        <Link
-          to="/inventory/raw-materials"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0D5C53] text-white rounded-xl text-xs font-semibold hover:bg-[#094740] transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Daftar</span>
-        </Link>
-      </div>
+      <Card className="max-w-md mx-auto my-8 text-center p-8">
+        <EmptyState
+          icon={<Package className="w-10 h-10 text-slate-300 mx-auto" />}
+          title="Bahan Baku Tidak Ditemukan"
+          description="Bahan baku yang Anda cari tidak tersedia atau telah dihapus."
+          action={
+            <Link to="/inventory/raw-materials">
+              <Button variant="primary" leftIcon={<ArrowLeft className="w-4 h-4" />}>
+                Kembali ke Daftar
+              </Button>
+            </Link>
+          }
+        />
+      </Card>
     );
   }
 
@@ -123,23 +123,13 @@ export const RawMaterialDetailScreen: React.FC = () => {
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">{material.name}</h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
-                {categoryName}
-              </span>
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 ${
-                  material.status === 'INACTIVE'
-                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                }`}
+              <Badge variant="neutral">{categoryName}</Badge>
+              <Badge
+                variant={material.status === 'INACTIVE' ? 'danger' : 'success'}
+                dot
               >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    material.status === 'INACTIVE' ? 'bg-rose-500' : 'bg-emerald-500'
-                  }`}
-                />
                 {material.status === 'INACTIVE' ? 'Inactive' : 'Active'}
-              </span>
+              </Badge>
             </div>
             <p className="text-xs text-slate-500 mt-0.5 font-mono">
               SKU: <span className="text-slate-700 font-semibold">{skuCode}</span>
@@ -148,174 +138,107 @@ export const RawMaterialDetailScreen: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link
-            to={`/inventory/raw-materials/${material.id}/edit`}
-            className="flex items-center gap-2 px-4 py-2 bg-[#0D5C53] hover:bg-[#094740] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <Edit2 className="w-4 h-4" />
-            <span>Edit Bahan Baku</span>
+          <Link to={`/inventory/raw-materials/${material.id}/edit`}>
+            <Button
+              variant="primary"
+              leftIcon={<Edit2 className="w-4 h-4" />}
+            >
+              Edit Bahan Baku
+            </Button>
           </Link>
         </div>
       </div>
 
-      {/* 4 KPI Cards */}
+      {/* 4 Reusable KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 1. Current Stock */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Stok Saat Ini</span>
-            <div className={`p-2 rounded-xl ${isLowStock ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
-              <Package className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-slate-900">
-                {currentStock.toLocaleString('id-ID')}
-              </span>
-              <span className="text-xs font-semibold text-slate-500">{material.unit}</span>
-            </div>
-            <div className="mt-1 flex items-center gap-1.5">
-              {isLowStock ? (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
-                  <AlertTriangle className="w-3 h-3" />
-                  Di bawah batas minimum
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Stok Aman
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+        <KpiCard
+          title="Stok Saat Ini"
+          value={currentStock.toLocaleString('id-ID')}
+          unit={material.unit}
+          icon={<Package className="w-4 h-4" />}
+          theme={isLowStock ? 'amber' : 'emerald'}
+          statusBadge={
+            isLowStock ? (
+              <Badge variant="warning" dot>
+                Di bawah batas minimum
+              </Badge>
+            ) : (
+              <Badge variant="success" dot>
+                Stok Aman
+              </Badge>
+            )
+          }
+        />
 
-        {/* 2. Minimum Stock */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Batas Stok Minimum</span>
-            <div className="p-2 rounded-xl bg-slate-50 text-slate-600">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-slate-900">
-                {minStock.toLocaleString('id-ID')}
-              </span>
-              <span className="text-xs font-semibold text-slate-500">{material.unit}</span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">Alert peringatan restock bahan</p>
-          </div>
-        </div>
+        <KpiCard
+          title="Batas Stok Minimum"
+          value={minStock.toLocaleString('id-ID')}
+          unit={material.unit}
+          icon={<AlertTriangle className="w-4 h-4" />}
+          theme="slate"
+          subtitle="Alert peringatan restock bahan"
+        />
 
-        {/* 3. Unit Cost */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Unit Cost (HPP Satuan)</span>
-            <div className="p-2 rounded-xl bg-teal-50 text-[#0D5C53]">
-              <Layers className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-[#0D5C53]">
-                Rp {unitCost.toLocaleString('id-ID')}
-              </span>
-              <span className="text-xs font-semibold text-slate-500">/ {material.unit}</span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">Moving Average dari Purchase Order</p>
-          </div>
-        </div>
+        <KpiCard
+          title="Unit Cost (HPP Satuan)"
+          value={`Rp ${unitCost.toLocaleString('id-ID')}`}
+          unit={`/ ${material.unit}`}
+          icon={<Layers className="w-4 h-4" />}
+          theme="teal"
+          subtitle="Moving Average dari Purchase Order"
+        />
 
-        {/* 4. Total Stock Value */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Total Nilai Stok</span>
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-              <ShoppingCart className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-slate-900">
-                Rp {stockValue.toLocaleString('id-ID')}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">Stok saat ini × Unit Cost</p>
-          </div>
-        </div>
+        <KpiCard
+          title="Total Nilai Stok"
+          value={`Rp ${stockValue.toLocaleString('id-ID')}`}
+          icon={<ShoppingCart className="w-4 h-4" />}
+          theme="indigo"
+          subtitle="Stok saat ini × Unit Cost"
+        />
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="border-b border-slate-200 flex items-center gap-8">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`pb-3 text-xs font-bold transition-all relative cursor-pointer ${
-            activeTab === 'overview'
-              ? 'text-[#0D5C53] border-b-2 border-[#0D5C53]'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Info className="w-4 h-4" />
-            <span>Overview & Spesifikasi</span>
-          </div>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('recipes')}
-          className={`pb-3 text-xs font-bold transition-all relative cursor-pointer ${
-            activeTab === 'recipes'
-              ? 'text-[#0D5C53] border-b-2 border-[#0D5C53]'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <ChefHat className="w-4 h-4" />
-            <span>Penggunaan Resep (BOM)</span>
-          </div>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('movements')}
-          className={`pb-3 text-xs font-bold transition-all relative cursor-pointer ${
-            activeTab === 'movements'
-              ? 'text-[#0D5C53] border-b-2 border-[#0D5C53]'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <History className="w-4 h-4" />
-            <span>Mutasi Stok ({movements.length})</span>
-          </div>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('purchases')}
-          className={`pb-3 text-xs font-bold transition-all relative cursor-pointer ${
-            activeTab === 'purchases'
-              ? 'text-[#0D5C53] border-b-2 border-[#0D5C53]'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <ShoppingCart className="w-4 h-4" />
-            <span>Riwayat Pembelian ({purchases.length})</span>
-          </div>
-        </button>
-      </div>
+      {/* Reusable Tabs Navigation */}
+      <Tabs
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        tabs={[
+          {
+            id: 'overview',
+            label: 'Overview & Spesifikasi',
+            icon: <Info className="w-4 h-4" />,
+          },
+          {
+            id: 'recipes',
+            label: 'Penggunaan Resep (BOM)',
+            icon: <ChefHat className="w-4 h-4" />,
+          },
+          {
+            id: 'movements',
+            label: 'Mutasi Stok',
+            icon: <History className="w-4 h-4" />,
+            count: movements.length,
+          },
+          {
+            id: 'purchases',
+            label: 'Riwayat Pembelian',
+            icon: <ShoppingCart className="w-4 h-4" />,
+            count: purchases.length,
+          },
+        ]}
+      />
 
       {/* Tab Contents */}
       {/* 1. Overview */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6">
-            <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
-              Informasi Rinci Bahan Baku
-            </h3>
-
+          <Card
+            className="md:col-span-2 space-y-6"
+            header={
+              <h3 className="text-sm font-bold text-slate-900">
+                Informasi Rinci Bahan Baku
+              </h3>
+            }
+          >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <span className="text-slate-400 block mb-1">Nama Bahan Baku</span>
@@ -361,13 +284,16 @@ export const RawMaterialDetailScreen: React.FC = () => {
                 {material.description || 'Tidak ada deskripsi tambahan untuk bahan baku ini.'}
               </p>
             </div>
-          </div>
+          </Card>
 
           <div className="space-y-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
-              <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">
-                Analisis & Rekomendasi
-              </h3>
+            <Card
+              header={
+                <h3 className="text-sm font-bold text-slate-900">
+                  Analisis & Rekomendasi
+                </h3>
+              }
+            >
               <div className="space-y-4 text-xs">
                 <div className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl">
                   <div className="flex items-center gap-2 text-[#0D5C53] font-bold mb-1">
@@ -401,45 +327,45 @@ export const RawMaterialDetailScreen: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       )}
 
       {/* 2. Resep Penggunaan (BOM) */}
       {activeTab === 'recipes' && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        <Card
+          padding="none"
+          header={
             <div>
               <h3 className="text-sm font-bold text-slate-900">Produk & Menu yang Menggunakan Bahan Ini</h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Daftar menu POS dan varian yang terhubung ke bahan baku ini (Bill of Materials).
               </p>
             </div>
-          </div>
-
-          <div className="p-8 text-center text-slate-400">
-            <ChefHat className="w-10 h-10 mx-auto mb-2 opacity-30 text-[#0D5C53]" />
-            <h4 className="font-semibold text-slate-700 text-xs">Integrasi Resep Menu</h4>
-            <p className="text-[11px] text-slate-400 max-w-md mx-auto mt-1">
-              Bahan baku ini secara otomatis dipotong saat pesanan menu yang memuatnya berhasil dibayar di POS Kasir.
-            </p>
-          </div>
-        </div>
+          }
+        >
+          <EmptyState
+            icon={<ChefHat className="w-10 h-10 mx-auto opacity-30 text-[#0D5C53]" />}
+            title="Integrasi Resep Menu"
+            description="Bahan baku ini secara otomatis dipotong saat pesanan menu yang memuatnya berhasil dibayar di POS Kasir."
+          />
+        </Card>
       )}
 
       {/* 3. Mutasi Stok */}
       {activeTab === 'movements' && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        <Card
+          padding="none"
+          header={
             <div>
               <h3 className="text-sm font-bold text-slate-900">Riwayat Mutasi & Pergerakan Stok</h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Log kronologis keluar/masuk bahan baku akibat penjualan POS, PO masuk, maupun penyesuaian opname.
               </p>
             </div>
-          </div>
-
+          }
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-600">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
@@ -454,12 +380,12 @@ export const RawMaterialDetailScreen: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {movements.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-slate-400">
-                      <History className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                      <p className="font-semibold text-slate-600">Belum ada riwayat mutasi stok</p>
-                      <p className="text-[11px] text-slate-400 mt-1">
-                        Mutasi akan tercatat otomatis saat ada transaksi penjualan, penyesuaian stok, atau pembelian.
-                      </p>
+                    <td colSpan={5}>
+                      <EmptyState
+                        icon={<History className="w-8 h-8 mx-auto opacity-30" />}
+                        title="Belum ada riwayat mutasi stok"
+                        description="Mutasi akan tercatat otomatis saat ada transaksi penjualan, penyesuaian stok, atau pembelian."
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -477,20 +403,16 @@ export const RawMaterialDetailScreen: React.FC = () => {
                           })}
                         </td>
                         <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                              isIncoming
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : 'bg-rose-50 text-rose-700 border border-rose-200'
-                            }`}
+                          <Badge
+                            variant={isIncoming ? 'success' : 'danger'}
                           >
                             {isIncoming ? (
-                              <ArrowDownLeft className="w-3 h-3 text-emerald-600" />
+                              <ArrowDownLeft className="w-3 h-3 text-emerald-600 mr-1" />
                             ) : (
-                              <ArrowUpRight className="w-3 h-3 text-rose-600" />
+                              <ArrowUpRight className="w-3 h-3 text-rose-600 mr-1" />
                             )}
                             {m.type || (isIncoming ? 'IN' : 'OUT')}
-                          </span>
+                          </Badge>
                         </td>
                         <td className={`py-3 px-4 text-right font-bold ${isIncoming ? 'text-emerald-700' : 'text-rose-700'}`}>
                           {isIncoming ? '+' : '-'} {Math.abs(m.quantity).toLocaleString('id-ID')} {material.unit}
@@ -508,21 +430,22 @@ export const RawMaterialDetailScreen: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* 4. Riwayat Pembelian (PO) */}
       {activeTab === 'purchases' && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        <Card
+          padding="none"
+          header={
             <div>
               <h3 className="text-sm font-bold text-slate-900">Riwayat Pengadaan & Pembelian (Purchase Orders)</h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Daftar faktur pembelian supplier yang memuat bahan baku ini.
               </p>
             </div>
-          </div>
-
+          }
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-600">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
@@ -538,12 +461,12 @@ export const RawMaterialDetailScreen: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {purchases.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
-                      <ShoppingCart className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                      <p className="font-semibold text-slate-600">Belum ada riwayat pembelian</p>
-                      <p className="text-[11px] text-slate-400 mt-1">
-                        Riwayat pembelian dari supplier akan muncul saat Purchase Order diterima.
-                      </p>
+                    <td colSpan={6}>
+                      <EmptyState
+                        icon={<ShoppingCart className="w-8 h-8 mx-auto opacity-30" />}
+                        title="Belum ada riwayat pembelian"
+                        description="Riwayat pembelian dari supplier akan muncul saat Purchase Order diterima."
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -567,9 +490,9 @@ export const RawMaterialDetailScreen: React.FC = () => {
                         {po.unitPrice ? `Rp ${Number(po.unitPrice).toLocaleString('id-ID')}` : '-'}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <Badge variant="success">
                           {po.status || 'RECEIVED'}
-                        </span>
+                        </Badge>
                       </td>
                     </tr>
                   ))
@@ -577,9 +500,8 @@ export const RawMaterialDetailScreen: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );
 };
-

@@ -6,10 +6,15 @@ import {
   ArrowLeft,
   Lock,
   Plus,
-  Loader2,
-  Check,
-  X,
 } from 'lucide-react';
+import {
+  Button,
+  Card,
+  FormInput,
+  FormSelect,
+  FormTextarea,
+  Modal,
+} from '@presentation/components/ui';
 
 export const RawMaterialCreateScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -67,7 +72,10 @@ export const RawMaterialCreateScreen: React.FC = () => {
         setCategoryId(created.id);
       }
     } catch (err: unknown) {
-      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal membuat kategori.');
+      alert(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Gagal membuat kategori.'
+      );
     } finally {
       setCreatingCat(false);
     }
@@ -94,280 +102,218 @@ export const RawMaterialCreateScreen: React.FC = () => {
 
       navigate('/inventory/raw-materials');
     } catch (err: unknown) {
-      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menyimpan bahan baku.');
+      alert(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Gagal menyimpan bahan baku.'
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-6 pb-12 select-none">
-      {/* Breadcrumb & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-            <Link to="/inventory/stock" className="hover:text-slate-800 transition-colors">
-              Inventory
-            </Link>
-            <span>/</span>
-            <Link to="/inventory/raw-materials" className="hover:text-slate-800 transition-colors">
-              Bahan Baku
-            </Link>
-            <span>/</span>
-            <span className="text-[#0D5C53] font-semibold">Tambah Bahan Baku</span>
-          </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tambah Bahan Baku</h1>
-        </div>
-
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => navigate('/inventory/raw-materials')}
-            className="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-xs cursor-pointer"
           >
-            Batal
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex items-center gap-2 px-4 py-2 bg-[#0D5C53] hover:bg-[#094740] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Menyimpan...</span>
-              </>
-            ) : (
-              <span>Simpan Bahan Baku</span>
-            )}
-          </button>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tambah Bahan Baku</h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Daftarkan bahan mentah baru yang digunakan untuk komposisi resep menu (BOM).
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* 2-Column Form Layout matching Mockup */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Informasi Dasar (7 Cols) */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5">
-            <h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
-              Informasi Dasar
-            </h2>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Nama Bahan Baku <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Kolom Kiri: Informasi Dasar */}
+          <Card
+            header={
+              <h2 className="text-sm font-bold text-slate-900">
+                Informasi Dasar
+              </h2>
+            }
+          >
+            <div className="space-y-4">
+              <FormInput
+                label="Nama Bahan Baku"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Contoh: Biji Kopi Arabika"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                placeholder="Contoh: Biji Kopi Espresso Blend"
               />
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  SKU / Kode (Opsional)
-                </label>
-                <input
-                  type="text"
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value)}
-                  placeholder="AUTO / MAT-001"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-                />
-              </div>
+              <FormInput
+                label="SKU / Kode Bahan Baku"
+                value={sku}
+                onChange={(e) => setSku(e.target.value)}
+                placeholder="Contoh: RM-COF-001"
+                helperText="Kode unik untuk identifikasi dan barcode scanning."
+              />
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-700">Kategori</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Kategori Bahan Baku
+                  </label>
                   <button
                     type="button"
                     onClick={() => setIsCatModalOpen(true)}
                     className="text-[11px] font-semibold text-[#0D5C53] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
-                    <span>Tambah Kategori</span>
+                    <span>+ Kategori Baru</span>
                   </button>
                 </div>
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-                >
-                  <option value="">
-                    {loadingCats
-                      ? 'Memuat kategori...'
-                      : categories.length === 0
-                      ? '-- Belum ada kategori --'
-                      : 'Pilih Kategori...'}
-                  </option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                {loadingCats ? (
+                  <div className="text-xs text-slate-400 py-2">Memuat kategori...</div>
+                ) : (
+                  <FormSelect
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                  >
+                    <option value="">Pilih Kategori...</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </FormSelect>
+                )}
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Deskripsi (Opsional)
-              </label>
-              <textarea
-                rows={4}
+              <FormTextarea
+                label="Deskripsi / Catatan"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Detail spesifikasi bahan baku, cara penyimpanan, atau catatan supplier..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                placeholder="Catatan spesifikasi penyimpanan atau informasi tambahan..."
+                rows={3}
               />
             </div>
+          </Card>
 
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-800">Status Aktif</p>
-                <p className="text-[11px] text-slate-400">
-                  Bahan baku dapat digunakan dalam resep dan pembelian.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setStatus(status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
-                className={`w-11 h-6 rounded-full p-0.5 transition-colors cursor-pointer ${
-                  status === 'ACTIVE' ? 'bg-[#0D5C53]' : 'bg-slate-200'
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${
-                    status === 'ACTIVE' ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </div>
+          {/* Kolom Kanan: Unit & Stok */}
+          <div className="space-y-6">
+            <Card
+              header={
+                <h2 className="text-sm font-bold text-slate-900">
+                  Unit & Batas Stok
+                </h2>
+              }
+            >
+              <div className="space-y-4">
+                <FormSelect
+                  label="Satuan Dasar (Base Unit)"
+                  required
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value)}
+                  helperText="Satuan terkecil yang digunakan untuk takaran resep (contoh: gram, ml, pcs)."
+                >
+                  <option value="g">Gram (g) - Berat</option>
+                  <option value="ml">Mililiter (ml) - Volume</option>
+                  <option value="pcs">Pcs - Satuan</option>
+                  <option value="kg">Kilogram (kg)</option>
+                  <option value="l">Liter (l)</option>
+                  <option value="shot">Shot - Takaran Kopi</option>
+                  <option value="slice">Slice / Lembar</option>
+                </FormSelect>
 
-        {/* Right Column: Unit & Stock (5 Cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5">
-            <h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
-              Unit & Stock
-            </h2>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Base Unit <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                <option value="g">Gram (g)</option>
-                <option value="kg">Kilogram (kg)</option>
-                <option value="ml">Mililiter (ml)</option>
-                <option value="L">Liter (L)</option>
-                <option value="pcs">Pcs / Butir</option>
-                <option value="shot">Shot</option>
-                <option value="slice">Slice</option>
-              </select>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Satuan terkecil yang digunakan saat menakar resep.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Minimum Stock Alert
-              </label>
-              <div className="relative">
-                <input
+                <FormInput
+                  label="Batas Stok Minimum (Alert Threshold)"
                   type="number"
                   min="0"
+                  step="any"
+                  unit={unit}
                   value={minimumStock}
                   onChange={(e) => setMinimumStock(e.target.value)}
                   placeholder="0"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3.5 pr-12 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                  helperText='Sistem akan menandai status "Stok Rendah" jika stok mencapai atau di bawah angka ini.'
                 />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                  {unit}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Peringatan jika stok di bawah batas ini.
-              </p>
-            </div>
 
-            {/* Unit Cost Locked Card (Mockup Feature) */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">Unit Cost (Otomatis)</span>
-                <Lock className="w-3.5 h-3.5 text-slate-400" />
+                <FormSelect
+                  label="Status Bahan Baku"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as 'ACTIVE' | 'INACTIVE')}
+                >
+                  <option value="ACTIVE">Aktif (Dapat digunakan di Resep & Pembelian)</option>
+                  <option value="INACTIVE">Nonaktif (Diarsipkan)</option>
+                </FormSelect>
               </div>
-              <p className="text-xs text-slate-400 italic">Belum tersedia</p>
-              <p className="text-[11px] text-slate-500 leading-relaxed pt-1 border-t border-slate-200/60">
-                Unit cost dihitung otomatis ketika ada rincian pembelian (Moving Average).
+            </Card>
+
+            {/* Locked Unit Cost Information Card */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+              <div className="flex items-center gap-2 text-slate-800 font-bold text-xs mb-1.5">
+                <Lock className="w-3.5 h-3.5 text-slate-400" />
+                <span>Unit Cost (HPP Satuan Otomatis)</span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Unit cost dihitung secara otomatis oleh sistem menggunakan metode <strong>Cumulative Weighted Moving Average</strong> saat barang masuk atau Purchase Order (PO) diterima dari supplier.
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Bottom Actions Bar */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <Link to="/inventory/raw-materials">
+            <Button type="button" variant="outline">
+              Batal
+            </Button>
+          </Link>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={submitting}
+          >
+            Simpan Bahan Baku
+          </Button>
         </div>
       </form>
 
-      {/* Inline Quick Category Modal */}
-      {isCatModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm">Tambah Kategori Bahan</h3>
-              <button
-                type="button"
-                onClick={() => setIsCatModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {/* Reusable Quick Category Modal */}
+      <Modal
+        isOpen={isCatModalOpen}
+        onClose={() => setIsCatModalOpen(false)}
+        title="Tambah Kategori Baru"
+        maxWidth="sm"
+      >
+        <form onSubmit={handleCreateCategory} className="space-y-4">
+          <FormInput
+            label="Nama Kategori"
+            required
+            autoFocus
+            value={newCatName}
+            onChange={(e) => setNewCatName(e.target.value)}
+            placeholder="Contoh: Dairy & Susu"
+          />
 
-            <form onSubmit={handleCreateCategory} className="py-4 space-y-3.5 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Nama Kategori *</label>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder="Contoh: Dairy, Coffee, Syrup, Flour"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-                />
-              </div>
-
-              <div className="pt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCatModalOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={creatingCat}
-                  className="flex-1 py-2.5 bg-[#0D5C53] hover:bg-[#094740] text-white font-semibold rounded-xl cursor-pointer shadow-xs disabled:opacity-50"
-                >
-                  {creatingCat ? 'Menyimpan...' : 'Simpan'}
-                </button>
-              </div>
-            </form>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsCatModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={creatingCat}
+            >
+              Simpan Kategori
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 };
-
