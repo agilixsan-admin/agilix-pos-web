@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Product, Category } from '@model/Product';
 import { productService } from '@domain/services/product-service';
 import { useAuthStore } from '@domain/state/auth-store';
 import { Plus, Search, Edit2, Trash2, Loader2, Coffee, X } from 'lucide-react';
 
 export const ProductsScreen: React.FC = () => {
+  const navigate = useNavigate();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -12,7 +14,7 @@ export const ProductsScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
-  // Modal State
+  // Modal State for quick edit
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
@@ -45,16 +47,7 @@ export const ProductsScreen: React.FC = () => {
   }, [currentOutlet?.id]);
 
   const handleOpenAdd = () => {
-    setEditingProduct(null);
-    setFormData({
-      name: '',
-      sku: '',
-      categoryId: categories[0]?.id || '',
-      price: '',
-      costPrice: '',
-      description: '',
-    });
-    setIsModalOpen(true);
+    navigate('/products/create');
   };
 
   const handleOpenEdit = (p: Product) => {

@@ -8,6 +8,7 @@ import { LoginScreen } from '@presentation/screens/login/login-screen';
 import { PosScreen } from '@presentation/screens/pos/pos-screen';
 import { TransactionsScreen } from '@presentation/screens/transactions/transactions-screen';
 import { ProductsScreen } from '@presentation/screens/products/products-screen';
+import { ProductCreateWizardScreen } from '@presentation/screens/products/product-create-wizard-screen';
 import { CategoriesScreen } from '@presentation/screens/products/categories-screen';
 import { StockScreen } from '@presentation/screens/inventory/stock-screen';
 import { RawMaterialsScreen } from '@presentation/screens/inventory/raw-materials-screen';
@@ -71,6 +72,14 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute requiredPermission="product:read">
               <ProductsScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="products/create"
+          element={
+            <ProtectedRoute requiredPermission="product:create">
+              <ProductCreateWizardScreen />
             </ProtectedRoute>
           }
         />
