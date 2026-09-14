@@ -1,8 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import type { RawMaterial, InventoryCategory } from '@model/Inventory';
-import { inventoryService } from '@domain/services/inventory-service';
 import { useAuthStore } from '@domain/state/auth-store';
+import {
+  useRawMaterials,
+  useInventoryCategories,
+  useDeleteRawMaterialMutation,
+  useCreateInventoryCategoryMutation,
+  useUpdateInventoryCategoryMutation,
+  useDeleteInventoryCategoryMutation,
+  useDebounce,
+} from '@domain/hooks';
 import {
   Wheat,
   Plus,
@@ -32,63 +40,38 @@ export const RawMaterialsScreen: React.FC = () => {
   // Tab State
   const [activeTab, setActiveTab] = useState<string>('materials');
 
-  // Materials State
-  const [materials, setMaterials] = useState<RawMaterial[]>([]);
-  const [loadingMaterials, setLoadingMaterials] = useState(true);
+  // Query Hooks
+  const { data: materials = [], isLoading: loadingMaterials } = useRawMaterials({ outletId: currentOutlet?.id });
+  const { data: categories = [], isLoading: loadingCategories } = useInventoryCategories();
+
+  // Mutations
+  const deleteMaterialMutation = useDeleteRawMaterialMutation();
+  const createCategoryMutation = useCreateInventoryCategoryMutation();
+  const updateCategoryMutation = useUpdateInventoryCategoryMutation();
+  const deleteCategoryMutation = useDeleteInventoryCategoryMutation();
+  const savingCategory = createCategoryMutation.isPending || updateCategoryMutation.isPending;
+
+  // Materials Filter State
   const [searchMaterial, setSearchMaterial] = useState('');
+  const debouncedSearchMaterial = useDebounce(searchMaterial, 200);
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
-  // Categories State
-  const [categories, setCategories] = useState<InventoryCategory[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
+  // Categories Filter State
   const [searchCategory, setSearchCategory] = useState('');
+  const debouncedSearchCategory = useDebounce(searchCategory, 200);
 
   // Category Modal State
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<InventoryCategory | null>(null);
   const [catName, setCatName] = useState('');
   const [catStatus, setCatStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
-  const [savingCategory, setSavingCategory] = useState(false);
-
-  // Load Data
-  const loadMaterials = async () => {
-    setLoadingMaterials(true);
-    try {
-      const data = await inventoryService.getRawMaterials({ outletId: currentOutlet?.id });
-      setMaterials(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to load raw materials:', err);
-      setMaterials([]);
-    } finally {
-      setLoadingMaterials(false);
-    }
-  };
-
-  const loadCategories = async () => {
-    setLoadingCategories(true);
-    try {
-      const data = await inventoryService.getInventoryCategories();
-      setCategories(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to load categories:', err);
-      setCategories([]);
-    } finally {
-      setLoadingCategories(false);
-    }
-  };
-
-  useEffect(() => {
-    loadMaterials();
-    loadCategories();
-  }, [currentOutlet?.id]);
 
   // Handle Delete Material
   const handleDeleteMaterial = async (id: string, name: string) => {
     if (!confirm(`Apakah Anda yakin ingin menghapus bahan baku "${name}"?`)) return;
     try {
-      await inventoryService.deleteRawMaterial(id);
-      loadMaterials();
+      await deleteMaterialMutation.mutateAsync(id);
     } catch (err: unknown) {
       alert(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -116,36 +99,34 @@ export const RawMaterialsScreen: React.FC = () => {
     e.preventDefault();
     if (!catName.trim()) return;
 
-    setSavingCategory(true);
     try {
       if (editingCategory) {
-        await inventoryService.updateInventoryCategory(editingCategory.id, {
-          name: catName.trim(),
-          status: catStatus,
+        await updateCategoryMutation.mutateAsync({
+          id: editingCategory.id,
+          data: {
+            name: catName.trim(),
+            status: catStatus,
+          },
         });
       } else {
-        await inventoryService.createInventoryCategory({
+        await createCategoryMutation.mutateAsync({
           name: catName.trim(),
           status: catStatus,
         });
       }
       setIsCatModalOpen(false);
-      loadCategories();
     } catch (err: unknown) {
       alert(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menyimpan kategori.'
       );
-    } finally {
-      setSavingCategory(false);
     }
   };
 
   const handleDeleteCategory = async (id: string, name: string) => {
     if (!confirm(`Apakah Anda yakin ingin menghapus kategori "${name}"?`)) return;
     try {
-      await inventoryService.deleteInventoryCategory(id);
-      loadCategories();
+      await deleteCategoryMutation.mutateAsync(id);
     } catch (err: unknown) {
       alert(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -159,7 +140,7 @@ export const RawMaterialsScreen: React.FC = () => {
     if (!m) return false;
     const nameStr = (m.name || '').toLowerCase();
     const codeStr = (m.sku || m.code || '').toLowerCase();
-    const q = searchMaterial.toLowerCase();
+    const q = debouncedSearchMaterial.toLowerCase();
     const matchesSearch = nameStr.includes(q) || codeStr.includes(q);
 
     const mCatId = m.categoryId || (typeof m.category === 'object' && m.category ? (m.category as any).id : '');
@@ -175,7 +156,7 @@ export const RawMaterialsScreen: React.FC = () => {
   const filteredCategories = categories.filter((c) => {
     if (!c) return false;
     const nameStr = (c.name || '').toLowerCase();
-    return nameStr.includes(searchCategory.toLowerCase());
+    return nameStr.includes(debouncedSearchCategory.toLowerCase());
   });
 
   return (

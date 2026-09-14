@@ -1,8 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Product, Category } from '@model/Product';
-import { productService } from '@domain/services/product-service';
+import type { Product } from '@model/Product';
 import { useAuthStore } from '@domain/state/auth-store';
+import {
+  useProducts,
+  useCategories,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation,
+  useDebounce,
+} from '@domain/hooks';
 import { Plus, Edit2, Trash2, Coffee } from 'lucide-react';
 import {
   Button,
@@ -20,12 +27,21 @@ import {
 export const ProductsScreen: React.FC = () => {
   const navigate = useNavigate();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Query Hooks
+  const { data: products = [], isLoading: productsLoading } = useProducts({ outletId: currentOutlet?.id });
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const loading = productsLoading || categoriesLoading;
+
+  // Mutations
+  const createProductMutation = useCreateProductMutation();
+  const updateProductMutation = useUpdateProductMutation();
+  const deleteProductMutation = useDeleteProductMutation();
+  const submitting = createProductMutation.isPending || updateProductMutation.isPending;
+
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 200);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [submitting, setSubmitting] = useState(false);
 
   // Modal State for quick edit
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,26 +54,6 @@ export const ProductsScreen: React.FC = () => {
     costPrice: '',
     description: '',
   });
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [prod, cat] = await Promise.all([
-        productService.getProducts({ outletId: currentOutlet?.id }),
-        productService.getCategories(),
-      ]);
-      setProducts(prod);
-      setCategories(cat);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [currentOutlet?.id]);
 
   const handleOpenAdd = () => {
     navigate('/products/create');
@@ -78,19 +74,21 @@ export const ProductsScreen: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     try {
       if (editingProduct) {
-        await productService.updateProduct(editingProduct.id, {
-          name: formData.name,
-          sku: formData.sku || undefined,
-          categoryId: formData.categoryId || undefined,
-          price: Number(formData.price),
-          description: formData.description || undefined,
-          status: 'ACTIVE',
+        await updateProductMutation.mutateAsync({
+          id: editingProduct.id,
+          data: {
+            name: formData.name,
+            sku: formData.sku || undefined,
+            categoryId: formData.categoryId || undefined,
+            price: Number(formData.price),
+            description: formData.description || undefined,
+            status: 'ACTIVE',
+          },
         });
       } else {
-        await productService.createProduct({
+        await createProductMutation.mutateAsync({
           name: formData.name,
           sku: formData.sku || undefined,
           categoryId: formData.categoryId || undefined,
@@ -100,22 +98,18 @@ export const ProductsScreen: React.FC = () => {
         });
       }
       setIsModalOpen(false);
-      loadData();
     } catch (err: unknown) {
       alert(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menyimpan produk.'
       );
-    } finally {
-      setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
     try {
-      await productService.deleteProduct(id);
-      loadData();
+      await deleteProductMutation.mutateAsync(id);
     } catch (err: unknown) {
       alert('Gagal menghapus produk.');
     }

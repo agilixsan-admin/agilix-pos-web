@@ -1,6 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import type { Category } from '@model/Product';
-import { productService } from '@domain/services/product-service';
+import {
+  useCategories,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
+} from '@domain/hooks';
 import { Plus, Tags, Edit2, Trash2 } from 'lucide-react';
 import {
   Button,
@@ -13,28 +18,15 @@ import {
 } from '@presentation/components/ui';
 
 export const CategoriesScreen: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: categories = [], isLoading: loading } = useCategories();
+  const createCategoryMutation = useCreateCategoryMutation();
+  const updateCategoryMutation = useUpdateCategoryMutation();
+  const deleteCategoryMutation = useDeleteCategoryMutation();
+  const submitting = createCategoryMutation.isPending || updateCategoryMutation.isPending;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({ name: '' });
-  const [submitting, setSubmitting] = useState(false);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const data = await productService.getCategories();
-      setCategories(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const handleOpenAdd = () => {
     setEditingCategory(null);
@@ -50,36 +42,31 @@ export const CategoriesScreen: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     try {
       if (editingCategory) {
-        await productService.updateCategory(editingCategory.id, {
-          name: formData.name,
-          status: (editingCategory as { status?: string }).status || 'ACTIVE',
+        await updateCategoryMutation.mutateAsync({
+          id: editingCategory.id,
+          data: {
+            name: formData.name,
+            status: (editingCategory as { status?: string }).status || 'ACTIVE',
+          },
         });
       } else {
-        await productService.createCategory({
+        await createCategoryMutation.mutateAsync({
           name: formData.name,
           status: 'ACTIVE',
         });
       }
       setIsModalOpen(false);
-      loadData();
     } catch (err: unknown) {
-      alert(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Gagal menyimpan kategori.'
-      );
-    } finally {
-      setSubmitting(false);
+      alert('Gagal menyimpan kategori.');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Hapus kategori ini?')) return;
+    if (!confirm('Apakah Anda yakin ingin menghapus kategori ini?')) return;
     try {
-      await productService.deleteCategory(id);
-      loadData();
+      await deleteCategoryMutation.mutateAsync(id);
     } catch (err: unknown) {
       alert('Gagal menghapus kategori.');
     }

@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import type { Supplier } from '@model/Inventory';
-import { inventoryService } from '@domain/services/inventory-service';
+import React, { useState } from 'react';
+import { useSuppliers, useDebounce } from '@domain/hooks';
 import { Truck } from 'lucide-react';
 import {
   Card,
@@ -10,25 +9,9 @@ import {
 } from '@presentation/components/ui';
 
 export const SuppliersScreen: React.FC = () => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: suppliers = [], isLoading: loading } = useSuppliers();
   const [search, setSearch] = useState('');
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const data = await inventoryService.getSuppliers();
-      setSuppliers(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  const debouncedSearch = useDebounce(search, 200);
 
   const rawList = Array.isArray(suppliers) ? suppliers : [];
   const filtered = rawList.filter((s) => {
@@ -36,7 +19,7 @@ export const SuppliersScreen: React.FC = () => {
     const nameStr = (s.name || '').toLowerCase();
     const picStr = (s.contactPerson || '').toLowerCase();
     const phoneStr = (s.phone || '').toLowerCase();
-    const q = (search || '').toLowerCase();
+    const q = (debouncedSearch || '').toLowerCase();
     return nameStr.includes(q) || picStr.includes(q) || phoneStr.includes(q);
   });
 

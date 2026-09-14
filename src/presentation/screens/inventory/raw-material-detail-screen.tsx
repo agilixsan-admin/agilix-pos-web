@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import type { RawMaterial, StockMovement } from '@model/Inventory';
-import { inventoryService } from '@domain/services/inventory-service';
-import { httpClient } from '@domain/services/http-client';
+import {
+  useRawMaterialDetail,
+  useStockMovements,
+} from '@domain/hooks';
 import {
   ArrowLeft,
   Edit2,
@@ -31,46 +32,11 @@ export const RawMaterialDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [material, setMaterial] = useState<RawMaterial | null>(null);
-  const [movements, setMovements] = useState<StockMovement[]>([]);
-  const [purchases, setPurchases] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Query Hooks
+  const { data: material = null, isLoading: loading } = useRawMaterialDetail(id);
+  const { data: movements = [] } = useStockMovements({ itemId: id });
   const [activeTab, setActiveTab] = useState<string>('overview');
-
-  const loadDetail = async () => {
-    if (!id) return;
-    setLoading(true);
-    try {
-      // 1. Load Raw Material Detail
-      const data = await inventoryService.getRawMaterialById(id);
-      setMaterial(data);
-
-      // 2. Load Stock Movements for this item
-      try {
-        const moves = await inventoryService.getStockMovements({ itemId: id });
-        setMovements(Array.isArray(moves) ? moves : []);
-      } catch (err) {
-        console.warn('Could not load movements:', err);
-      }
-
-      // 3. Load Purchases (PO) history if any
-      try {
-        const res = await httpClient.get('/purchases', { params: { itemId: id } });
-        const poList = res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
-        setPurchases(poList);
-      } catch (err) {
-        console.warn('Could not load purchases:', err);
-      }
-    } catch (err) {
-      console.error('Failed to load raw material details:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadDetail();
-  }, [id]);
+  const purchases: any[] = [];
 
   if (loading) {
     return <LoadingState message="Memuat detail bahan baku..." className="min-h-[400px]" />;

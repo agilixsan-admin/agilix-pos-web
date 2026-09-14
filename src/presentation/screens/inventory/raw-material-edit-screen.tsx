@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import type { InventoryCategory } from '@model/Inventory';
-import { inventoryService } from '@domain/services/inventory-service';
+import {
+  useRawMaterialDetail,
+  useInventoryCategories,
+  useUpdateRawMaterialMutation,
+  useCreateInventoryCategoryMutation,
+} from '@domain/hooks';
 import {
   ArrowLeft,
   Lock,
@@ -22,10 +26,13 @@ export const RawMaterialEditScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [categories, setCategories] = useState<InventoryCategory[]>([]);
-  const [loadingCats, setLoadingCats] = useState(true);
-  const [loadingItem, setLoadingItem] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  // Query & Mutation Hooks
+  const { data: item, isLoading: loadingItem } = useRawMaterialDetail(id);
+  const { data: categories = [], isLoading: loadingCats } = useInventoryCategories();
+  const updateMaterialMutation = useUpdateRawMaterialMutation();
+  const createCategoryMutation = useCreateInventoryCategoryMutation();
+  const submitting = updateMaterialMutation.isPending;
+  const creatingCat = createCategoryMutation.isPending;
 
   // Form State
   const [name, setName] = useState('');
@@ -40,59 +47,35 @@ export const RawMaterialEditScreen: React.FC = () => {
   // Inline Category Modal State
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
-  const [creatingCat, setCreatingCat] = useState(false);
-
-  const loadData = async () => {
-    if (!id) return;
-    setLoadingItem(true);
-    setLoadingCats(true);
-    try {
-      const [cats, item] = await Promise.all([
-        inventoryService.getInventoryCategories(),
-        inventoryService.getRawMaterialById(id),
-      ]);
-
-      setCategories(Array.isArray(cats) ? cats : []);
-      if (item) {
-        setName(item.name || '');
-        setSku(item.sku || item.code || '');
-        setCategoryId(
-          item.categoryId ||
-            (typeof item.category === 'object' && item.category
-              ? (item.category as any).id
-              : '')
-        );
-        setDescription(item.description || '');
-        setStatus((item.status as 'ACTIVE' | 'INACTIVE') || 'ACTIVE');
-        setUnit(item.unit || 'g');
-        setMinimumStock(String(item.minimumStock ?? item.minStock ?? 0));
-        setUnitCost(Number(item.unitCost ?? item.costPrice ?? 0));
-      }
-    } catch (err) {
-      console.error('Failed to load raw material data for edit:', err);
-    } finally {
-      setLoadingItem(false);
-      setLoadingCats(false);
-    }
-  };
 
   useEffect(() => {
-    loadData();
-  }, [id]);
+    if (item) {
+      setName(item.name || '');
+      setSku(item.sku || item.code || '');
+      setCategoryId(
+        item.categoryId ||
+          (typeof item.category === 'object' && item.category
+            ? (item.category as any).id
+            : '')
+      );
+      setDescription(item.description || '');
+      setStatus((item.status as 'ACTIVE' | 'INACTIVE') || 'ACTIVE');
+      setUnit(item.unit || 'g');
+      setMinimumStock(String(item.minimumStock ?? item.minStock ?? 0));
+      setUnitCost(Number(item.unitCost ?? item.costPrice ?? 0));
+    }
+  }, [item]);
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
-    setCreatingCat(true);
     try {
-      const created = await inventoryService.createInventoryCategory({
+      const created = await createCategoryMutation.mutateAsync({
         name: newCatName.trim(),
         status: 'ACTIVE',
       });
       setIsCatModalOpen(false);
       setNewCatName('');
-      const data = await inventoryService.getInventoryCategories();
-      setCategories(Array.isArray(data) ? data : []);
       if (created?.id) {
         setCategoryId(created.id);
       }
@@ -101,8 +84,6 @@ export const RawMaterialEditScreen: React.FC = () => {
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal membuat kategori.'
       );
-    } finally {
-      setCreatingCat(false);
     }
   };
 
@@ -114,25 +95,25 @@ export const RawMaterialEditScreen: React.FC = () => {
       return;
     }
 
-    setSubmitting(true);
     try {
-      await inventoryService.updateRawMaterial(id, {
-        name: name.trim(),
-        sku: sku.trim() || undefined,
-        categoryId: categoryId || undefined,
-        description: description.trim() || undefined,
-        minimumStock: Number(minimumStock || 0),
-        status,
+      await updateMaterialMutation.mutateAsync({
+        id,
+        data: {
+          name: name.trim(),
+          sku: sku.trim() || undefined,
+          categoryId: categoryId || undefined,
+          description: description.trim() || undefined,
+          minimumStock: Number(minimumStock || 0),
+          status,
+        },
       });
 
-      navigate(`/inventory/raw-materials/${id}`);
+      navigate('/inventory/raw-materials');
     } catch (err: unknown) {
       alert(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Gagal menyimpan perubahan.'
+          'Gagal memperbarui bahan baku.'
       );
-    } finally {
-      setSubmitting(false);
     }
   };
 

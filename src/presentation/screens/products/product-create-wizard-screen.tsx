@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Category } from '@model/Product';
 import type { RawMaterial, PackagingItem } from '@model/Inventory';
 import { productService } from '@domain/services/product-service';
-import { inventoryService } from '@domain/services/inventory-service';
 import { useAuthStore } from '@domain/state/auth-store';
+import {
+  useCategories,
+  useRawMaterials,
+  usePackagingItems,
+  useCreateProductMutation,
+} from '@domain/hooks';
 import {
   ArrowLeft,
   Check,
@@ -54,13 +58,14 @@ export const ProductCreateWizardScreen: React.FC = () => {
   const navigate = useNavigate();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
 
+  // Query Hooks
+  const { data: categories = [] } = useCategories();
+  const { data: availableMaterials = [] } = useRawMaterials({ outletId: currentOutlet?.id });
+  const { data: availablePackagings = [] } = usePackagingItems({ outletId: currentOutlet?.id });
+  const createProductMutation = useCreateProductMutation();
+
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const [loadingData, setLoadingData] = useState<boolean>(true);
-
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [availableMaterials, setAvailableMaterials] = useState<RawMaterial[]>([]);
-  const [availablePackagings, setAvailablePackagings] = useState<PackagingItem[]>([]);
 
   // Step 1: Basic Info
   const [name, setName] = useState('');
@@ -108,36 +113,8 @@ export const ProductCreateWizardScreen: React.FC = () => {
   // Active variant tab for Steps 3 & 4
   const [activeVariantId, setActiveVariantId] = useState<string>('default');
 
-  useEffect(() => {
-    const loadInitial = async () => {
-      setLoadingData(true);
-      try {
-        const [catsRes, matsRes, pkgsRes] = await Promise.allSettled([
-          productService.getCategories(),
-          inventoryService.getRawMaterials({ outletId: currentOutlet?.id }),
-          inventoryService.getPackagingItems({ outletId: currentOutlet?.id }),
-        ]);
-
-        if (catsRes.status === 'fulfilled' && Array.isArray(catsRes.value)) {
-          setCategories(catsRes.value);
-          if (catsRes.value.length > 0 && !categoryId) {
-            setCategoryId(catsRes.value[0].id);
-          }
-        }
-        if (matsRes.status === 'fulfilled' && Array.isArray(matsRes.value)) {
-          setAvailableMaterials(matsRes.value);
-        }
-        if (pkgsRes.status === 'fulfilled' && Array.isArray(pkgsRes.value)) {
-          setAvailablePackagings(pkgsRes.value);
-        }
-      } catch (err) {
-        console.error('Failed to load initial wizard data:', err);
-      } finally {
-        setLoadingData(false);
-      }
-    };
-    loadInitial();
-  }, [currentOutlet?.id]);
+  // Set default category when categories load
+  const selectedCatId = categoryId || (categories.length > 0 ? categories[0].id : '');
 
   // Variant Helpers
   const addVariant = () => {
@@ -308,7 +285,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
           }))
         : undefined;
 
-      const created = await productService.createProduct({
+      const created = await createProductMutation.mutateAsync({
         name,
         sku: sku || undefined,
         categoryId: categoryId || undefined,

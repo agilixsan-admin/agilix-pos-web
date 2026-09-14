@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import type { PackagingItem } from '@model/Inventory';
-import { inventoryService } from '@domain/services/inventory-service';
 import { useAuthStore } from '@domain/state/auth-store';
+import { usePackagingItems, useDebounce } from '@domain/hooks';
 import { Box, Plus, Edit2, Trash2 } from 'lucide-react';
 import { httpClient } from '@domain/services/http-client';
+import { useQueryClient } from '@tanstack/react-query';
+import { inventoryKeys } from '@domain/hooks/queries/query-keys';
 import {
   Button,
   Badge,
@@ -18,9 +20,11 @@ import {
 
 export const PackagingScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const [packagings, setPackagings] = useState<PackagingItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: packagings = [], isLoading: loading } = usePackagingItems({ outletId: currentOutlet?.id });
+
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 200);
   const [submitting, setSubmitting] = useState(false);
 
   // Modal State
@@ -33,23 +37,6 @@ export const PackagingScreen: React.FC = () => {
     unitCost: '0',
     minStock: '0',
   });
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const data = await inventoryService.getPackagingItems({ outletId: currentOutlet?.id });
-      setPackagings(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to load packaging items:', err);
-      setPackagings([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [currentOutlet?.id]);
 
   const handleOpenAdd = () => {
     setEditingItem(null);
@@ -97,7 +84,7 @@ export const PackagingScreen: React.FC = () => {
         });
       }
       setIsModalOpen(false);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
     } catch (err: unknown) {
       alert(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -112,7 +99,7 @@ export const PackagingScreen: React.FC = () => {
     if (!confirm('Apakah Anda yakin ingin menghapus kemasan ini?')) return;
     try {
       await httpClient.delete(`/packagings/${id}`);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
     } catch (err: unknown) {
       alert('Gagal menghapus packaging.');
     }
