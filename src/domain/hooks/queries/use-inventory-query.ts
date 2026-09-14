@@ -12,6 +12,8 @@ import type {
   ReceivePurchasePayload,
   CreateStockOpnamePayload,
   UpdateStockOpnameCountsPayload,
+  CreateStockAdjustmentPayload,
+  CreateReasonCategoryPayload,
 } from '@model/Inventory';
 import { inventoryKeys } from './query-keys';
 
@@ -83,13 +85,6 @@ export function useStockMovements(params?: { outletId?: string; itemId?: string;
   return useQuery({
     queryKey: inventoryKeys.movements(params),
     queryFn: () => inventoryService.getStockMovements(params),
-  });
-}
-
-export function useStockAdjustments(params?: { outletId?: string }) {
-  return useQuery({
-    queryKey: inventoryKeys.adjustments(params),
-    queryFn: () => inventoryService.getAdjustments(params),
   });
 }
 
@@ -452,6 +447,72 @@ export function useCancelStockOpnameMutation() {
     },
   });
 }
+
+// Stock Adjustment Queries
+export function useStockAdjustments(params?: {
+  outletId?: string;
+  inventoryItemId?: string;
+  reasonCategoryId?: string;
+  type?: 'IN' | 'OUT';
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: inventoryKeys.adjustments(params),
+    queryFn: () => inventoryService.getAdjustments(params),
+  });
+}
+
+export function useStockAdjustmentDetail(id?: string) {
+  return useQuery({
+    queryKey: inventoryKeys.adjustmentDetail(id || ''),
+    queryFn: () => inventoryService.getAdjustmentById(id!),
+    enabled: Boolean(id),
+  });
+}
+
+// Stock Adjustment Mutations
+export function useCreateStockAdjustmentMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateStockAdjustmentPayload) => inventoryService.createAdjustment(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.adjustments() });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.stock() });
+    },
+  });
+}
+
+// Reason Category Queries & Mutations
+export function useReasonCategories(params?: { type?: string }) {
+  return useQuery({
+    queryKey: inventoryKeys.reasonCategories(params),
+    queryFn: () => inventoryService.getReasonCategories(params),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateReasonCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateReasonCategoryPayload) => inventoryService.createReasonCategory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.reasonCategories() });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+export function useUploadAdjustmentProofMutation() {
+  return useMutation({
+    mutationFn: (file: File) => inventoryService.uploadAdjustmentProof(file),
+  });
+}
+
 
 
 

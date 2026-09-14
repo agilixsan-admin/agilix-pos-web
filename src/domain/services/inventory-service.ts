@@ -17,6 +17,10 @@ import type {
   CreateStockOpnamePayload,
   UpdateStockOpnameCountsPayload,
   PaginatedStockOpnamesResult,
+  ReasonCategory,
+  CreateReasonCategoryPayload,
+  CreateStockAdjustmentPayload,
+  PaginatedStockAdjustmentsResult,
 } from '@model/Inventory';
 
 export interface PaginatedPurchasesResult {
@@ -225,26 +229,71 @@ export const inventoryService = {
     return res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
   },
 
-  getAdjustments: async (params?: { outletId?: string }): Promise<StockAdjustment[]> => {
+  getAdjustments: async (params?: {
+    outletId?: string;
+    inventoryItemId?: string;
+    reasonCategoryId?: string;
+    type?: 'IN' | 'OUT';
+    startDate?: string;
+    endDate?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedStockAdjustmentsResult> => {
     const res = await httpClient.get('/inventory/adjustments', { params });
-    return res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+    if (res.data?.data && res.data?.meta && res.data?.summary) {
+      return {
+        data: res.data.data,
+        meta: res.data.meta,
+        summary: res.data.summary,
+      };
+    }
+    const items = res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+    return {
+      data: items,
+      meta: {
+        page: params?.page || 1,
+        limit: params?.limit || 20,
+        total: items.length,
+        totalPages: 1,
+      },
+      summary: res.data?.summary || {
+        totalAdjustments: items.length,
+        totalIn: 0,
+        totalOut: 0,
+        totalLossValue: 0,
+      },
+    };
   },
 
-  createAdjustment: async (payload: {
-    outletId: string;
-    adjustmentDate: string;
-    items: {
-      itemId: string;
-      itemName: string;
-      itemType: string;
-      systemStock: number;
-      actualStock: number;
-      reasonCategory: string;
-      notes?: string;
-    }[];
-    notes?: string;
-  }): Promise<StockAdjustment> => {
+  getAdjustmentById: async (id: string): Promise<StockAdjustment> => {
+    const res = await httpClient.get(`/inventory/adjustments/${id}`);
+    return res.data?.data || res.data;
+  },
+
+  createAdjustment: async (payload: CreateStockAdjustmentPayload): Promise<StockAdjustment> => {
     const res = await httpClient.post('/inventory/adjustments', payload);
+    return res.data?.data || res.data;
+  },
+
+  getReasonCategories: async (params?: { type?: string }): Promise<ReasonCategory[]> => {
+    const res = await httpClient.get('/inventory/reason-categories', { params });
+    return res.data?.data || (Array.isArray(res.data) ? res.data : []);
+  },
+
+  createReasonCategory: async (payload: CreateReasonCategoryPayload): Promise<ReasonCategory> => {
+    const res = await httpClient.post('/inventory/reason-categories', payload);
+    return res.data?.data || res.data;
+  },
+
+  uploadAdjustmentProof: async (file: File): Promise<{ imageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await httpClient.post('/inventory/adjustments/upload-proof', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return res.data?.data || res.data;
   },
 

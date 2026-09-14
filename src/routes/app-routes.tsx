@@ -149,6 +149,16 @@ const AdjustmentsScreen = lazy(() =>
     default: m.AdjustmentsScreen,
   }))
 );
+const AdjustmentCreateScreen = lazy(() =>
+  import('@presentation/screens/inventory/adjustment-create-screen').then((m) => ({
+    default: m.AdjustmentCreateScreen,
+  }))
+);
+const AdjustmentDetailScreen = lazy(() =>
+  import('@presentation/screens/inventory/adjustment-detail-screen').then((m) => ({
+    default: m.AdjustmentDetailScreen,
+  }))
+);
 
 // Reports Screens
 const SalesReportScreen = lazy(() =>
@@ -520,6 +530,26 @@ export const AppRoutes: React.FC = () => {
               <ProtectedRoute requiredPermission="adjustment:read">
                 <SuspenseLoader>
                   <AdjustmentsScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/adjustments/create"
+            element={
+              <ProtectedRoute requiredPermission="adjustment:create">
+                <SuspenseLoader>
+                  <AdjustmentCreateScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/adjustments/:id"
+            element={
+              <ProtectedRoute requiredPermission="adjustment:read">
+                <SuspenseLoader>
+                  <AdjustmentDetailScreen />
                 </SuspenseLoader>
               </ProtectedRoute>
             }

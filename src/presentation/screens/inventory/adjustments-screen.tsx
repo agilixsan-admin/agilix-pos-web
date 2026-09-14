@@ -1,326 +1,438 @@
-import React, { useEffect, useState } from 'react';
-import type { RawMaterial, PackagingItem, StockAdjustment } from '@model/Inventory';
-import { inventoryService } from '@domain/services/inventory-service';
-import { useAuthStore } from '@domain/state/auth-store';
-import { SlidersHorizontal, Plus } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import {
-  Button,
-  Badge,
+  SlidersHorizontal,
+  Plus,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Calendar,
+  Eye,
+  FileText,
+  AlertTriangle,
+  TrendingDown,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+} from 'lucide-react';
+import { useAuthStore } from '@domain/state/auth-store';
+import { useStockAdjustments, useReasonCategories } from '@domain/hooks';
+import type { StockAdjustment } from '@model/Inventory';
+import {
   Card,
-  Modal,
-  FormInput,
+  Badge,
+  Button,
+  SearchInput,
   FormSelect,
-  FormTextarea,
-  LoadingState,
+  FormInput,
+  KpiCard,
   EmptyState,
+  LoadingState,
 } from '@presentation/components/ui';
 
 export const AdjustmentsScreen: React.FC = () => {
+  const navigate = useNavigate();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
-  const [materials, setMaterials] = useState<RawMaterial[]>([]);
-  const [packagings, setPackagings] = useState<PackagingItem[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  // Create Adjustment Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState('');
-  const [itemType, setItemType] = useState<'RAW_MATERIAL' | 'PACKAGING'>('RAW_MATERIAL');
-  const [actualStock, setActualStock] = useState('');
-  const [reasonCategory, setReasonCategory] = useState<
-    'DAMAGED' | 'EXPIRED' | 'LOST' | 'COUNTING_ERROR' | 'OTHER'
-  >('DAMAGED');
-  const [notes, setNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  // Filters State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [reasonFilter, setReasonFilter] = useState<string>('ALL');
+  const [startDateFilter, setStartDateFilter] = useState<string>('');
+  const [endDateFilter, setEndDateFilter] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
+  const limit = 10;
 
-  const loadData = async () => {
-    setLoading(true);
+  // Reason Categories Query
+  const { data: reasonCategories = [] } = useReasonCategories();
+
+  // Adjustments Query Params
+  const queryParams = useMemo(() => {
+    return {
+      outletId: currentOutlet?.id,
+      page,
+      limit,
+      search: searchTerm.trim() || undefined,
+      type: typeFilter !== 'ALL' ? (typeFilter as 'IN' | 'OUT') : undefined,
+      reasonCategoryId: reasonFilter !== 'ALL' ? reasonFilter : undefined,
+      startDate: startDateFilter || undefined,
+      endDate: endDateFilter || undefined,
+    };
+  }, [currentOutlet?.id, page, limit, searchTerm, typeFilter, reasonFilter, startDateFilter, endDateFilter]);
+
+  const { data: adjustmentData, isLoading } = useStockAdjustments(queryParams);
+
+  const adjustments: StockAdjustment[] = adjustmentData?.data || [];
+  const meta = adjustmentData?.meta || {
+    page: 1,
+    limit: 10,
+    total: adjustments.length,
+    totalPages: 1,
+  };
+  const summary = adjustmentData?.summary || {
+    totalAdjustments: adjustments.length,
+    totalIn: adjustments.filter((a: StockAdjustment) => a.type === 'IN').length,
+    totalOut: adjustments.filter((a: StockAdjustment) => a.type === 'OUT').length,
+    totalLossValue: 0,
+  };
+
+  // Format Date & Time
+  const formatDateTime = (dateString?: string) => {
+    if (!dateString) return '-';
     try {
-      const [adjRes, matRes, packRes] = await Promise.allSettled([
-        inventoryService.getAdjustments({ outletId: currentOutlet?.id }),
-        inventoryService.getRawMaterials({ outletId: currentOutlet?.id }),
-        inventoryService.getPackagingItems({ outletId: currentOutlet?.id }),
-      ]);
-      setAdjustments(adjRes.status === 'fulfilled' && Array.isArray(adjRes.value) ? adjRes.value : []);
-      setMaterials(matRes.status === 'fulfilled' && Array.isArray(matRes.value) ? matRes.value : []);
-      setPackagings(packRes.status === 'fulfilled' && Array.isArray(packRes.value) ? packRes.value : []);
-    } catch (err) {
-      console.error('Failed to load adjustments data:', err);
-      setAdjustments([]);
-      setMaterials([]);
-      setPackagings([]);
-    } finally {
-      setLoading(false);
+      const d = new Date(dateString);
+      return d.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return dateString;
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [currentOutlet?.id]);
-
-  const selectedItem =
-    itemType === 'RAW_MATERIAL'
-      ? materials.find((m) => m.id === selectedItemId)
-      : packagings.find((p) => p.id === selectedItemId);
-
-  const systemStock = Number(selectedItem?.currentStock || 0);
-  const diff = actualStock !== '' ? Number(actualStock) - systemStock : 0;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedItem) {
-      alert('Pilih item terlebih dahulu.');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      await inventoryService.createAdjustment({
-        outletId: currentOutlet?.id || '',
-        adjustmentDate: new Date().toISOString(),
-        items: [
-          {
-            itemId: selectedItem.id,
-            itemName: selectedItem.name,
-            itemType,
-            systemStock,
-            actualStock: Number(actualStock),
-            reasonCategory,
-            notes,
-          },
-        ],
-        notes,
-      });
-
-      setIsModalOpen(false);
-      loadData();
-    } catch (err: unknown) {
-      alert(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Gagal menyimpan penyesuaian stok.'
-      );
-    } finally {
-      setSubmitting(false);
-    }
+  // Format Currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount);
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-16 max-w-7xl mx-auto">
+      {/* Top Header & Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Stock Adjustment (Penyesuaian Stok)
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Link to="/inventory/stock" className="hover:text-[#0D5C53]">
+              Inventory
+            </Link>
+            <span>/</span>
+            <span className="text-slate-800 font-semibold">Stock Adjustment</span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight mt-0.5">
+            Stock Adjustment
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Catat koreksi stok barang rusak, kadaluwarsa, hilang, atau selisih hitung.
+            Catat perubahan stok secara manual (kerusakan, residu, koreksi timbangan, atau alasan operasional lainnya).
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={() => {
-            setSelectedItemId(materials[0]?.id || packagings[0]?.id || '');
-            setActualStock('');
-            setNotes('');
-            setIsModalOpen(true);
-          }}
-        >
-          Buat Penyesuaian
-        </Button>
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="primary"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={() => navigate('/inventory/adjustments/create')}
+          >
+            Buat Adjustment
+          </Button>
+        </div>
       </div>
 
+      {/* 4 KPI Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          title="TOTAL ADJUSTMENT"
+          value={summary.totalAdjustments.toLocaleString('id-ID')}
+          subtitle="Riwayat penyesuaian stok"
+          icon={<SlidersHorizontal className="w-5 h-5" />}
+          theme="slate"
+        />
+
+        <KpiCard
+          title="ADJUSTMENT IN"
+          value={summary.totalIn.toLocaleString('id-ID')}
+          subtitle="Penambahan stok manual"
+          icon={<ArrowUpRight className="w-5 h-5" />}
+          theme="emerald"
+        />
+
+        <KpiCard
+          title="ADJUSTMENT OUT"
+          value={summary.totalOut.toLocaleString('id-ID')}
+          subtitle="Pengurangan stok manual"
+          icon={<ArrowDownLeft className="w-5 h-5" />}
+          theme="amber"
+        />
+
+        <KpiCard
+          title="TOTAL NILAI LOSS"
+          value={formatCurrency(summary.totalLossValue)}
+          subtitle="Valuasi penyusutan / keluar"
+          icon={<TrendingDown className="w-5 h-5" />}
+          theme={summary.totalLossValue > 0 ? 'amber' : 'slate'}
+        />
+      </div>
+
+      {/* Filter Bar */}
+      <Card padding="sm" className="bg-white">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-center">
+          {/* Search */}
+          <div className="lg:col-span-2">
+            <SearchInput
+              value={searchTerm}
+              onChange={(val) => {
+                setSearchTerm(val);
+                setPage(1);
+              }}
+              onClear={() => {
+                setSearchTerm('');
+                setPage(1);
+              }}
+              placeholder="Cari No. Adjustment, Item, Alasan..."
+            />
+          </div>
+
+          {/* Type Filter */}
+          <div>
+            <FormSelect
+              value={typeFilter}
+              onChange={(e) => {
+                setTypeFilter(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="ALL">Semua Tipe (IN / OUT)</option>
+              <option value="IN">Masuk (IN / +)</option>
+              <option value="OUT">Keluar (OUT / -)</option>
+            </FormSelect>
+          </div>
+
+          {/* Reason Category Filter */}
+          <div>
+            <FormSelect
+              value={reasonFilter}
+              onChange={(e) => {
+                setReasonFilter(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="ALL">Semua Alasan</option>
+              {reasonCategories.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </FormSelect>
+          </div>
+
+          {/* Date Filter */}
+          <div>
+            <FormInput
+              type="date"
+              value={startDateFilter}
+              onChange={(e) => {
+                setStartDateFilter(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Pilih Tanggal"
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* Adjustment Table Card */}
       <Card padding="none">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+            <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="py-3.5 px-4">Tanggal</th>
-                <th className="py-3.5 px-4">Nama Item</th>
-                <th className="py-3.5 px-4 text-right">Stok Sistem</th>
-                <th className="py-3.5 px-4 text-right">Stok Aktual</th>
-                <th className="py-3.5 px-4 text-right">Selisih</th>
+                <th className="py-3.5 px-4">Adjustment No.</th>
+                <th className="py-3.5 px-4">Tanggal & Waktu</th>
+                <th className="py-3.5 px-4">Item Details</th>
+                <th className="py-3.5 px-4 text-center">Tipe</th>
+                <th className="py-3.5 px-4 text-right">Kuantitas</th>
                 <th className="py-3.5 px-4">Alasan</th>
+                <th className="py-3.5 px-4 text-center">Sumber</th>
                 <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {loading ? (
+              {isLoading ? (
                 <tr>
-                  <td colSpan={7}>
-                    <LoadingState message="Memuat riwayat penyesuaian..." />
+                  <td colSpan={9}>
+                    <LoadingState message="Memuat riwayat stock adjustment..." />
                   </td>
                 </tr>
               ) : adjustments.length === 0 ? (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={9}>
                     <EmptyState
-                      icon={<SlidersHorizontal className="w-8 h-8 opacity-30 mx-auto" />}
-                      title="Belum ada penyesuaian stok"
-                      description='Klik tombol "+ Buat Penyesuaian" untuk merekam koreksi stok manual.'
+                      icon={<SlidersHorizontal className="w-8 h-8 opacity-30 mx-auto text-[#0D5C53]" />}
+                      title="Belum ada riwayat stock adjustment"
+                      description={
+                        searchTerm || typeFilter !== 'ALL' || reasonFilter !== 'ALL' || startDateFilter
+                          ? 'Tidak ada data adjustment yang cocok dengan filter pencarian.'
+                          : 'Catat penyesuaian stok manual barang rusak, susut, atau koreksi hitung.'
+                      }
+                      action={
+                        !searchTerm && typeFilter === 'ALL' && reasonFilter === 'ALL' ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            leftIcon={<Plus className="w-3.5 h-3.5" />}
+                            onClick={() => navigate('/inventory/adjustments/create')}
+                          >
+                            Buat Adjustment
+                          </Button>
+                        ) : undefined
+                      }
                     />
                   </td>
                 </tr>
               ) : (
-                adjustments.flatMap((adj) =>
-                  (adj.items || []).map((item, idx) => (
-                    <tr key={`${adj.id}-${idx}`} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500">
-                        {new Date(adj.adjustmentDate || adj.createdAt).toLocaleDateString('id-ID', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
+                adjustments.map((adj: StockAdjustment) => {
+                  const isIn = adj.type === 'IN';
+                  const item = adj.inventoryItem;
+                  const unit = item?.unit || 'unit';
+                  const qtyNumber = Number(adj.quantity || 0);
+
+                  return (
+                    <tr
+                      key={adj.id}
+                      className="hover:bg-slate-50/60 transition-colors group cursor-pointer"
+                      onClick={() => navigate(`/inventory/adjustments/${adj.id}`)}
+                    >
+                      {/* Adjustment Number */}
+                      <td className="py-3.5 px-4 font-mono font-bold text-[#0D5C53]">
+                        <Link
+                          to={`/inventory/adjustments/${adj.id}`}
+                          className="hover:underline flex items-center gap-1.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <FileText className="w-3.5 h-3.5 text-slate-400" />
+                          {adj.adjustmentNumber}
+                        </Link>
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900">{item.itemName}</td>
-                      <td className="py-3.5 px-4 text-right text-slate-600 font-semibold">
-                        {item.systemStock}
+
+                      {/* Date & Time */}
+                      <td className="py-3.5 px-4 text-slate-700 font-medium">
+                        {formatDateTime(adj.adjustmentDate)}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">
-                        {item.actualStock}
+
+                      {/* Item details */}
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-slate-900 text-xs">
+                          {item?.name || 'Item'}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {item?.sku && (
+                            <span className="font-mono text-[11px] text-slate-500">
+                              {item.sku}
+                            </span>
+                          )}
+                          {item?.category && (
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                              {item.category.name}
+                            </span>
+                          )}
+                        </div>
                       </td>
-                      <td
-                        className={`py-3.5 px-4 text-right font-bold ${
-                          item.difference >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                        }`}
-                      >
-                        {item.difference > 0 ? `+${item.difference}` : item.difference}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-700">
-                        <Badge variant="neutral">{item.reasonCategory}</Badge>
-                      </td>
+
+                      {/* Type Badge */}
                       <td className="py-3.5 px-4 text-center">
-                        <Badge variant="success" dot>
-                          {adj.status || 'CONFIRMED'}
+                        <Badge variant={isIn ? 'success' : 'danger'} size="sm" dot>
+                          {isIn ? 'IN' : 'OUT'}
                         </Badge>
                       </td>
+
+                      {/* Quantity */}
+                      <td className="py-3.5 px-4 text-right">
+                        <span
+                          className={`font-mono font-bold text-xs ${
+                            isIn ? 'text-emerald-700' : 'text-rose-700'
+                          }`}
+                        >
+                          {isIn ? `+${qtyNumber.toLocaleString('id-ID')}` : `-${qtyNumber.toLocaleString('id-ID')}`}{' '}
+                          <span className="text-[11px] text-slate-500 font-normal">{unit}</span>
+                        </span>
+                      </td>
+
+                      {/* Reason */}
+                      <td className="py-3.5 px-4 text-slate-700">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[11px] font-medium">
+                          {adj.reasonCategory?.name || 'Manual'}
+                        </span>
+                      </td>
+
+                      {/* Source */}
+                      <td className="py-3.5 px-4 text-center text-slate-500 text-[11px]">
+                        {adj.source === 'STOCK_OPNAME' ? 'Stock Opname' : 'Manual'}
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3.5 px-4 text-center">
+                        <Badge variant="success" size="sm">
+                          Completed
+                        </Badge>
+                      </td>
+
+                      {/* Action */}
+                      <td className="py-3.5 px-4 text-right">
+                        <div
+                          className="flex items-center justify-end"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Link to={`/inventory/adjustments/${adj.id}`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              leftIcon={<Eye className="w-3.5 h-3.5" />}
+                              className="text-[#0D5C53] hover:bg-[#0D5C53]/10"
+                            >
+                              Detail
+                            </Button>
+                          </Link>
+                        </div>
+                      </td>
                     </tr>
-                  ))
-                )
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
-      </Card>
 
-      {/* Reusable Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Buat Penyesuaian Stok (Adjustment)"
-        maxWidth="sm"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormSelect
-            label="Tipe Inventori"
-            value={itemType}
-            onChange={(e) => {
-              const type = e.target.value as 'RAW_MATERIAL' | 'PACKAGING';
-              setItemType(type);
-              setSelectedItemId(
-                type === 'RAW_MATERIAL' ? materials[0]?.id || '' : packagings[0]?.id || ''
-              );
-            }}
-          >
-            <option value="RAW_MATERIAL">Bahan Baku (Raw Material)</option>
-            <option value="PACKAGING">Kemasan (Packaging)</option>
-          </FormSelect>
-
-          <FormSelect
-            label="Pilih Item"
-            required
-            value={selectedItemId}
-            onChange={(e) => setSelectedItemId(e.target.value)}
-          >
-            {itemType === 'RAW_MATERIAL'
-              ? materials.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} (Stok Sistem: {m.currentStock || 0} {m.unit})
-                  </option>
-                ))
-              : packagings.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} (Stok Sistem: {p.currentStock || 0} {p.unit})
-                  </option>
-                ))}
-          </FormSelect>
-
-          {selectedItem && (
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
-              <span className="text-slate-500">Stok Sistem Saat Ini:</span>{' '}
-              <span className="font-bold text-slate-900">
-                {systemStock} {selectedItem.unit}
-              </span>
+        {/* Pagination */}
+        {meta.totalPages > 1 && (
+          <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div>
+              Menampilkan <span className="font-semibold text-slate-700">{(page - 1) * limit + 1}</span> -{' '}
+              <span className="font-semibold text-slate-700">
+                {Math.min(page * limit, meta.total)}
+              </span>{' '}
+              dari <span className="font-semibold text-slate-700">{meta.total}</span> data
             </div>
-          )}
-
-          <FormInput
-            label="Stok Fisik Aktual"
-            type="number"
-            min="0"
-            step="any"
-            unit={selectedItem?.unit}
-            required
-            value={actualStock}
-            onChange={(e) => setActualStock(e.target.value)}
-            placeholder="0"
-          />
-
-          {actualStock !== '' && (
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
-              <span className="text-slate-500">Selisih Stok:</span>
-              <span
-                className={`font-bold ${
-                  diff >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                }`}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                leftIcon={<ChevronLeft className="w-3.5 h-3.5" />}
               >
-                {diff > 0 ? `+${diff}` : diff} {selectedItem?.unit}
+                Sebelumnya
+              </Button>
+              <span className="font-semibold text-slate-700 px-2">
+                {page} / {meta.totalPages}
               </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= meta.totalPages}
+                onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+                rightIcon={<ChevronRight className="w-3.5 h-3.5" />}
+              >
+                Selanjutnya
+              </Button>
             </div>
-          )}
-
-          <FormSelect
-            label="Kategori Alasan Penyesuaian"
-            value={reasonCategory}
-            onChange={(e) =>
-              setReasonCategory(
-                e.target.value as 'DAMAGED' | 'EXPIRED' | 'LOST' | 'COUNTING_ERROR' | 'OTHER'
-              )
-            }
-          >
-            <option value="DAMAGED">Rusak / Pecah (Damaged)</option>
-            <option value="EXPIRED">Kadaluwarsa (Expired / Basi)</option>
-            <option value="LOST">Hilang / Selisih Fisik (Lost)</option>
-            <option value="COUNTING_ERROR">Salah Hitung Sebelumnya (Counting Error)</option>
-            <option value="OTHER">Lainnya (Other)</option>
-          </FormSelect>
-
-          <FormTextarea
-            label="Catatan Tambahan (Opsional)"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Contoh: Kemasan sobek saat pengiriman"
-            rows={2}
-          />
-
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsModalOpen(false)}
-            >
-              Batal
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              isLoading={submitting}
-            >
-              Simpan Penyesuaian
-            </Button>
           </div>
-        </form>
-      </Modal>
+        )}
+      </Card>
     </div>
   );
 };

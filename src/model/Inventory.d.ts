@@ -118,27 +118,92 @@ export interface StockMovement {
   createdAt: string;
 }
 
-export interface StockAdjustmentItem {
-  itemId: string;
-  itemName: string;
-  itemType: 'RAW_MATERIAL' | 'PACKAGING' | 'PRODUCT';
-  systemStock: number;
-  actualStock: number;
-  difference: number;
-  reasonCategory: 'DAMAGED' | 'EXPIRED' | 'LOST' | 'COUNTING_ERROR' | 'OTHER';
-  notes?: string;
+export interface ReasonCategory {
+  id: string;
+  tenantId?: string;
+  name: string;
+  type: 'IN' | 'OUT' | 'BOTH';
+  status: 'ACTIVE' | 'INACTIVE' | string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface StockAdjustment {
   id: string;
   tenantId: string;
   outletId: string;
+  outlet?: {
+    id: string;
+    name: string;
+  };
+  adjustmentNumber: string;
   adjustmentDate: string;
-  items: StockAdjustmentItem[];
-  status: 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
-  notes?: string;
-  createdByName?: string;
+  type: 'IN' | 'OUT';
+  inventoryItemId: string;
+  inventoryItem?: {
+    id: string;
+    name: string;
+    sku?: string | null;
+    unit?: string;
+    itemType?: 'RAW_MATERIAL' | 'PACKAGING' | string;
+    unitCost?: number;
+    category?: {
+      id: string;
+      name: string;
+    } | null;
+  };
+  previousStock: number;
+  quantity: number;
+  currentStock: number;
+  reasonCategoryId?: string | null;
+  reasonCategory?: ReasonCategory | null;
+  notes?: string | null;
+  imageUrl?: string | null;
+  source: 'MANUAL' | 'STOCK_OPNAME';
+  status: string;
+  createdBy?: string | null;
+  creator?: {
+    id: string;
+    name: string;
+  } | null;
   createdAt: string;
+  updatedAt?: string;
+}
+
+export interface StockAdjustmentSummary {
+  totalAdjustments: number;
+  totalIn: number;
+  totalOut: number;
+  totalLossValue: number;
+}
+
+export interface PaginatedStockAdjustmentsResult {
+  data: StockAdjustment[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  summary: StockAdjustmentSummary;
+}
+
+export interface CreateStockAdjustmentPayload {
+  outletId?: string;
+  inventoryItemId: string;
+  type: 'IN' | 'OUT';
+  quantity: number;
+  adjustmentDate?: string;
+  reasonCategoryId?: string;
+  notes?: string;
+  imageUrl?: string;
+  source?: 'MANUAL' | 'STOCK_OPNAME';
+}
+
+export interface CreateReasonCategoryPayload {
+  name: string;
+  type?: 'IN' | 'OUT' | 'BOTH';
+  status?: string;
 }
 
 export type PurchaseStatus = 'DRAFT' | 'RECEIVED' | 'CANCELLED';
