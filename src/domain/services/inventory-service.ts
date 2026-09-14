@@ -13,6 +13,10 @@ import type {
   ReceivePurchasePayload,
   InventoryItemStock,
   PaginatedInventoryStockResult,
+  StockOpname,
+  CreateStockOpnamePayload,
+  UpdateStockOpnameCountsPayload,
+  PaginatedStockOpnamesResult,
 } from '@model/Inventory';
 
 export interface PaginatedPurchasesResult {
@@ -339,6 +343,65 @@ export const inventoryService = {
 
   getInventoryItemStockById: async (id: string, outletId?: string): Promise<InventoryItemStock> => {
     const res = await httpClient.get(`/inventory/${id}`, { params: { outletId } });
+    return res.data?.data || res.data;
+  },
+
+  // Stock Opnames
+  getStockOpnames: async (params?: {
+    outletId?: string;
+    search?: string;
+    status?: string;
+    scope?: string;
+    categoryId?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedStockOpnamesResult> => {
+    const res = await httpClient.get('/stock-opnames', { params });
+    if (res.data?.data && res.data?.meta) {
+      return {
+        data: res.data.data,
+        meta: res.data.meta,
+      };
+    }
+    const items = res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+    return {
+      data: items,
+      meta: {
+        page: params?.page || 1,
+        limit: params?.limit || 20,
+        total: items.length,
+        totalPages: 1,
+      },
+    };
+  },
+
+  getStockOpnameById: async (id: string): Promise<StockOpname> => {
+    const res = await httpClient.get(`/stock-opnames/${id}`);
+    return res.data?.data || res.data;
+  },
+
+  createStockOpname: async (data: CreateStockOpnamePayload): Promise<StockOpname> => {
+    const res = await httpClient.post('/stock-opnames', data);
+    return res.data?.data || res.data;
+  },
+
+  updateStockOpnameCounts: async (
+    id: string,
+    data: UpdateStockOpnameCountsPayload
+  ): Promise<StockOpname> => {
+    const res = await httpClient.put(`/stock-opnames/${id}/counts`, data);
+    return res.data?.data || res.data;
+  },
+
+  finalizeStockOpname: async (id: string, notes?: string): Promise<StockOpname> => {
+    const res = await httpClient.post(`/stock-opnames/${id}/finalize`, { notes });
+    return res.data?.data || res.data;
+  },
+
+  cancelStockOpname: async (id: string, notes?: string): Promise<StockOpname> => {
+    const res = await httpClient.post(`/stock-opnames/${id}/cancel`, { notes });
     return res.data?.data || res.data;
   },
 };

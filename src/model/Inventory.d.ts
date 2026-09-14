@@ -271,5 +271,97 @@ export interface PaginatedInventoryStockResult {
   summary: StockSummary;
 }
 
+export type StockOpnameStatus = 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type StockOpnameItemStatus = 'UNCOUNTED' | 'MATCH' | 'DEFICIT' | 'SURPLUS';
+
+export interface StockOpnameItem {
+  id: string;
+  tenantId?: string;
+  stockOpnameId: string;
+  inventoryItemId: string;
+  inventoryItem?: {
+    id: string;
+    name: string;
+    sku?: string | null;
+    unit?: string;
+    unitCost?: number;
+    itemType?: 'RAW_MATERIAL' | 'PACKAGING' | string;
+    category?: InventoryCategory | null;
+  };
+  systemStock: number;
+  actualStock: number | null;
+  difference: number;
+  status: StockOpnameItemStatus;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface StockOpname {
+  id: string;
+  tenantId: string;
+  outletId: string;
+  outlet?: {
+    id: string;
+    name: string;
+  };
+  opnameNumber: string;
+  opnameDate: string;
+  status: StockOpnameStatus;
+  scope: 'ALL' | 'CATEGORY';
+  categoryId?: string | null;
+  category?: InventoryCategory | null;
+  totalItems: number;
+  countedItems: number;
+  matchedItems: number;
+  deficitItems: number;
+  surplusItems: number;
+  totalDifferenceValue: number;
+  notes?: string | null;
+  finalizedAt?: string | null;
+  finalizedBy?: string | null;
+  finalizer?: {
+    id: string;
+    name: string;
+  } | null;
+  createdBy?: string | null;
+  creator?: {
+    id: string;
+    name: string;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+  items: StockOpnameItem[];
+}
+
+export interface CreateStockOpnamePayload {
+  outletId: string;
+  scope?: 'ALL' | 'CATEGORY';
+  categoryId?: string;
+  opnameDate?: string;
+  notes?: string;
+}
+
+export interface UpdateStockOpnameCountItemPayload {
+  inventoryItemId: string;
+  actualStock: number;
+  notes?: string;
+}
+
+export interface UpdateStockOpnameCountsPayload {
+  items: UpdateStockOpnameCountItemPayload[];
+}
+
+export interface PaginatedStockOpnamesResult {
+  data: StockOpname[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+
 
 

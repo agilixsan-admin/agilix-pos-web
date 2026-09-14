@@ -10,6 +10,8 @@ import type {
   CreatePurchasePayload,
   UpdatePurchasePayload,
   ReceivePurchasePayload,
+  CreateStockOpnamePayload,
+  UpdateStockOpnameCountsPayload,
 } from '@model/Inventory';
 import { inventoryKeys } from './query-keys';
 
@@ -376,5 +378,80 @@ export function useReceivePurchaseMutation() {
     },
   });
 }
+
+// Stock Opname Queries
+export function useStockOpnames(params?: {
+  outletId?: string;
+  search?: string;
+  status?: string;
+  scope?: string;
+  categoryId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: inventoryKeys.opnames(params),
+    queryFn: () => inventoryService.getStockOpnames(params),
+  });
+}
+
+export function useStockOpnameDetail(id?: string) {
+  return useQuery({
+    queryKey: inventoryKeys.opnameDetail(id || ''),
+    queryFn: () => inventoryService.getStockOpnameById(id!),
+    enabled: Boolean(id),
+  });
+}
+
+// Stock Opname Mutations
+export function useCreateStockOpnameMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateStockOpnamePayload) => inventoryService.createStockOpname(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.opnames() });
+    },
+  });
+}
+
+export function useUpdateStockOpnameCountsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateStockOpnameCountsPayload }) =>
+      inventoryService.updateStockOpnameCounts(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.opnameDetail(variables.id) });
+    },
+  });
+}
+
+export function useFinalizeStockOpnameMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, notes }: { id: string; notes?: string }) =>
+      inventoryService.finalizeStockOpname(id, notes),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.opnameDetail(variables.id) });
+    },
+  });
+}
+
+export function useCancelStockOpnameMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, notes }: { id: string; notes?: string }) =>
+      inventoryService.cancelStockOpname(id, notes),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.opnameDetail(variables.id) });
+    },
+  });
+}
+
 
 

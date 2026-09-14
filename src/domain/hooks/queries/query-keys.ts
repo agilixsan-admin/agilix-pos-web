@@ -28,6 +28,7 @@ export const inventoryKeys = {
   purchases: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'purchases', filters || {}] as const,
   purchaseDetail: (id: string) => [...inventoryKeys.all, 'purchases', 'detail', id] as const,
   opnames: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'opnames', filters || {}] as const,
+  opnameDetail: (id: string) => [...inventoryKeys.all, 'opnames', 'detail', id] as const,
 };
 
 export const posKeys = {

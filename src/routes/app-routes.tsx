@@ -124,6 +124,26 @@ const PurchaseEditScreen = lazy(() =>
 const OpnameScreen = lazy(() =>
   import('@presentation/screens/inventory/opname-screen').then((m) => ({ default: m.OpnameScreen }))
 );
+const OpnameCreateScreen = lazy(() =>
+  import('@presentation/screens/inventory/opname-create-screen').then((m) => ({
+    default: m.OpnameCreateScreen,
+  }))
+);
+const OpnameDetailScreen = lazy(() =>
+  import('@presentation/screens/inventory/opname-detail-screen').then((m) => ({
+    default: m.OpnameDetailScreen,
+  }))
+);
+const OpnameCountScreen = lazy(() =>
+  import('@presentation/screens/inventory/opname-count-screen').then((m) => ({
+    default: m.OpnameCountScreen,
+  }))
+);
+const OpnameReviewScreen = lazy(() =>
+  import('@presentation/screens/inventory/opname-review-screen').then((m) => ({
+    default: m.OpnameReviewScreen,
+  }))
+);
 const AdjustmentsScreen = lazy(() =>
   import('@presentation/screens/inventory/adjustments-screen').then((m) => ({
     default: m.AdjustmentsScreen,
@@ -450,6 +470,46 @@ export const AppRoutes: React.FC = () => {
               <ProtectedRoute requiredPermission="opname:read">
                 <SuspenseLoader>
                   <OpnameScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/opname/create"
+            element={
+              <ProtectedRoute requiredPermission="opname:create">
+                <SuspenseLoader>
+                  <OpnameCreateScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/opname/:id"
+            element={
+              <ProtectedRoute requiredPermission="opname:read">
+                <SuspenseLoader>
+                  <OpnameDetailScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/opname/:id/count"
+            element={
+              <ProtectedRoute requiredPermission="opname:update">
+                <SuspenseLoader>
+                  <OpnameCountScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/opname/:id/review"
+            element={
+              <ProtectedRoute requiredPermission="opname:update">
+                <SuspenseLoader>
+                  <OpnameReviewScreen />
                 </SuspenseLoader>
               </ProtectedRoute>
             }
