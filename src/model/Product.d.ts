@@ -43,6 +43,10 @@ export interface Product {
   barcode?: string;
   price: number;
   costPrice?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  totalCogs?: number;
+  profitMarginPercentage?: number;
   image?: string;
   description?: string;
   status?: 'ACTIVE' | 'INACTIVE' | string;

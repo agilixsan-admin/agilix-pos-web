@@ -65,7 +65,7 @@ export const ProductsScreen: React.FC = () => {
       name: p.name,
       sku: p.sku || '',
       categoryId: p.categoryId,
-      price: p.price.toString(),
+      price: (p.price ?? p.minPrice ?? p.variants?.[0]?.price ?? 0).toString(),
       costPrice: p.costPrice?.toString() || '',
       description: p.description || '',
     });
@@ -214,7 +214,9 @@ export const ProductsScreen: React.FC = () => {
                         <Badge variant="neutral">{catName}</Badge>
                       </td>
                       <td className="py-3.5 px-4 text-right font-bold text-[#0D5C53]">
-                        Rp {Number(p.price).toLocaleString('id-ID')}
+                        {p.minPrice !== undefined && p.maxPrice !== undefined && p.maxPrice > p.minPrice
+                          ? `Rp ${Number(p.minPrice).toLocaleString('id-ID')} - ${Number(p.maxPrice).toLocaleString('id-ID')}`
+                          : `Rp ${Number(p.price ?? p.minPrice ?? p.variants?.[0]?.price ?? 0).toLocaleString('id-ID')}`}
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <span className="text-slate-600 font-medium">
