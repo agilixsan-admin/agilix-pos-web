@@ -1,0 +1,132 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { inventoryService } from '@domain/services/inventory-service';
+import type { RawMaterial, InventoryCategory } from '@model/Inventory';
+import { inventoryKeys } from './query-keys';
+
+export function useRawMaterials(params?: { outletId?: string; search?: string; categoryId?: string }) {
+  return useQuery({
+    queryKey: inventoryKeys.materials(params),
+    queryFn: () => inventoryService.getRawMaterials(params),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useRawMaterialDetail(id?: string) {
+  return useQuery({
+    queryKey: inventoryKeys.materialDetail(id || ''),
+    queryFn: () => inventoryService.getRawMaterialById(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useInventoryCategories(params?: { search?: string }) {
+  return useQuery({
+    queryKey: inventoryKeys.categories(params),
+    queryFn: () => inventoryService.getInventoryCategories(params),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function usePackagingItems(params?: { outletId?: string; search?: string }) {
+  return useQuery({
+    queryKey: inventoryKeys.packagings(params),
+    queryFn: () => inventoryService.getPackagingItems(params),
+    staleTime: 3 * 60 * 1000,
+  });
+}
+
+export function useSuppliers() {
+  return useQuery({
+    queryKey: inventoryKeys.suppliers(),
+    queryFn: () => inventoryService.getSuppliers(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useStockMovements(params?: { outletId?: string; itemId?: string; startDate?: string; endDate?: string }) {
+  return useQuery({
+    queryKey: inventoryKeys.movements(params),
+    queryFn: () => inventoryService.getStockMovements(params),
+  });
+}
+
+export function useStockAdjustments(params?: { outletId?: string }) {
+  return useQuery({
+    queryKey: inventoryKeys.adjustments(params),
+    queryFn: () => inventoryService.getAdjustments(params),
+  });
+}
+
+// Mutations
+export function useCreateRawMaterialMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      sku?: string;
+      categoryId?: string;
+      description?: string;
+      unit: string;
+      minimumStock?: number;
+      status?: string;
+    }) => inventoryService.createRawMaterial(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+export function useUpdateRawMaterialMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<RawMaterial> }) =>
+      inventoryService.updateRawMaterial(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.materialDetail(variables.id) });
+    },
+  });
+}
+
+export function useDeleteRawMaterialMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => inventoryService.deleteRawMaterial(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+export function useCreateInventoryCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; description?: string; status?: string }) =>
+      inventoryService.createInventoryCategory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.categories() });
+    },
+  });
+}
+
+export function useUpdateInventoryCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; description?: string; status?: string } }) =>
+      inventoryService.updateInventoryCategory(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.categories() });
+    },
+  });
+}
+
+export function useDeleteInventoryCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => inventoryService.deleteInventoryCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.categories() });
+    },
+  });
+}
+
