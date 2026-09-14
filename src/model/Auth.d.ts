@@ -48,3 +48,18 @@ export interface AuthState {
   isLoading: boolean;
 }
 
+export interface InvitationVerification {
+  valid: boolean;
+  email: string;
+  name: string;
+  businessName: string;
+  outletName?: string;
+  roleName?: string;
+}
+
+export interface SetPasswordPayload {
+  token: string;
+  password: string;
+}
+
+
