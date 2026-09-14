@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '@domain/services/inventory-service';
-import type { RawMaterial, InventoryCategory, PackagingItem, PackagingCategory } from '@model/Inventory';
+import type { RawMaterial, InventoryCategory, PackagingItem, PackagingCategory, Supplier } from '@model/Inventory';
 import { inventoryKeys } from './query-keys';
 
 export function useRawMaterials(params?: { outletId?: string; search?: string; categoryId?: string }) {
@@ -51,11 +51,19 @@ export function usePackagingCategories(params?: { search?: string; status?: stri
   });
 }
 
-export function useSuppliers() {
+export function useSuppliers(params?: { search?: string; status?: string }) {
   return useQuery({
-    queryKey: inventoryKeys.suppliers(),
-    queryFn: () => inventoryService.getSuppliers(),
+    queryKey: inventoryKeys.suppliers(params),
+    queryFn: () => inventoryService.getSuppliers(params),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSupplierDetail(id?: string) {
+  return useQuery({
+    queryKey: inventoryKeys.supplierDetail(id || ''),
+    queryFn: () => inventoryService.getSupplierById(id!),
+    enabled: Boolean(id),
   });
 }
 
@@ -221,6 +229,42 @@ export function useDeletePackagingCategoryMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.packagingCategories() });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.categories() });
+    },
+  });
+}
+
+// Supplier Mutations
+export function useCreateSupplierMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Supplier>) => inventoryService.createSupplier(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.suppliers() });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+export function useUpdateSupplierMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Supplier> }) =>
+      inventoryService.updateSupplier(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.suppliers() });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.supplierDetail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+export function useDeleteSupplierMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => inventoryService.deleteSupplier(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.suppliers() });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
     },
   });
 }

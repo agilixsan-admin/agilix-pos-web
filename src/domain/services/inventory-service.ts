@@ -160,9 +160,29 @@ export const inventoryService = {
     }
   },
 
-  getSuppliers: async (): Promise<Supplier[]> => {
-    const res = await httpClient.get('/suppliers');
+  // Suppliers
+  getSuppliers: async (params?: { search?: string; status?: string; page?: number; limit?: number }): Promise<Supplier[]> => {
+    const res = await httpClient.get('/suppliers', { params });
     return res.data?.data || res.data?.items || (Array.isArray(res.data) ? res.data : []);
+  },
+
+  getSupplierById: async (id: string): Promise<Supplier> => {
+    const res = await httpClient.get(`/suppliers/${id}`);
+    return res.data?.data || res.data;
+  },
+
+  createSupplier: async (data: Partial<Supplier>): Promise<Supplier> => {
+    const res = await httpClient.post('/suppliers', data);
+    return res.data?.data || res.data;
+  },
+
+  updateSupplier: async (id: string, data: Partial<Supplier>): Promise<Supplier> => {
+    const res = await httpClient.put(`/suppliers/${id}`, data);
+    return res.data?.data || res.data;
+  },
+
+  deleteSupplier: async (id: string): Promise<void> => {
+    await httpClient.delete(`/suppliers/${id}`);
   },
 
   getStockMovements: async (params?: {

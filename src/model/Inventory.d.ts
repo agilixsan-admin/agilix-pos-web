@@ -77,13 +77,24 @@ export interface PackagingItem {
 
 export interface Supplier {
   id: string;
-  tenantId: string;
+  tenantId?: string;
+  code?: string;
   name: string;
-  contactPerson: string;
-  phone: string;
+  contactPerson?: string;
+  phone?: string;
   email?: string;
   address?: string;
-  isActive: boolean;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  notes?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | string;
+  isActive?: boolean;
+  totalPurchases?: number;
+  lastPurchaseDate?: string;
+  createdByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface StockMovement {

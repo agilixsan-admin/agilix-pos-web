@@ -81,6 +81,21 @@ const SuppliersScreen = lazy(() =>
     default: m.SuppliersScreen,
   }))
 );
+const SupplierCreateScreen = lazy(() =>
+  import('@presentation/screens/inventory/supplier-create-screen').then((m) => ({
+    default: m.SupplierCreateScreen,
+  }))
+);
+const SupplierDetailScreen = lazy(() =>
+  import('@presentation/screens/inventory/supplier-detail-screen').then((m) => ({
+    default: m.SupplierDetailScreen,
+  }))
+);
+const SupplierEditScreen = lazy(() =>
+  import('@presentation/screens/inventory/supplier-edit-screen').then((m) => ({
+    default: m.SupplierEditScreen,
+  }))
+);
 const PurchasesScreen = lazy(() =>
   import('@presentation/screens/inventory/purchases-screen').then((m) => ({
     default: m.PurchasesScreen,
@@ -325,6 +340,36 @@ export const AppRoutes: React.FC = () => {
               <ProtectedRoute requiredPermission="supplier:read">
                 <SuspenseLoader>
                   <SuppliersScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/suppliers/create"
+            element={
+              <ProtectedRoute requiredPermission="supplier:create">
+                <SuspenseLoader>
+                  <SupplierCreateScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/suppliers/:id"
+            element={
+              <ProtectedRoute requiredPermission="supplier:read">
+                <SuspenseLoader>
+                  <SupplierDetailScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/suppliers/:id/edit"
+            element={
+              <ProtectedRoute requiredPermission="supplier:update">
+                <SuspenseLoader>
+                  <SupplierEditScreen />
                 </SuspenseLoader>
               </ProtectedRoute>
             }
