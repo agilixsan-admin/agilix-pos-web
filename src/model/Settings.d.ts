@@ -75,8 +75,10 @@ export interface UserManagementItem {
   email: string;
   roleId: string;
   roleName: string;
+  role?: { id: string; name: string };
   outletId?: string;
   outletName?: string;
+  outlet?: { id: string; name: string };
   isActive: boolean;
   createdAt: string;
 }
