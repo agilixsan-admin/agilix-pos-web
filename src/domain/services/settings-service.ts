@@ -1,6 +1,14 @@
 import { httpClient } from './http-client';
 import type { Outlet } from '@model/Auth';
-import type { Table, Role, UserManagementItem, AuditLogItem } from '@model/Settings';
+import type {
+  Table,
+  Role,
+  CreateRolePayload,
+  UpdateRolePayload,
+  PermissionGroup,
+  UserManagementItem,
+  AuditLogItem,
+} from '@model/Settings';
 
 export const settingsService = {
   getOutlets: async (): Promise<Outlet[]> => {
@@ -37,8 +45,33 @@ export const settingsService = {
     await httpClient.delete(`/tables/${id}`);
   },
 
-  getRoles: async (): Promise<Role[]> => {
-    const res = await httpClient.get('/roles');
+  getRoles: async (params?: { outletId?: string }): Promise<Role[]> => {
+    const res = await httpClient.get('/roles', { params });
+    return res.data?.data || res.data || [];
+  },
+
+  getRoleById: async (id: string): Promise<Role> => {
+    const res = await httpClient.get(`/roles/${id}`);
+    return res.data?.data || res.data;
+  },
+
+  createRole: async (roleData: CreateRolePayload): Promise<Role> => {
+    const res = await httpClient.post('/roles', roleData);
+    return res.data?.data || res.data;
+  },
+
+  updateRole: async (id: string, roleData: UpdateRolePayload): Promise<Role> => {
+    const res = await httpClient.put(`/roles/${id}`, roleData);
+    return res.data?.data || res.data;
+  },
+
+  deleteRole: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const res = await httpClient.delete(`/roles/${id}`);
+    return res.data || { success: true, message: 'Role deleted successfully' };
+  },
+
+  getPermissionsCatalog: async (): Promise<PermissionGroup[]> => {
+    const res = await httpClient.get('/roles/permissions');
     return res.data?.data || res.data || [];
   },
 

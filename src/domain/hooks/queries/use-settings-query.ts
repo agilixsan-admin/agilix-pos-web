@@ -1,7 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '@domain/services/settings-service';
 import type { Outlet } from '@model/Auth';
-import type { Table, UserManagementItem } from '@model/Settings';
+import type {
+  Table,
+  Role,
+  CreateRolePayload,
+  UpdateRolePayload,
+  PermissionGroup,
+  UserManagementItem,
+} from '@model/Settings';
 import { settingsKeys } from './query-keys';
 
 export function useOutlets() {
@@ -20,11 +27,27 @@ export function useSettingsTables(outletId?: string) {
   });
 }
 
-export function useRoles() {
+export function useRoles(params?: { outletId?: string }) {
   return useQuery({
-    queryKey: settingsKeys.roles(),
-    queryFn: () => settingsService.getRoles(),
-    staleTime: 10 * 60 * 1000,
+    queryKey: settingsKeys.roles(params),
+    queryFn: () => settingsService.getRoles(params),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useRoleDetail(id?: string) {
+  return useQuery({
+    queryKey: settingsKeys.roleDetail(id || ''),
+    queryFn: () => settingsService.getRoleById(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function usePermissionsCatalog() {
+  return useQuery({
+    queryKey: settingsKeys.permissionsCatalog(),
+    queryFn: () => settingsService.getPermissionsCatalog(),
+    staleTime: 60 * 60 * 1000, // Long cache for static RBAC catalog
   });
 }
 
@@ -124,3 +147,40 @@ export function useUpdateUserMutation() {
     },
   });
 }
+
+// Role Mutations
+export function useCreateRoleMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateRolePayload) => settingsService.createRole(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.roles() });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useUpdateRoleMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateRolePayload }) =>
+      settingsService.updateRole(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.roles() });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.roleDetail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useDeleteRoleMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => settingsService.deleteRole(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.roles() });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+

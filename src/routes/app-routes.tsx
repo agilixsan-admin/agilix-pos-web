@@ -207,6 +207,21 @@ const PrintersScreen = lazy(() =>
 const RolesScreen = lazy(() =>
   import('@presentation/screens/settings/roles-screen').then((m) => ({ default: m.RolesScreen }))
 );
+const RoleCreateScreen = lazy(() =>
+  import('@presentation/screens/settings/role-create-screen').then((m) => ({
+    default: m.RoleCreateScreen,
+  }))
+);
+const RoleDetailScreen = lazy(() =>
+  import('@presentation/screens/settings/role-detail-screen').then((m) => ({
+    default: m.RoleDetailScreen,
+  }))
+);
+const RoleEditScreen = lazy(() =>
+  import('@presentation/screens/settings/role-edit-screen').then((m) => ({
+    default: m.RoleEditScreen,
+  }))
+);
 const UsersScreen = lazy(() =>
   import('@presentation/screens/settings/users-screen').then((m) => ({ default: m.UsersScreen }))
 );
@@ -654,6 +669,36 @@ export const AppRoutes: React.FC = () => {
               <ProtectedRoute requiredPermission="role:read">
                 <SuspenseLoader>
                   <RolesScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings/roles/create"
+            element={
+              <ProtectedRoute requiredPermission="role:create">
+                <SuspenseLoader>
+                  <RoleCreateScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings/roles/:id"
+            element={
+              <ProtectedRoute requiredPermission="role:read">
+                <SuspenseLoader>
+                  <RoleDetailScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings/roles/:id/edit"
+            element={
+              <ProtectedRoute requiredPermission="role:update">
+                <SuspenseLoader>
+                  <RoleEditScreen />
                 </SuspenseLoader>
               </ProtectedRoute>
             }
