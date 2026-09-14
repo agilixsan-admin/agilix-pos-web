@@ -16,14 +16,57 @@ export interface OrderTypeSetting {
   isActive: boolean;
 }
 
-export interface TaxSetting {
+export type TaxType = 'INCLUSIVE' | 'EXCLUSIVE';
+export type TaxStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface TaxItem {
   id: string;
+  tenantId: string;
+  outletId?: string | null;
   name: string;
-  code: string;
-  rate: number; // e.g. 10 for 10%
-  type: 'PERCENTAGE' | 'FIXED';
-  isIncludedInPrice: boolean;
-  isActive: boolean;
+  description?: string | null;
+  rate: number;
+  type: TaxType;
+  status: TaxStatus;
+  isGlobal: boolean;
+  code?: string;
+  isIncludedInPrice?: boolean;
+  isActive?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TaxSetting = TaxItem;
+
+export interface CreateTaxPayload {
+  name: string;
+  description?: string;
+  rate: number;
+  type: TaxType;
+  status?: TaxStatus;
+  isGlobal?: boolean;
+  outletId?: string;
+}
+
+export interface UpdateTaxPayload {
+  name?: string;
+  description?: string;
+  rate?: number;
+  type?: TaxType;
+  status?: TaxStatus;
+  isGlobal?: boolean;
+}
+
+export interface GlobalTaxConfig {
+  enableTaxCalculation: boolean;
+  defaultGlobalTaxId?: string | null;
+  defaultGlobalTax?: TaxItem | null;
+}
+
+export interface UpdateGlobalTaxConfigPayload {
+  enableTaxCalculation: boolean;
+  defaultGlobalTaxId?: string | null;
+  outletId?: string;
 }
 
 export interface DiscountSetting {

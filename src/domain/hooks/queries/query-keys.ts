@@ -53,6 +53,9 @@ export const settingsKeys = {
   printers: (outletId?: string) => [...settingsKeys.all, 'printers', outletId || 'all'] as const,
   printerDetail: (id: string) => [...settingsKeys.all, 'printers', 'detail', id] as const,
   printerRoutingRules: (outletId?: string) => [...settingsKeys.all, 'printers', 'routing', outletId || 'all'] as const,
+  taxes: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'taxes', filters || {}] as const,
+  taxDetail: (id: string) => [...settingsKeys.all, 'taxes', 'detail', id] as const,
+  taxGlobalConfig: (outletId?: string) => [...settingsKeys.all, 'taxes', 'globalConfig', outletId || 'all'] as const,
   auditLogs: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'auditLogs', filters || {}] as const,
 };
 

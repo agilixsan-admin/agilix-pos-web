@@ -17,6 +17,12 @@ import type {
   UpdatePrinterPayload,
   PrinterRoutingRule,
   UpdatePrinterRoutingPayload,
+  TaxItem,
+  TaxSetting,
+  CreateTaxPayload,
+  UpdateTaxPayload,
+  GlobalTaxConfig,
+  UpdateGlobalTaxConfigPayload,
   AuditLogItem,
 } from '@model/Settings';
 
@@ -174,6 +180,41 @@ export const settingsService = {
   updatePrinterRoutingRules: async (payload: UpdatePrinterRoutingPayload): Promise<PrinterRoutingRule[]> => {
     const res = await httpClient.put('/printers/routing-rules', payload);
     return res.data?.data || res.data || [];
+  },
+
+  getTaxes: async (params?: { outletId?: string; status?: string; type?: string; search?: string }): Promise<TaxItem[]> => {
+    const res = await httpClient.get('/settings/taxes', { params });
+    return res.data?.data || res.data || [];
+  },
+
+  getTaxById: async (id: string): Promise<TaxItem> => {
+    const res = await httpClient.get(`/settings/taxes/${id}`);
+    return res.data?.data || res.data;
+  },
+
+  createTax: async (payload: CreateTaxPayload): Promise<TaxItem> => {
+    const res = await httpClient.post('/settings/taxes', payload);
+    return res.data?.data || res.data;
+  },
+
+  updateTax: async (id: string, payload: UpdateTaxPayload): Promise<TaxItem> => {
+    const res = await httpClient.put(`/settings/taxes/${id}`, payload);
+    return res.data?.data || res.data;
+  },
+
+  deleteTax: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const res = await httpClient.delete(`/settings/taxes/${id}`);
+    return res.data || { success: true, message: 'Tax berhasil dihapus' };
+  },
+
+  getGlobalTaxConfig: async (outletId?: string): Promise<GlobalTaxConfig> => {
+    const res = await httpClient.get('/settings/taxes/global-config', { params: { outletId } });
+    return res.data?.data || res.data;
+  },
+
+  updateGlobalTaxConfig: async (payload: UpdateGlobalTaxConfigPayload): Promise<GlobalTaxConfig> => {
+    const res = await httpClient.put('/settings/taxes/global-config', payload);
+    return res.data?.data || res.data;
   },
 
   getAuditLogs: async (params?: {

@@ -17,6 +17,12 @@ import type {
   UpdatePrinterPayload,
   PrinterRoutingRule,
   UpdatePrinterRoutingPayload,
+  TaxItem,
+  TaxSetting,
+  CreateTaxPayload,
+  UpdateTaxPayload,
+  GlobalTaxConfig,
+  UpdateGlobalTaxConfigPayload,
 } from '@model/Settings';
 import { settingsKeys } from './query-keys';
 
@@ -293,5 +299,73 @@ export function useUpdatePrinterRoutingRulesMutation() {
     },
   });
 }
+
+// Tax Queries & Mutations
+export function useTaxes(params?: { outletId?: string; status?: string; type?: string; search?: string }) {
+  return useQuery({
+    queryKey: settingsKeys.taxes(params),
+    queryFn: () => settingsService.getTaxes(params),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useTaxDetail(id?: string) {
+  return useQuery({
+    queryKey: settingsKeys.taxDetail(id || ''),
+    queryFn: () => settingsService.getTaxById(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useGlobalTaxConfig(outletId?: string) {
+  return useQuery({
+    queryKey: settingsKeys.taxGlobalConfig(outletId),
+    queryFn: () => settingsService.getGlobalTaxConfig(outletId),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useCreateTaxMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateTaxPayload) => settingsService.createTax(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useUpdateTaxMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateTaxPayload }) =>
+      settingsService.updateTax(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useDeleteTaxMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => settingsService.deleteTax(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useUpdateGlobalTaxConfigMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateGlobalTaxConfigPayload) =>
+      settingsService.updateGlobalTaxConfig(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
 
 

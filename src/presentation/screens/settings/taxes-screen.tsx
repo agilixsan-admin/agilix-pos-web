@@ -1,118 +1,255 @@
 import React, { useState } from 'react';
-import type { TaxSetting } from '@model/Settings';
-import { Receipt, Plus, Edit2 } from 'lucide-react';
+import type { TaxItem, TaxType, TaxStatus } from '@model/Settings';
+import {
+  useTaxes,
+  useGlobalTaxConfig,
+  useCreateTaxMutation,
+  useUpdateTaxMutation,
+  useDeleteTaxMutation,
+  useUpdateGlobalTaxConfigMutation,
+} from '@domain/hooks';
+import { useAuthStore } from '@domain/state/auth-store';
+import {
+  Receipt,
+  Plus,
+  Edit2,
+  Globe,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  Search,
+  Check,
+  Percent,
+} from 'lucide-react';
 import {
   Button,
   Badge,
   Card,
   Modal,
   FormInput,
+  LoadingState,
   EmptyState,
 } from '@presentation/components/ui';
 
 export const TaxesScreen: React.FC = () => {
-  const [taxes, setTaxes] = useState<TaxSetting[]>([
-    {
-      id: '1',
-      name: 'Pajak Resto (PB1)',
-      code: 'PB1',
-      rate: 10,
-      type: 'PERCENTAGE',
-      isIncludedInPrice: false,
-      isActive: true,
-    },
-    {
-      id: '2',
-      name: 'Biaya Layanan (Service Charge)',
-      code: 'SERVICE',
-      rate: 5,
-      type: 'PERCENTAGE',
-      isIncludedInPrice: false,
-      isActive: true,
-    },
-    {
-      id: '3',
-      name: 'PPN',
-      code: 'PPN_11',
-      rate: 11,
-      type: 'PERCENTAGE',
-      isIncludedInPrice: false,
-      isActive: false,
-    },
-  ]);
+  const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const outletId = currentOutlet?.id;
 
+  // Queries
+  const { data: taxes = [], isLoading: taxesLoading, error: taxesError } = useTaxes({ outletId });
+  const { data: globalConfig, isLoading: configLoading } = useGlobalTaxConfig(outletId);
+
+  // Mutations
+  const createTaxMutation = useCreateTaxMutation();
+  const updateTaxMutation = useUpdateTaxMutation();
+  const deleteTaxMutation = useDeleteTaxMutation();
+  const updateGlobalTaxConfigMutation = useUpdateGlobalTaxConfigMutation();
+
+  // State
+  const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTax, setEditingTax] = useState<TaxSetting | null>(null);
+  const [editingTax, setEditingTax] = useState<TaxItem | null>(null);
+  const [deletingTax, setDeletingTax] = useState<TaxItem | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Form State
   const [formData, setFormData] = useState({
     name: '',
-    code: '',
-    rate: '10',
-    isIncludedInPrice: false,
-    isActive: true,
+    description: '',
+    rate: '11',
+    type: 'EXCLUSIVE' as TaxType,
+    status: 'ACTIVE' as TaxStatus,
+    isGlobal: false,
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ type, text });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   const handleOpenAdd = () => {
     setEditingTax(null);
-    setFormData({ name: '', code: '', rate: '10', isIncludedInPrice: false, isActive: true });
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEdit = (t: TaxSetting) => {
-    setEditingTax(t);
     setFormData({
-      name: t.name,
-      code: t.code,
-      rate: t.rate.toString(),
-      isIncludedInPrice: t.isIncludedInPrice,
-      isActive: t.isActive,
+      name: '',
+      description: '',
+      rate: '11',
+      type: 'EXCLUSIVE',
+      status: 'ACTIVE',
+      isGlobal: false,
     });
+    setFormErrors({});
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingTax) {
-      setTaxes(
-        taxes.map((t) =>
-          t.id === editingTax.id
-            ? {
-                ...t,
-                name: formData.name,
-                code: formData.code,
-                rate: Number(formData.rate),
-                isIncludedInPrice: formData.isIncludedInPrice,
-                isActive: formData.isActive,
-              }
-            : t
-        )
-      );
-    } else {
-      const newTax: TaxSetting = {
-        id: Date.now().toString(),
-        name: formData.name,
-        code: formData.code || 'TAX',
-        rate: Number(formData.rate),
-        type: 'PERCENTAGE',
-        isIncludedInPrice: formData.isIncludedInPrice,
-        isActive: formData.isActive,
-      };
-      setTaxes([...taxes, newTax]);
-    }
-    setIsModalOpen(false);
+  const handleOpenEdit = (tax: TaxItem) => {
+    setEditingTax(tax);
+    setFormData({
+      name: tax.name,
+      description: tax.description || '',
+      rate: tax.rate.toString(),
+      type: tax.type,
+      status: tax.status || (tax.isActive ? 'ACTIVE' : 'INACTIVE'),
+      isGlobal: tax.isGlobal || false,
+    });
+    setFormErrors({});
+    setIsModalOpen(true);
   };
 
-  const handleToggleActive = (id: string) => {
-    setTaxes(taxes.map((t) => (t.id === id ? { ...t, isActive: !t.isActive } : t)));
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    if (!formData.name.trim()) {
+      errors.name = 'Nama pajak wajib diisi';
+    }
+    const rateNum = parseFloat(formData.rate);
+    if (isNaN(rateNum) || rateNum < 0 || rateNum > 100) {
+      errors.rate = 'Tarif harus berupa angka antara 0 - 100%';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    const rate = parseFloat(formData.rate);
+
+    try {
+      if (editingTax) {
+        await updateTaxMutation.mutateAsync({
+          id: editingTax.id,
+          data: {
+            name: formData.name.trim(),
+            description: formData.description.trim() || undefined,
+            rate,
+            type: formData.type,
+            status: formData.status,
+            isGlobal: formData.isGlobal,
+          },
+        });
+        showToast('Pajak berhasil diperbarui');
+      } else {
+        await createTaxMutation.mutateAsync({
+          name: formData.name.trim(),
+          description: formData.description.trim() || undefined,
+          rate,
+          type: formData.type,
+          status: formData.status,
+          isGlobal: formData.isGlobal,
+          outletId: formData.isGlobal ? undefined : outletId,
+        });
+        showToast('Pajak baru berhasil ditambahkan');
+      }
+      setIsModalOpen(false);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      showToast(
+        error.response?.data?.message || error.message || 'Terjadi kesalahan saat menyimpan pajak',
+        'error'
+      );
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingTax) return;
+    try {
+      await deleteTaxMutation.mutateAsync(deletingTax.id);
+      showToast(`Pajak "${deletingTax.name}" berhasil dihapus`);
+      setDeletingTax(null);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      showToast(
+        error.response?.data?.message || error.message || 'Gagal menghapus pajak',
+        'error'
+      );
+    }
+  };
+
+  const handleToggleCalculation = async (enabled: boolean) => {
+    try {
+      await updateGlobalTaxConfigMutation.mutateAsync({
+        enableTaxCalculation: enabled,
+        defaultGlobalTaxId: globalConfig?.defaultGlobalTaxId ?? null,
+        outletId,
+      });
+      showToast(
+        enabled ? 'Perhitungan pajak diaktifkan' : 'Perhitungan pajak dinonaktifkan'
+      );
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      showToast(
+        error.response?.data?.message || error.message || 'Gagal memperbarui konfigurasi pajak',
+        'error'
+      );
+    }
+  };
+
+  const handleDefaultTaxChange = async (taxId: string) => {
+    try {
+      await updateGlobalTaxConfigMutation.mutateAsync({
+        enableTaxCalculation: globalConfig?.enableTaxCalculation ?? true,
+        defaultGlobalTaxId: taxId ? taxId : null,
+        outletId,
+      });
+      showToast('Pajak default global berhasil diperbarui');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      showToast(
+        error.response?.data?.message || error.message || 'Gagal memperbarui pajak default',
+        'error'
+      );
+    }
+  };
+
+  // Filtered taxes
+  const filteredTaxes = taxes.filter((t) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      t.name.toLowerCase().includes(q) ||
+      (t.description && t.description.toLowerCase().includes(q)) ||
+      (t.code && t.code.toLowerCase().includes(q))
+    );
+  });
+
+  const isSaving = createTaxMutation.isPending || updateTaxMutation.isPending;
+  const isDeleting = deleteTaxMutation.isPending;
+  const isUpdatingConfig = updateGlobalTaxConfigMutation.isPending;
+
+  if (taxesLoading || configLoading) {
+    return (
+      <div className="py-12">
+        <LoadingState message="Memuat data pengaturan pajak..." />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-16 max-w-7xl mx-auto">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          className={`flex items-center gap-2.5 p-4 rounded-xl border text-xs font-semibold shadow-md animate-in fade-in slide-in-from-top-3 duration-200 ${
+            toastMessage.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}
+        >
+          {toastMessage.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          )}
+          <span>{toastMessage.text}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Pajak & Biaya Tambahan</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Kelola pajak restoran (PB1), PPN, dan biaya layanan (*service charge*) pada transaksi POS.
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tax Settings</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage tax master data and global configurations for Agilix POS.
           </p>
         </div>
 
@@ -120,143 +257,391 @@ export const TaxesScreen: React.FC = () => {
           variant="primary"
           leftIcon={<Plus className="w-4 h-4" />}
           onClick={handleOpenAdd}
+          className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm"
         >
-          Tambah Pajak / Biaya
+          + Add Tax
         </Button>
       </div>
 
-      {/* Taxes Table */}
-      <Card padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-600">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
-              <tr>
-                <th className="py-3.5 px-4">Nama Pajak / Biaya</th>
-                <th className="py-3.5 px-4">Kode</th>
-                <th className="py-3.5 px-4">Persentase Tarif</th>
-                <th className="py-3.5 px-4">Tipe Perhitungan</th>
-                <th className="py-3.5 px-4 text-center">Status</th>
-                <th className="py-3.5 px-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {taxes.length === 0 ? (
-                <tr>
-                  <td colSpan={6}>
-                    <EmptyState
-                      icon={<Receipt className="w-8 h-8 opacity-30 mx-auto" />}
-                      title="Belum ada konfigurasi pajak"
-                      description="Klik tombol '+ Tambah Pajak / Biaya' untuk menambahkan komponen baru."
-                    />
-                  </td>
-                </tr>
-              ) : (
-                taxes.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{t.name}</td>
-                    <td className="py-3.5 px-4 font-mono font-semibold text-slate-600">{t.code}</td>
-                    <td className="py-3.5 px-4 font-bold text-[#0D5C53]">{t.rate}%</td>
-                    <td className="py-3.5 px-4 text-slate-600">
-                      {t.isIncludedInPrice ? 'Termasuk dalam harga (Inclusive)' : 'Ditambahkan pada total (Exclusive)'}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <button
-                        onClick={() => handleToggleActive(t.id)}
-                        className="cursor-pointer"
-                      >
-                        <Badge variant={t.isActive ? 'success' : 'danger'} dot>
-                          {t.isActive ? 'Aktif' : 'Nonaktif'}
-                        </Badge>
-                      </button>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleOpenEdit(t)}
-                        leftIcon={<Edit2 className="w-3.5 h-3.5" />}
-                      >
-                        Edit
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {taxesError && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>Gagal memuat data dari server. Silakan muat ulang halaman.</span>
+        </div>
+      )}
+
+      {/* Card 1: Global Configuration */}
+      <Card className="border border-slate-200/90 shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-teal-50 text-[#0D5C53] flex items-center justify-center border border-teal-100/70">
+            <Globe className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Global Configuration</h2>
+            <p className="text-xs text-slate-500">Konfigurasi perhitungan pajak default untuk seluruh sistem POS.</p>
+          </div>
+        </div>
+
+        <div className="p-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Box 1: Enable Tax Calculation */}
+            <div className="p-4.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/80 transition-colors flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xs font-bold text-slate-900">Enable Tax Calculation</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">Turn on to calculate taxes on orders.</p>
+              </div>
+
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={globalConfig?.enableTaxCalculation ?? false}
+                  disabled={isUpdatingConfig}
+                  onChange={(e) => handleToggleCalculation(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0D5C53]"></div>
+              </label>
+            </div>
+
+            {/* Box 2: Default Global Tax */}
+            <div className="p-4.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/80 transition-colors flex flex-col justify-between gap-3">
+              <div>
+                <h3 className="text-xs font-bold text-slate-900">Default Global Tax</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">Applied automatically at POS for taxable items.</p>
+              </div>
+
+              <div>
+                <select
+                  value={globalConfig?.defaultGlobalTaxId || ''}
+                  disabled={!(globalConfig?.enableTaxCalculation) || isUpdatingConfig}
+                  onChange={(e) => handleDefaultTaxChange(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed transition-all"
+                >
+                  <option value="">-- None (Tidak Ada) --</option>
+                  {taxes
+                    .filter((t) => t.status === 'ACTIVE' || t.isActive)
+                    .map((tax) => (
+                      <option key={tax.id} value={tax.id}>
+                        {tax.name} ({tax.rate}%) - {tax.type === 'INCLUSIVE' ? 'Inclusive' : 'Exclusive'}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       </Card>
 
-      {/* Reusable Modal */}
+      {/* Card 2: Tax Master List */}
+      <Card className="border border-slate-200/90 shadow-sm overflow-hidden" padding="none">
+        <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-teal-50 text-[#0D5C53] flex items-center justify-center border border-teal-100/70">
+              <Receipt className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Tax Master List</h2>
+              <p className="text-xs text-slate-500">Daftar semua tarif pajak yang tersedia untuk transaksi POS.</p>
+            </div>
+          </div>
+
+          <div className="relative w-full sm:w-64">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Cari nama pajak..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] transition-all"
+            />
+          </div>
+        </div>
+
+        <div className="p-5">
+          {filteredTaxes.length === 0 ? (
+            <div className="py-8">
+              <EmptyState
+                icon={<Receipt className="w-10 h-10 text-slate-300 mx-auto" />}
+                title={searchQuery ? 'Tidak ada pajak yang cocok' : 'Belum ada data master pajak'}
+                description={
+                  searchQuery
+                    ? `Tidak ditemukan pajak dengan kata kunci "${searchQuery}".`
+                    : 'Tambahkan master pajak untuk mengaktifkan perhitungan pajak pada pesanan POS.'
+                }
+              />
+              {!searchQuery && (
+                <div className="text-center mt-4">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    leftIcon={<Plus className="w-4 h-4" />}
+                    onClick={handleOpenAdd}
+                  >
+                    Tambah Pajak Pertama
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredTaxes.map((tax) => {
+                const isActive = tax.status === 'ACTIVE' || tax.isActive;
+                return (
+                  <div
+                    key={tax.id}
+                    className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  >
+                    {/* Left Details */}
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-teal-50/80 text-[#0D5C53] flex items-center justify-center shrink-0 border border-teal-100/60">
+                        <Receipt className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-slate-900 text-sm">{tax.name}</span>
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                              isActive
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-slate-100 text-slate-500 border border-slate-200'
+                            }`}
+                          >
+                            {isActive ? 'Active' : 'Inactive'}
+                          </span>
+                          {tax.isGlobal && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+                              Global
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {tax.description || 'Standard Tax Rate'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right Info & Actions */}
+                    <div className="flex items-center justify-between sm:justify-end gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                      <div className="text-left sm:text-right">
+                        <div className="text-base font-bold text-slate-900 tracking-tight">
+                          {Number(tax.rate).toFixed(2)}%
+                        </div>
+                        <div className="text-[11px] font-medium text-slate-500 capitalize">
+                          {tax.type === 'INCLUSIVE' ? 'Inclusive' : 'Exclusive'}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEdit(tax)}
+                          leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+                          className="text-xs font-semibold text-slate-700"
+                        >
+                          Edit
+                        </Button>
+                        <button
+                          onClick={() => setDeletingTax(tax)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-slate-200 transition-colors"
+                          title="Hapus Pajak"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Add / Edit Tax Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingTax ? 'Edit Pajak / Biaya' : 'Tambah Pajak / Biaya'}
-        maxWidth="sm"
+        title={editingTax ? 'Edit Tax' : 'Add Tax'}
+        maxWidth="md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <FormInput
-            label="Nama Pajak / Biaya"
+            label="Tax Name"
             required
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Contoh: Pajak Resto (PB1)"
+            placeholder="e.g. PPN 11% or Pajak Resto"
+            error={formErrors.name}
           />
 
           <FormInput
-            label="Kode Unik"
-            required
-            value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-            placeholder="Contoh: PB1"
+            label="Description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="e.g. Standard Value Added Tax"
           />
 
           <FormInput
-            label="Persentase Tarif"
+            label="Rate Percentage (%)"
             type="number"
             min="0"
             max="100"
-            step="any"
+            step="0.01"
             unit="%"
             required
             value={formData.rate}
             onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-            placeholder="10"
+            placeholder="11.00"
+            error={formErrors.rate}
           />
 
-          <label className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer pt-1">
-            <input
-              type="checkbox"
-              checked={formData.isIncludedInPrice}
-              onChange={(e) => setFormData({ ...formData, isIncludedInPrice: e.target.checked })}
-              className="rounded-md text-[#0D5C53] focus:ring-[#0D5C53]"
-            />
-            <span>Termasuk dalam harga menu (*Tax Inclusive*)</span>
-          </label>
+          {/* Tax Type */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Tax Calculation Type <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, type: 'EXCLUSIVE' })}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  formData.type === 'EXCLUSIVE'
+                    ? 'border-[#0D5C53] bg-teal-50/50 ring-1 ring-[#0D5C53]'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900">Exclusive</span>
+                  {formData.type === 'EXCLUSIVE' && (
+                    <Check className="w-4 h-4 text-[#0D5C53]" />
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Ditambahkan di luar harga produk (pada subtotal order).
+                </p>
+              </button>
 
-          <label className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.isActive}
-              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-              className="rounded-md text-[#0D5C53] focus:ring-[#0D5C53]"
-            />
-            <span>Status Aktif</span>
-          </label>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, type: 'INCLUSIVE' })}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  formData.type === 'INCLUSIVE'
+                    ? 'border-[#0D5C53] bg-teal-50/50 ring-1 ring-[#0D5C53]'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900">Inclusive</span>
+                  {formData.type === 'INCLUSIVE' && (
+                    <Check className="w-4 h-4 text-[#0D5C53]" />
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Harga produk sudah termasuk pajak di dalamnya.
+                </p>
+              </button>
+            </div>
+          </div>
+
+          {/* Scope & Status Toggles */}
+          <div className="pt-2 border-t border-slate-100 space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/70 border border-slate-200/70">
+              <div>
+                <span className="text-xs font-semibold text-slate-900">Set as Global Tax</span>
+                <p className="text-[11px] text-slate-500">Berlaku untuk seluruh outlet / dapat dijadikan default global.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={formData.isGlobal}
+                  onChange={(e) => setFormData({ ...formData, isGlobal: e.target.checked })}
+                />
+                <div className="w-10 h-5.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#0D5C53]"></div>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/70 border border-slate-200/70">
+              <div>
+                <span className="text-xs font-semibold text-slate-900">Status Aktif</span>
+                <p className="text-[11px] text-slate-500">Pajak aktif dapat digunakan saat transaksi penjualan.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={formData.status === 'ACTIVE'}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      status: e.target.checked ? 'ACTIVE' : 'INACTIVE',
+                    })
+                  }
+                />
+                <div className="w-10 h-5.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#0D5C53]"></div>
+              </label>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+              disabled={isSaving}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isSaving}
+              className="bg-[#0D5C53] hover:bg-[#09423c] text-white"
+            >
+              {isSaving ? 'Menyimpan...' : editingTax ? 'Perbarui Pajak' : 'Simpan Pajak'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(deletingTax)}
+        onClose={() => setDeletingTax(null)}
+        title="Hapus Master Pajak"
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-red-50 text-red-800 text-xs">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+            <div>
+              <p className="font-semibold">Tindakan ini tidak dapat dibatalkan.</p>
+              <p className="mt-0.5 text-red-700">
+                Apakah Anda yakin ingin menghapus pajak <strong>"{deletingTax?.name}"</strong> ({deletingTax?.rate}%)?
+              </p>
+            </div>
+          </div>
 
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => setDeletingTax(null)}
+              disabled={isDeleting}
             >
               Batal
             </Button>
-            <Button type="submit" variant="primary">
-              Simpan
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Menghapus...' : 'Ya, Hapus Pajak'}
             </Button>
           </div>
-        </form>
+        </div>
       </Modal>
     </div>
   );
