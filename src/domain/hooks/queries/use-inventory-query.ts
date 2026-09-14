@@ -1,6 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '@domain/services/inventory-service';
-import type { RawMaterial, InventoryCategory, PackagingItem, PackagingCategory, Supplier } from '@model/Inventory';
+import type {
+  RawMaterial,
+  InventoryCategory,
+  PackagingItem,
+  PackagingCategory,
+  Supplier,
+  Purchase,
+  CreatePurchasePayload,
+  UpdatePurchasePayload,
+  ReceivePurchasePayload,
+} from '@model/Inventory';
 import { inventoryKeys } from './query-keys';
 
 export function useRawMaterials(params?: { outletId?: string; search?: string; categoryId?: string }) {
@@ -80,6 +90,34 @@ export function useStockAdjustments(params?: { outletId?: string }) {
     queryFn: () => inventoryService.getAdjustments(params),
   });
 }
+
+export function useStockOverview(params?: {
+  outletId?: string;
+  search?: string;
+  categoryId?: string;
+  itemType?: string;
+  status?: string;
+  stockStatus?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+}) {
+  return useQuery({
+    queryKey: inventoryKeys.stock(params),
+    queryFn: () => inventoryService.getStockOverview(params),
+    staleTime: 1 * 60 * 1000,
+  });
+}
+
+export function useStockItemDetail(id?: string, outletId?: string) {
+  return useQuery({
+    queryKey: inventoryKeys.stockDetail(id || '', outletId),
+    queryFn: () => inventoryService.getInventoryItemStockById(id!, outletId),
+    enabled: Boolean(id),
+  });
+}
+
 
 // Mutations
 export function useCreateRawMaterialMutation() {
@@ -268,4 +306,75 @@ export function useDeleteSupplierMutation() {
     },
   });
 }
+
+// Purchase Queries
+export function usePurchases(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  outletId?: string;
+  supplierId?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  return useQuery({
+    queryKey: inventoryKeys.purchases(params),
+    queryFn: () => inventoryService.getPurchases(params),
+  });
+}
+
+export function usePurchaseDetail(id?: string) {
+  return useQuery({
+    queryKey: inventoryKeys.purchaseDetail(id || ''),
+    queryFn: () => inventoryService.getPurchaseById(id!),
+    enabled: Boolean(id),
+  });
+}
+
+// Purchase Mutations
+export function useCreatePurchaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreatePurchasePayload) => inventoryService.createPurchase(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+export function useUpdatePurchaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdatePurchasePayload }) =>
+      inventoryService.updatePurchase(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.purchaseDetail(variables.id) });
+    },
+  });
+}
+
+export function useDeletePurchaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => inventoryService.deletePurchase(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+export function useReceivePurchaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data?: ReceivePurchasePayload }) =>
+      inventoryService.receivePurchase(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.purchaseDetail(variables.id) });
+    },
+  });
+}
+
 

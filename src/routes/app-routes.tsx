@@ -36,6 +36,11 @@ const CategoriesScreen = lazy(() =>
 const StockScreen = lazy(() =>
   import('@presentation/screens/inventory/stock-screen').then((m) => ({ default: m.StockScreen }))
 );
+const StockDetailScreen = lazy(() =>
+  import('@presentation/screens/inventory/stock-detail-screen').then((m) => ({
+    default: m.StockDetailScreen,
+  }))
+);
 const RawMaterialsScreen = lazy(() =>
   import('@presentation/screens/inventory/raw-materials-screen').then((m) => ({
     default: m.RawMaterialsScreen,
@@ -99,6 +104,21 @@ const SupplierEditScreen = lazy(() =>
 const PurchasesScreen = lazy(() =>
   import('@presentation/screens/inventory/purchases-screen').then((m) => ({
     default: m.PurchasesScreen,
+  }))
+);
+const PurchaseCreateScreen = lazy(() =>
+  import('@presentation/screens/inventory/purchase-create-screen').then((m) => ({
+    default: m.PurchaseCreateScreen,
+  }))
+);
+const PurchaseDetailScreen = lazy(() =>
+  import('@presentation/screens/inventory/purchase-detail-screen').then((m) => ({
+    default: m.PurchaseDetailScreen,
+  }))
+);
+const PurchaseEditScreen = lazy(() =>
+  import('@presentation/screens/inventory/purchase-edit-screen').then((m) => ({
+    default: m.PurchaseEditScreen,
   }))
 );
 const OpnameScreen = lazy(() =>
@@ -255,6 +275,16 @@ export const AppRoutes: React.FC = () => {
             }
           />
           <Route
+            path="inventory/stock/:id"
+            element={
+              <ProtectedRoute requiredPermission="stock:read">
+                <SuspenseLoader>
+                  <StockDetailScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="inventory/raw-materials"
             element={
               <ProtectedRoute requiredPermission="material:read">
@@ -380,6 +410,36 @@ export const AppRoutes: React.FC = () => {
               <ProtectedRoute requiredPermission="purchase:read">
                 <SuspenseLoader>
                   <PurchasesScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/purchases/create"
+            element={
+              <ProtectedRoute requiredPermission="purchase:create">
+                <SuspenseLoader>
+                  <PurchaseCreateScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/purchases/:id"
+            element={
+              <ProtectedRoute requiredPermission="purchase:read">
+                <SuspenseLoader>
+                  <PurchaseDetailScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/purchases/:id/edit"
+            element={
+              <ProtectedRoute requiredPermission="purchase:update">
+                <SuspenseLoader>
+                  <PurchaseEditScreen />
                 </SuspenseLoader>
               </ProtectedRoute>
             }

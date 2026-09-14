@@ -17,6 +17,7 @@ export const inventoryKeys = {
   materialDetail: (id: string) => [...inventoryKeys.all, 'materials', 'detail', id] as const,
   categories: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'categories', filters || {}] as const,
   stock: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'stock', filters || {}] as const,
+  stockDetail: (id: string, outletId?: string) => [...inventoryKeys.all, 'stock', 'detail', id, outletId || ''] as const,
   packagings: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'packagings', filters || {}] as const,
   packagingDetail: (id: string) => [...inventoryKeys.all, 'packagings', 'detail', id] as const,
   packagingCategories: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'packagingCategories', filters || {}] as const,
@@ -25,6 +26,7 @@ export const inventoryKeys = {
   movements: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'movements', filters || {}] as const,
   adjustments: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'adjustments', filters || {}] as const,
   purchases: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'purchases', filters || {}] as const,
+  purchaseDetail: (id: string) => [...inventoryKeys.all, 'purchases', 'detail', id] as const,
   opnames: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'opnames', filters || {}] as const,
 };
 

@@ -1,5 +1,31 @@
 import { httpClient } from './http-client';
-import type { RawMaterial, InventoryCategory, PackagingItem, PackagingCategory, Supplier, StockMovement, StockAdjustment } from '@model/Inventory';
+import type {
+  RawMaterial,
+  InventoryCategory,
+  PackagingItem,
+  PackagingCategory,
+  Supplier,
+  StockMovement,
+  StockAdjustment,
+  Purchase,
+  CreatePurchasePayload,
+  UpdatePurchasePayload,
+  ReceivePurchasePayload,
+  InventoryItemStock,
+  PaginatedInventoryStockResult,
+} from '@model/Inventory';
+
+export interface PaginatedPurchasesResult {
+  data: Purchase[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+
 
 export const inventoryService = {
   // Inventory Items (Raw Materials)
@@ -215,6 +241,104 @@ export const inventoryService = {
     notes?: string;
   }): Promise<StockAdjustment> => {
     const res = await httpClient.post('/inventory/adjustments', payload);
+    return res.data?.data || res.data;
+  },
+
+  // Purchases
+  getPurchases: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    outletId?: string;
+    supplierId?: string;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<PaginatedPurchasesResult> => {
+    const res = await httpClient.get('/purchases', { params });
+    if (res.data?.data && res.data?.meta) {
+      return {
+        data: res.data.data,
+        meta: res.data.meta,
+      };
+    }
+    const items = res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+    return {
+      data: items,
+      meta: {
+        page: params?.page || 1,
+        limit: params?.limit || 20,
+        total: items.length,
+        totalPages: 1,
+      },
+    };
+  },
+
+  getPurchaseById: async (id: string): Promise<Purchase> => {
+    const res = await httpClient.get(`/purchases/${id}`);
+    return res.data?.data || res.data;
+  },
+
+  createPurchase: async (data: CreatePurchasePayload): Promise<Purchase> => {
+    const res = await httpClient.post('/purchases', data);
+    return res.data?.data || res.data;
+  },
+
+  updatePurchase: async (id: string, data: UpdatePurchasePayload): Promise<Purchase> => {
+    const res = await httpClient.put(`/purchases/${id}`, data);
+    return res.data?.data || res.data;
+  },
+
+  deletePurchase: async (id: string): Promise<void> => {
+    await httpClient.delete(`/purchases/${id}`);
+  },
+
+  receivePurchase: async (id: string, data?: ReceivePurchasePayload): Promise<Purchase> => {
+    const res = await httpClient.post(`/purchases/${id}/receive`, data || {});
+    return res.data?.data || res.data;
+  },
+
+  // Stock Overview & Summary
+  getStockOverview: async (params?: {
+    outletId?: string;
+    search?: string;
+    categoryId?: string;
+    itemType?: string;
+    status?: string;
+    stockStatus?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<PaginatedInventoryStockResult> => {
+    const res = await httpClient.get('/inventory', { params });
+    if (res.data?.data && res.data?.meta && res.data?.summary) {
+      return {
+        data: res.data.data,
+        meta: res.data.meta,
+        summary: res.data.summary,
+      };
+    }
+    const items = res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+    return {
+      data: items,
+      meta: {
+        page: params?.page || 1,
+        limit: params?.limit || 20,
+        total: items.length,
+        totalPages: 1,
+      },
+      summary: res.data?.summary || {
+        totalItems: items.length,
+        totalInventoryValue: 0,
+        lowStockCount: 0,
+        outOfStockCount: 0,
+      },
+    };
+  },
+
+  getInventoryItemStockById: async (id: string, outletId?: string): Promise<InventoryItemStock> => {
+    const res = await httpClient.get(`/inventory/${id}`, { params: { outletId } });
     return res.data?.data || res.data;
   },
 };
