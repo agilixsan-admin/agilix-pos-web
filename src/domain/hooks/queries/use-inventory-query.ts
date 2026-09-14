@@ -198,11 +198,12 @@ export function useCreatePackagingMutation() {
       sku?: string;
       categoryId?: string;
       description?: string;
-      unit?: string;
-      unitCost?: number;
-      minimumStock?: number;
+      costPrice?: number;
+      extraPrice?: number;
+      applyToOrderType?: 'TAKE_AWAY' | 'ALL' | 'CUSTOM';
       status?: string;
       outletId?: string;
+      inventoryItemId?: string;
     }) => inventoryService.createPackaging(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.all });

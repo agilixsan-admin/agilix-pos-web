@@ -94,24 +94,13 @@ export const inventoryService = {
 
   // Packaging Items
   getPackagingItems: async (params?: { outletId?: string; search?: string; categoryId?: string; status?: string }): Promise<PackagingItem[]> => {
-    try {
-      const res = await httpClient.get('/packagings', { params });
-      return res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
-    } catch {
-      // Fallback to /inventory?itemType=PACKAGING if /packagings is not active
-      const res = await httpClient.get('/inventory', { params: { ...params, itemType: 'PACKAGING' } });
-      return res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
-    }
+    const res = await httpClient.get('/packagings', { params });
+    return res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
   },
 
   getPackagingById: async (id: string): Promise<PackagingItem> => {
-    try {
-      const res = await httpClient.get(`/packagings/${id}`);
-      return res.data?.data || res.data;
-    } catch {
-      const res = await httpClient.get(`/inventory/${id}`);
-      return res.data?.data || res.data;
-    }
+    const res = await httpClient.get(`/packagings/${id}`);
+    return res.data?.data || res.data;
   },
 
   createPackaging: async (data: {
@@ -119,79 +108,68 @@ export const inventoryService = {
     sku?: string;
     categoryId?: string;
     description?: string;
-    unit?: string;
-    unitCost?: number;
-    minimumStock?: number;
+    costPrice?: number;
+    extraPrice?: number;
+    applyToOrderType?: 'TAKE_AWAY' | 'ALL' | 'CUSTOM';
     status?: string;
     outletId?: string;
+    inventoryItemId?: string;
   }): Promise<PackagingItem> => {
-    try {
-      const res = await httpClient.post('/packagings', data);
-      return res.data?.data || res.data;
-    } catch {
-      const res = await httpClient.post('/inventory', {
-        ...data,
-        itemType: 'PACKAGING',
-      });
-      return res.data?.data || res.data;
-    }
+    const payload = {
+      name: data.name,
+      sku: data.sku || undefined,
+      categoryId: data.categoryId || undefined,
+      description: data.description || undefined,
+      costPrice: data.costPrice,
+      extraPrice: data.extraPrice,
+      applyToOrderType: data.applyToOrderType,
+      status: data.status,
+      outletId: data.outletId || undefined,
+      inventoryItemId: data.inventoryItemId || undefined,
+    };
+    const res = await httpClient.post('/packagings', payload);
+    return res.data?.data || res.data;
   },
 
   updatePackaging: async (id: string, data: Partial<PackagingItem>): Promise<PackagingItem> => {
-    try {
-      const res = await httpClient.put(`/packagings/${id}`, data);
-      return res.data?.data || res.data;
-    } catch {
-      const res = await httpClient.put(`/inventory/${id}`, data);
-      return res.data?.data || res.data;
-    }
+    const payload = {
+      name: data.name,
+      sku: data.sku || undefined,
+      categoryId: data.categoryId || (typeof data.category === 'object' && data.category ? (data.category as { id?: string }).id : undefined),
+      description: data.description || undefined,
+      costPrice: data.costPrice,
+      extraPrice: data.extraPrice,
+      applyToOrderType: data.applyToOrderType,
+      status: data.status,
+      outletId: data.outletId || undefined,
+      inventoryItemId: data.inventoryItemId || undefined,
+    };
+    const res = await httpClient.put(`/packagings/${id}`, payload);
+    return res.data?.data || res.data;
   },
 
   deletePackaging: async (id: string): Promise<void> => {
-    try {
-      await httpClient.delete(`/packagings/${id}`);
-    } catch {
-      await httpClient.delete(`/inventory/${id}`);
-    }
+    await httpClient.delete(`/packagings/${id}`);
   },
 
   // Packaging Categories
   getPackagingCategories: async (params?: { search?: string; status?: string }): Promise<PackagingCategory[]> => {
-    try {
-      const res = await httpClient.get('/packagings/categories', { params });
-      return res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
-    } catch {
-      const res = await httpClient.get('/inventory/categories', { params });
-      return res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
-    }
+    const res = await httpClient.get('/packagings/categories', { params });
+    return res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
   },
 
   createPackagingCategory: async (data: { name: string; description?: string; status?: string }): Promise<PackagingCategory> => {
-    try {
-      const res = await httpClient.post('/packagings/categories', data);
-      return res.data?.data || res.data;
-    } catch {
-      const res = await httpClient.post('/inventory/categories', data);
-      return res.data?.data || res.data;
-    }
+    const res = await httpClient.post('/packagings/categories', data);
+    return res.data?.data || res.data;
   },
 
   updatePackagingCategory: async (id: string, data: { name?: string; description?: string; status?: string }): Promise<PackagingCategory> => {
-    try {
-      const res = await httpClient.put(`/packagings/categories/${id}`, data);
-      return res.data?.data || res.data;
-    } catch {
-      const res = await httpClient.put(`/inventory/categories/${id}`, data);
-      return res.data?.data || res.data;
-    }
+    const res = await httpClient.put(`/packagings/categories/${id}`, data);
+    return res.data?.data || res.data;
   },
 
   deletePackagingCategory: async (id: string): Promise<void> => {
-    try {
-      await httpClient.delete(`/packagings/categories/${id}`);
-    } catch {
-      await httpClient.delete(`/inventory/categories/${id}`);
-    }
+    await httpClient.delete(`/packagings/categories/${id}`);
   },
 
   // Suppliers

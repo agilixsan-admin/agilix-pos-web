@@ -63,6 +63,8 @@ export interface PackagingItem {
   minStock?: number;
   unitCost?: number;
   costPrice?: number;
+  extraPrice?: number;
+  applyToOrderType?: 'TAKE_AWAY' | 'ALL' | 'CUSTOM';
   description?: string;
   supplierId?: string;
   supplierName?: string;
