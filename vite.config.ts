@@ -6,7 +6,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/app-erp/',
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [
     tailwindcss(),
     react(),
