@@ -6,6 +6,7 @@ import { productService } from '@domain/services/product-service';
 import { posService } from '@domain/services/pos-service';
 import { useAuthStore } from '@domain/state/auth-store';
 import { useCartStore } from '@domain/state/cart-store';
+import { useDebounce, useKeyboardShortcuts, useBarcodeScanner } from '@domain/hooks';
 import { PaymentModal } from './payment-modal';
 import { ReceiptModal } from './receipt-modal';
 import { OpenOrdersModal } from './open-orders-modal';
@@ -91,12 +92,14 @@ export const PosScreen: React.FC = () => {
     loadData();
   }, [currentOutlet?.id]);
 
+  const debouncedSearch = useDebounce(searchQuery, 200);
+
   // Filtered Products
   const filteredProducts = products.filter((product) => {
     const matchesCategory = selectedCategory === 'ALL' || product.categoryId === selectedCategory;
     const matchesSearch =
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku?.toLowerCase().includes(searchQuery.toLowerCase());
+      product.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      product.sku?.toLowerCase().includes(debouncedSearch.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -112,6 +115,40 @@ export const PosScreen: React.FC = () => {
     addItem(product, variant);
     setVariantModalProduct(null);
   };
+
+  // Hardware Barcode Scanner Listener
+  useBarcodeScanner((scannedCode) => {
+    const matchedProduct = products.find(
+      (p) =>
+        p.sku?.toLowerCase() === scannedCode.toLowerCase() ||
+        p.id === scannedCode ||
+        p.barcode?.toLowerCase() === scannedCode.toLowerCase()
+    );
+    if (matchedProduct) {
+      handleProductClick(matchedProduct);
+    }
+  });
+
+  // Keyboard Shortcuts for Cashier (F2=Pay, F4=Hold, Esc=Close Modal)
+  useKeyboardShortcuts({
+    F2: () => {
+      if (cartItems.length > 0) {
+        handleCheckoutDirect();
+      }
+    },
+    F4: () => {
+      if (cartItems.length > 0) {
+        handleSaveOpenOrder();
+      }
+    },
+    Escape: () => {
+      setVariantModalProduct(null);
+      setNotesModalItem(null);
+      setActivePaymentOrder(null);
+      setCompletedOrderForReceipt(null);
+      setIsOpenOrdersOpen(false);
+    },
+  });
 
   // Direct Instant Checkout
   const handleCheckoutDirect = async () => {

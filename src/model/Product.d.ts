@@ -14,6 +14,7 @@ export interface Variant {
   productId?: string;
   name: string;
   sku: string;
+  barcode?: string;
   price: number;
   costPrice?: number;
   stock?: number;
@@ -39,6 +40,7 @@ export interface Product {
   categoryName?: string;
   name: string;
   sku: string;
+  barcode?: string;
   price: number;
   costPrice?: number;
   image?: string;
