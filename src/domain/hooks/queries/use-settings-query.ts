@@ -12,6 +12,11 @@ import type {
   CreateUserPayload,
   UpdateUserPayload,
   QueryUsersParams,
+  PrinterSetting,
+  CreatePrinterPayload,
+  UpdatePrinterPayload,
+  PrinterRoutingRule,
+  UpdatePrinterRoutingPayload,
 } from '@model/Settings';
 import { settingsKeys } from './query-keys';
 
@@ -214,4 +219,79 @@ export function useDeleteRoleMutation() {
     },
   });
 }
+
+// Printer Queries & Mutations
+export function usePrinters(outletId?: string) {
+  return useQuery({
+    queryKey: settingsKeys.printers(outletId),
+    queryFn: () => settingsService.getPrinters(outletId),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function usePrinterDetail(id?: string) {
+  return useQuery({
+    queryKey: settingsKeys.printerDetail(id || ''),
+    queryFn: () => settingsService.getPrinterById(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function usePrinterRoutingRules(outletId?: string) {
+  return useQuery({
+    queryKey: settingsKeys.printerRoutingRules(outletId),
+    queryFn: () => settingsService.getPrinterRoutingRules(outletId!),
+    enabled: Boolean(outletId),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useCreatePrinterMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreatePrinterPayload) => settingsService.createPrinter(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useUpdatePrinterMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdatePrinterPayload }) =>
+      settingsService.updatePrinter(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useDeletePrinterMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => settingsService.deletePrinter(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useTestPrintMutation() {
+  return useMutation({
+    mutationFn: (id: string) => settingsService.testPrint(id),
+  });
+}
+
+export function useUpdatePrinterRoutingRulesMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdatePrinterRoutingPayload) =>
+      settingsService.updatePrinterRoutingRules(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
 

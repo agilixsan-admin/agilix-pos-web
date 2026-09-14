@@ -2,12 +2,17 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  roleId: string;
-  roleName: string;
+  roleId?: string;
+  roleName?: string;
+  role?: {
+    id: string;
+    name: string;
+    permissions?: string[];
+  } | null;
   isSuperAdmin?: boolean;
   outletId?: string;
   tenantId: string;
-  permissions: string[];
+  permissions?: string[];
   menuAccess?: string[];
 }
 
@@ -15,9 +20,12 @@ export interface Outlet {
   id: string;
   tenantId: string;
   name: string;
+  code?: string;
   address?: string;
   phone?: string;
-  isActive: boolean;
+  email?: string;
+  status?: string;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }

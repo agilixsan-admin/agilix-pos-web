@@ -12,6 +12,14 @@ export const Header: React.FC = () => {
     navigate('/login');
   };
 
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0 select-none">
       {/* Left: Outlet Selector */}
@@ -49,11 +57,13 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Right: User Profile & Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className="text-right">
           <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.name || 'Kasir'}</p>
           <div className="flex items-center justify-end gap-1.5 mt-0.5">
-            <span className="text-[11px] font-medium text-slate-500">{user?.roleName || 'Staff'}</span>
+            <span className="text-[11px] font-medium text-slate-500">
+              {user?.role?.name || user?.roleName || (user?.isSuperAdmin ? 'Super Admin' : 'Staff')}
+            </span>
             {tenant?.name && (
               <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">
                 {tenant.name}
@@ -62,7 +72,12 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        <div className="h-8 w-px bg-slate-200" />
+        {/* User Avatar */}
+        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#0D5C53] to-teal-500 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 border border-teal-100/50">
+          {getInitials(user?.name || 'Kasir')}
+        </div>
+
+        <div className="h-7 w-px bg-slate-200" />
 
         <button
           onClick={handleLogout}

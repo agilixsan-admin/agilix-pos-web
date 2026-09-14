@@ -50,6 +50,9 @@ export const settingsKeys = {
   permissionsCatalog: () => [...settingsKeys.all, 'permissionsCatalog'] as const,
   users: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'users', filters || {}] as const,
   userDetail: (id: string) => [...settingsKeys.all, 'users', 'detail', id] as const,
+  printers: (outletId?: string) => [...settingsKeys.all, 'printers', outletId || 'all'] as const,
+  printerDetail: (id: string) => [...settingsKeys.all, 'printers', 'detail', id] as const,
+  printerRoutingRules: (outletId?: string) => [...settingsKeys.all, 'printers', 'routing', outletId || 'all'] as const,
   auditLogs: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'auditLogs', filters || {}] as const,
 };
 

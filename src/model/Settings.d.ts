@@ -37,15 +37,69 @@ export interface DiscountSetting {
   isActive: boolean;
 }
 
+export type PrinterType = 'RECEIPT' | 'KITCHEN' | 'BAR';
+export type PrinterConnectionType = 'BLUETOOTH' | 'NETWORK' | 'USB';
+export type PrinterPaperSize = '58mm' | '80mm';
+export type PrinterStatus = 'ACTIVE' | 'INACTIVE';
+
 export interface PrinterSetting {
   id: string;
+  tenantId: string;
+  outletId: string;
   name: string;
-  type: 'BLUETOOTH' | 'NETWORK' | 'USB';
-  paperWidth: '58mm' | '80mm';
+  type: PrinterType;
+  connectionType: PrinterConnectionType;
+  paperSize: PrinterPaperSize;
+  paperWidth?: '58mm' | '80mm';
+  ipAddress?: string | null;
+  port?: number | null;
+  bluetoothMac?: string | null;
+  isDefault: boolean;
+  status: PrinterStatus;
+  isActive?: boolean;
+  targetRole?: PrinterType;
+  autoCut?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PrinterItem = PrinterSetting;
+
+export interface CreatePrinterPayload {
+  outletId: string;
+  name: string;
+  type: PrinterType;
+  connectionType: PrinterConnectionType;
+  paperSize?: PrinterPaperSize;
   ipAddress?: string;
-  targetRole: 'RECEIPT' | 'KITCHEN' | 'BAR';
-  autoCut: boolean;
-  isActive: boolean;
+  port?: number;
+  bluetoothMac?: string;
+  isDefault?: boolean;
+}
+
+export interface UpdatePrinterPayload {
+  name?: string;
+  type?: PrinterType;
+  connectionType?: PrinterConnectionType;
+  paperSize?: PrinterPaperSize;
+  ipAddress?: string;
+  port?: number;
+  bluetoothMac?: string;
+  isDefault?: boolean;
+  status?: PrinterStatus;
+}
+
+export interface PrinterRoutingRule {
+  categoryId: string;
+  categoryName: string;
+  printerId: string;
+  printerName: string;
+  printerType: PrinterType;
+}
+
+export interface UpdatePrinterRoutingPayload {
+  outletId: string;
+  routings: Array<{ categoryId: string; printerId: string }>;
 }
 
 export interface AuditLogItem {

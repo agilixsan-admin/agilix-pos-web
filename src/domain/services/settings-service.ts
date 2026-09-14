@@ -12,6 +12,11 @@ import type {
   UpdateUserPayload,
   QueryUsersParams,
   PaginatedUsersResult,
+  PrinterSetting,
+  CreatePrinterPayload,
+  UpdatePrinterPayload,
+  PrinterRoutingRule,
+  UpdatePrinterRoutingPayload,
   AuditLogItem,
 } from '@model/Settings';
 
@@ -129,6 +134,46 @@ export const settingsService = {
   deleteUser: async (id: string): Promise<{ success: boolean; message: string }> => {
     const res = await httpClient.delete(`/users/${id}`);
     return res.data || { success: true, message: 'Pengguna berhasil dinonaktifkan' };
+  },
+
+  getPrinters: async (outletId?: string): Promise<PrinterSetting[]> => {
+    const res = await httpClient.get('/printers', { params: { outletId } });
+    return res.data?.data || res.data || [];
+  },
+
+  getPrinterById: async (id: string): Promise<PrinterSetting> => {
+    const res = await httpClient.get(`/printers/${id}`);
+    return res.data?.data || res.data;
+  },
+
+  createPrinter: async (payload: CreatePrinterPayload): Promise<PrinterSetting> => {
+    const res = await httpClient.post('/printers', payload);
+    return res.data?.data || res.data;
+  },
+
+  updatePrinter: async (id: string, payload: UpdatePrinterPayload): Promise<PrinterSetting> => {
+    const res = await httpClient.put(`/printers/${id}`, payload);
+    return res.data?.data || res.data;
+  },
+
+  deletePrinter: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const res = await httpClient.delete(`/printers/${id}`);
+    return res.data || { success: true, message: 'Printer berhasil dihapus' };
+  },
+
+  testPrint: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const res = await httpClient.post(`/printers/${id}/test-print`);
+    return res.data || { success: true, message: 'Test print berhasil dikirim' };
+  },
+
+  getPrinterRoutingRules: async (outletId: string): Promise<PrinterRoutingRule[]> => {
+    const res = await httpClient.get('/printers/routing-rules', { params: { outletId } });
+    return res.data?.data || res.data || [];
+  },
+
+  updatePrinterRoutingRules: async (payload: UpdatePrinterRoutingPayload): Promise<PrinterRoutingRule[]> => {
+    const res = await httpClient.put('/printers/routing-rules', payload);
+    return res.data?.data || res.data || [];
   },
 
   getAuditLogs: async (params?: {
