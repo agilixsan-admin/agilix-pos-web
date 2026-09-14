@@ -22,7 +22,10 @@
       "@model/*": ["./src/model/*"],
       "@domain/*": ["./src/domain/*"],
       "@presentation/*": ["./src/presentation/*"],
-      "@pages/*": ["./src/pages/*"],
+      "@layouts/*": ["./src/presentation/layouts/*"],
+      "@guards/*": ["./src/presentation/guards/*"],
+      "@routes/*": ["./src/routes/*"],
+      "@utils/*": ["./src/utils/*"],
       "@/*": ["./src/*"]
     },
 
