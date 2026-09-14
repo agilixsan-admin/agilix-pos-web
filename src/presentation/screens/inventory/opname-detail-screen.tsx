@@ -509,3 +509,4 @@ export const OpnameDetailScreen: React.FC = () => {
     </div>
   );
 };
+
