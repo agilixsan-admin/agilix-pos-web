@@ -49,6 +49,7 @@ export const settingsKeys = {
   roleDetail: (id: string) => [...settingsKeys.all, 'roles', 'detail', id] as const,
   permissionsCatalog: () => [...settingsKeys.all, 'permissionsCatalog'] as const,
   users: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'users', filters || {}] as const,
+  userDetail: (id: string) => [...settingsKeys.all, 'users', 'detail', id] as const,
   auditLogs: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'auditLogs', filters || {}] as const,
 };
 

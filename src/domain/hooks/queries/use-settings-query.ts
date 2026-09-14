@@ -7,7 +7,11 @@ import type {
   CreateRolePayload,
   UpdateRolePayload,
   PermissionGroup,
+  UserItem,
   UserManagementItem,
+  CreateUserPayload,
+  UpdateUserPayload,
+  QueryUsersParams,
 } from '@model/Settings';
 import { settingsKeys } from './query-keys';
 
@@ -51,11 +55,19 @@ export function usePermissionsCatalog() {
   });
 }
 
-export function useUsers(params?: { outletId?: string }) {
+export function useUsers(params?: QueryUsersParams) {
   return useQuery({
-    queryKey: settingsKeys.users(params),
+    queryKey: settingsKeys.users(params as Record<string, unknown>),
     queryFn: () => settingsService.getUsers(params),
     staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useUserDetail(id?: string) {
+  return useQuery({
+    queryKey: settingsKeys.userDetail(id || ''),
+    queryFn: () => settingsService.getUserById(id!),
+    enabled: Boolean(id),
   });
 }
 
@@ -129,10 +141,10 @@ export function useDeleteTableMutation() {
 export function useCreateUserMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<UserManagementItem> & { password?: string }) =>
-      settingsService.createUser(data),
+    mutationFn: (payload: CreateUserPayload) => settingsService.createUser(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.users() });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
     },
   });
 }
@@ -140,10 +152,29 @@ export function useCreateUserMutation() {
 export function useUpdateUserMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<UserManagementItem> }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateUserPayload }) =>
       settingsService.updateUser(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.users() });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.userDetail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useResendInvitationMutation() {
+  return useMutation({
+    mutationFn: (id: string) => settingsService.resendInvitation(id),
+  });
+}
+
+export function useDeleteUserMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => settingsService.deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.users() });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
     },
   });
 }

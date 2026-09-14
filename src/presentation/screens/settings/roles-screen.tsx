@@ -48,7 +48,8 @@ export const RolesScreen: React.FC = () => {
   const { data: roles = [], isLoading } = useRoles(
     effectiveOutletId ? { outletId: effectiveOutletId } : undefined
   );
-  const { data: allUsers = [] } = useUsers();
+  const { data: usersResponse } = useUsers();
+  const allUsers = usersResponse?.data || [];
 
   // Mutations
   const deleteRoleMutation = useDeleteRoleMutation();

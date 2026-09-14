@@ -6,7 +6,12 @@ import type {
   CreateRolePayload,
   UpdateRolePayload,
   PermissionGroup,
+  UserItem,
   UserManagementItem,
+  CreateUserPayload,
+  UpdateUserPayload,
+  QueryUsersParams,
+  PaginatedUsersResult,
   AuditLogItem,
 } from '@model/Settings';
 
@@ -75,19 +80,55 @@ export const settingsService = {
     return res.data?.data || res.data || [];
   },
 
-  getUsers: async (params?: { outletId?: string }): Promise<UserManagementItem[]> => {
+  getUsers: async (params?: QueryUsersParams): Promise<PaginatedUsersResult> => {
     const res = await httpClient.get('/users', { params });
-    return res.data?.data || res.data || [];
+    const raw = res.data;
+    if (Array.isArray(raw?.data)) {
+      return {
+        data: raw.data,
+        meta: raw.meta || {
+          page: raw.page || 1,
+          limit: raw.limit || raw.data.length,
+          total: raw.total ?? raw.data.length,
+          totalPages: raw.totalPages || 1,
+        },
+      };
+    }
+    if (Array.isArray(raw)) {
+      return {
+        data: raw,
+        meta: { page: 1, limit: raw.length, total: raw.length, totalPages: 1 },
+      };
+    }
+    return {
+      data: [],
+      meta: { page: 1, limit: 10, total: 0, totalPages: 0 },
+    };
   },
 
-  createUser: async (userData: Partial<UserManagementItem> & { password?: string }): Promise<UserManagementItem> => {
-    const res = await httpClient.post('/users', userData);
+  getUserById: async (id: string): Promise<UserItem> => {
+    const res = await httpClient.get(`/users/${id}`);
     return res.data?.data || res.data;
   },
 
-  updateUser: async (id: string, userData: Partial<UserManagementItem>): Promise<UserManagementItem> => {
-    const res = await httpClient.put(`/users/${id}`, userData);
+  createUser: async (payload: CreateUserPayload): Promise<UserItem> => {
+    const res = await httpClient.post('/users', payload);
     return res.data?.data || res.data;
+  },
+
+  updateUser: async (id: string, payload: UpdateUserPayload): Promise<UserItem> => {
+    const res = await httpClient.put(`/users/${id}`, payload);
+    return res.data?.data || res.data;
+  },
+
+  resendInvitation: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const res = await httpClient.post(`/users/${id}/resend-invitation`);
+    return res.data || { success: true, message: 'Undangan berhasil dikirim ulang' };
+  },
+
+  deleteUser: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const res = await httpClient.delete(`/users/${id}`);
+    return res.data || { success: true, message: 'Pengguna berhasil dinonaktifkan' };
   },
 
   getAuditLogs: async (params?: {

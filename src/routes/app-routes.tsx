@@ -225,9 +225,30 @@ const RoleEditScreen = lazy(() =>
 const UsersScreen = lazy(() =>
   import('@presentation/screens/settings/users-screen').then((m) => ({ default: m.UsersScreen }))
 );
+const UserCreateScreen = lazy(() =>
+  import('@presentation/screens/settings/user-create-screen').then((m) => ({
+    default: m.UserCreateScreen,
+  }))
+);
+const UserDetailScreen = lazy(() =>
+  import('@presentation/screens/settings/user-detail-screen').then((m) => ({
+    default: m.UserDetailScreen,
+  }))
+);
+const UserEditScreen = lazy(() =>
+  import('@presentation/screens/settings/user-edit-screen').then((m) => ({
+    default: m.UserEditScreen,
+  }))
+);
 const AuditLogsScreen = lazy(() =>
   import('@presentation/screens/settings/audit-logs-screen').then((m) => ({
     default: m.AuditLogsScreen,
+  }))
+);
+
+const SetPasswordScreen = lazy(() =>
+  import('@presentation/screens/auth/set-password-screen').then((m) => ({
+    default: m.SetPasswordScreen,
   }))
 );
 
@@ -239,8 +260,24 @@ export const AppRoutes: React.FC = () => {
   return (
     <Suspense fallback={<LoadingState message="Menyiapkan aplikasi..." />}>
       <Routes>
-        {/* Public Route */}
+        {/* Public Routes */}
         <Route path="/login" element={<LoginScreen />} />
+        <Route
+          path="/auth/set-password"
+          element={
+            <SuspenseLoader>
+              <SetPasswordScreen />
+            </SuspenseLoader>
+          }
+        />
+        <Route
+          path="/auth/activate"
+          element={
+            <SuspenseLoader>
+              <SetPasswordScreen />
+            </SuspenseLoader>
+          }
+        />
 
         {/* Protected Layout Routes */}
         <Route
@@ -709,6 +746,36 @@ export const AppRoutes: React.FC = () => {
               <ProtectedRoute requiredPermission="user:read">
                 <SuspenseLoader>
                   <UsersScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings/users/create"
+            element={
+              <ProtectedRoute requiredPermission="user:create">
+                <SuspenseLoader>
+                  <UserCreateScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings/users/:id"
+            element={
+              <ProtectedRoute requiredPermission="user:read">
+                <SuspenseLoader>
+                  <UserDetailScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings/users/:id/edit"
+            element={
+              <ProtectedRoute requiredPermission="user:update">
+                <SuspenseLoader>
+                  <UserEditScreen />
                 </SuspenseLoader>
               </ProtectedRoute>
             }

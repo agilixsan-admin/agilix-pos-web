@@ -141,7 +141,8 @@ export const RoleDetailScreen: React.FC = () => {
   // Queries
   const { data: role, isLoading, error } = useRoleDetail(id);
   const { data: catalogGroups = [] } = usePermissionsCatalog();
-  const { data: allUsers = [] } = useUsers();
+  const { data: usersResponse } = useUsers();
+  const allUsers = usersResponse?.data || [];
 
   // Mutations
   const deleteRoleMutation = useDeleteRoleMutation();
@@ -350,8 +351,11 @@ export const RoleDetailScreen: React.FC = () => {
                       </div>
                     </div>
 
-                    <Badge variant={u.isActive ? 'success' : 'neutral'} size="sm">
-                      {u.isActive ? 'Aktif' : 'Nonaktif'}
+                    <Badge
+                      variant={u.status === 'ACTIVE' || u.isActive ? 'success' : 'neutral'}
+                      size="sm"
+                    >
+                      {u.status === 'ACTIVE' || u.isActive ? 'Aktif' : 'Nonaktif'}
                     </Badge>
                   </div>
                 ))

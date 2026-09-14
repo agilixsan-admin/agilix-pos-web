@@ -113,17 +113,77 @@ export interface UpdateRolePayload {
   status?: string;
 }
 
-export interface UserManagementItem {
+export interface UserItem {
   id: string;
   tenantId: string;
+  outletId: string | null;
+  roleId: string | null;
   name: string;
   email: string;
-  roleId: string;
-  roleName: string;
-  role?: { id: string; name: string };
-  outletId?: string;
-  outletName?: string;
-  outlet?: { id: string; name: string };
-  isActive: boolean;
+  isSuperAdmin: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | string;
+  isActive?: boolean;
   createdAt: string;
+  updatedAt: string;
+  role?: {
+    id: string;
+    name: string;
+    permissions?: string[];
+    description?: string;
+  } | null;
+  outlet?: {
+    id: string;
+    name: string;
+    address?: string;
+  } | null;
+  tenant?: {
+    id: string;
+    businessName: string;
+  };
 }
+
+export type UserManagementItem = UserItem & {
+  roleName?: string;
+  outletName?: string;
+  isActive?: boolean;
+};
+
+export interface CreateUserPayload {
+  name: string;
+  email: string;
+  password?: string;
+  isSuperAdmin?: boolean;
+  roleId?: string;
+  outletId?: string;
+  status?: string;
+}
+
+export interface UpdateUserPayload {
+  name?: string;
+  password?: string;
+  isSuperAdmin?: boolean;
+  roleId?: string;
+  outletId?: string;
+  status?: string;
+}
+
+export interface QueryUsersParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  outletId?: string;
+  roleId?: string;
+  isSuperAdmin?: boolean;
+  status?: string;
+}
+
+export interface PaginatedUsersResult {
+  data: UserItem[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
