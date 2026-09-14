@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '@domain/services/inventory-service';
-import type { RawMaterial, InventoryCategory } from '@model/Inventory';
+import type { RawMaterial, InventoryCategory, PackagingItem, PackagingCategory } from '@model/Inventory';
 import { inventoryKeys } from './query-keys';
 
 export function useRawMaterials(params?: { outletId?: string; search?: string; categoryId?: string }) {
@@ -27,11 +27,27 @@ export function useInventoryCategories(params?: { search?: string }) {
   });
 }
 
-export function usePackagingItems(params?: { outletId?: string; search?: string }) {
+export function usePackagingItems(params?: { outletId?: string; search?: string; categoryId?: string; status?: string }) {
   return useQuery({
     queryKey: inventoryKeys.packagings(params),
     queryFn: () => inventoryService.getPackagingItems(params),
     staleTime: 3 * 60 * 1000,
+  });
+}
+
+export function usePackagingDetail(id?: string) {
+  return useQuery({
+    queryKey: inventoryKeys.packagingDetail(id || ''),
+    queryFn: () => inventoryService.getPackagingById(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function usePackagingCategories(params?: { search?: string; status?: string }) {
+  return useQuery({
+    queryKey: inventoryKeys.packagingCategories(params),
+    queryFn: () => inventoryService.getPackagingCategories(params),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -125,6 +141,85 @@ export function useDeleteInventoryCategoryMutation() {
   return useMutation({
     mutationFn: (id: string) => inventoryService.deleteInventoryCategory(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.categories() });
+    },
+  });
+}
+
+// Packaging Item Mutations
+export function useCreatePackagingMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      sku?: string;
+      categoryId?: string;
+      description?: string;
+      unit?: string;
+      unitCost?: number;
+      minimumStock?: number;
+      status?: string;
+      outletId?: string;
+    }) => inventoryService.createPackaging(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+export function useUpdatePackagingMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<PackagingItem> }) =>
+      inventoryService.updatePackaging(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.packagingDetail(variables.id) });
+    },
+  });
+}
+
+export function useDeletePackagingMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => inventoryService.deletePackaging(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+// Packaging Category Mutations
+export function useCreatePackagingCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; description?: string; status?: string }) =>
+      inventoryService.createPackagingCategory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.packagingCategories() });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.categories() });
+    },
+  });
+}
+
+export function useUpdatePackagingCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; description?: string; status?: string } }) =>
+      inventoryService.updatePackagingCategory(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.packagingCategories() });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.categories() });
+    },
+  });
+}
+
+export function useDeletePackagingCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => inventoryService.deletePackagingCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.packagingCategories() });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.categories() });
     },
   });

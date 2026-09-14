@@ -61,6 +61,21 @@ const PackagingScreen = lazy(() =>
     default: m.PackagingScreen,
   }))
 );
+const PackagingCreateScreen = lazy(() =>
+  import('@presentation/screens/inventory/packaging-create-screen').then((m) => ({
+    default: m.PackagingCreateScreen,
+  }))
+);
+const PackagingDetailScreen = lazy(() =>
+  import('@presentation/screens/inventory/packaging-detail-screen').then((m) => ({
+    default: m.PackagingDetailScreen,
+  }))
+);
+const PackagingEditScreen = lazy(() =>
+  import('@presentation/screens/inventory/packaging-edit-screen').then((m) => ({
+    default: m.PackagingEditScreen,
+  }))
+);
 const SuppliersScreen = lazy(() =>
   import('@presentation/screens/inventory/suppliers-screen').then((m) => ({
     default: m.SuppliersScreen,
@@ -270,6 +285,36 @@ export const AppRoutes: React.FC = () => {
               <ProtectedRoute requiredPermission="packaging:read">
                 <SuspenseLoader>
                   <PackagingScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/packaging/create"
+            element={
+              <ProtectedRoute requiredPermission="packaging:create">
+                <SuspenseLoader>
+                  <PackagingCreateScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/packaging/:id"
+            element={
+              <ProtectedRoute requiredPermission="packaging:read">
+                <SuspenseLoader>
+                  <PackagingDetailScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="inventory/packaging/:id/edit"
+            element={
+              <ProtectedRoute requiredPermission="packaging:update">
+                <SuspenseLoader>
+                  <PackagingEditScreen />
                 </SuspenseLoader>
               </ProtectedRoute>
             }

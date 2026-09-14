@@ -2,11 +2,23 @@ export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT' | 'SALE' | 'VOID' | 'WAST
 
 export interface InventoryCategory {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   name: string;
   description?: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: 'ACTIVE' | 'INACTIVE' | string;
   itemCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PackagingCategory {
+  id: string;
+  tenantId?: string;
+  name: string;
+  description?: string;
+  status: 'ACTIVE' | 'INACTIVE' | string;
+  itemCount?: number;
+  packagingCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -27,8 +39,9 @@ export interface RawMaterial {
   minStock?: number;
   unitCost?: number;
   costPrice?: number;
+  storageLocation?: string;
   description?: string;
-  status?: 'ACTIVE' | 'INACTIVE';
+  status?: 'ACTIVE' | 'INACTIVE' | string;
   createdAt?: string;
   updatedAt?: string;
   stocks?: { outletId: string; quantity: number }[];
@@ -36,15 +49,30 @@ export interface RawMaterial {
 
 export interface PackagingItem {
   id: string;
-  tenantId: string;
-  outletId: string;
+  tenantId?: string;
+  outletId?: string;
   name: string;
-  code: string;
+  sku?: string;
+  code?: string;
+  categoryId?: string;
+  category?: string | PackagingCategory | InventoryCategory;
+  categoryName?: string;
   unit: string;
-  currentStock: number;
-  minimumStock: number;
-  costPrice: number;
-  updatedAt: string;
+  currentStock?: number;
+  minimumStock?: number;
+  minStock?: number;
+  unitCost?: number;
+  costPrice?: number;
+  description?: string;
+  supplierId?: string;
+  supplierName?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | string;
+  isActive?: boolean;
+  inventoryItemId?: string;
+  inventoryItem?: any;
+  createdAt?: string;
+  updatedAt?: string;
+  stocks?: { outletId: string; quantity: number }[];
 }
 
 export interface Supplier {

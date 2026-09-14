@@ -91,7 +91,7 @@ export const RawMaterialsScreen: React.FC = () => {
   const handleOpenEditCategory = (cat: InventoryCategory) => {
     setEditingCategory(cat);
     setCatName(cat.name);
-    setCatStatus(cat.status || 'ACTIVE');
+    setCatStatus(cat.status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE');
     setIsCatModalOpen(true);
   };
 
