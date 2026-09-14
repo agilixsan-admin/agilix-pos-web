@@ -140,10 +140,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <span>Rp {Number(order.taxAmount).toLocaleString('id-ID')}</span>
               </div>
             )}
-            {Number(order.serviceChargeAmount || 0) > 0 && (
+            {Number(order.serviceCharge || 0) > 0 && (
               <div className="flex justify-between text-slate-600">
                 <span>Service Charge</span>
-                <span>Rp {Number(order.serviceChargeAmount).toLocaleString('id-ID')}</span>
+                <span>Rp {Number(order.serviceCharge).toLocaleString('id-ID')}</span>
               </div>
             )}
           </div>

@@ -104,24 +104,12 @@ export const PosScreen: React.FC = () => {
     if (product.variants && product.variants.length > 0) {
       setVariantModalProduct(product);
     } else {
-      addItem({
-        productId: product.id,
-        productName: product.name,
-        price: product.price,
-        image: product.image,
-      });
+      addItem(product);
     }
   };
 
   const handleSelectVariant = (product: Product, variant: Variant) => {
-    addItem({
-      productId: product.id,
-      productName: product.name,
-      variantId: variant.id,
-      variantName: variant.name,
-      price: variant.price,
-      image: product.image,
-    });
+    addItem(product, variant);
     setVariantModalProduct(null);
   };
 
@@ -143,7 +131,7 @@ export const PosScreen: React.FC = () => {
       }));
 
       const createdOrder = await posService.createOrder({
-        outletId: currentOutlet?.id,
+        outletId: currentOutlet?.id || '',
         orderType: orderType as OrderType,
         tableId: tableId || undefined,
         customerName: customerName || undefined,
@@ -180,7 +168,7 @@ export const PosScreen: React.FC = () => {
       }));
 
       await posService.createOrder({
-        outletId: currentOutlet?.id,
+        outletId: currentOutlet?.id || '',
         orderType: orderType as OrderType,
         tableId: tableId || undefined,
         customerName: customerName || undefined,
@@ -406,7 +394,7 @@ export const PosScreen: React.FC = () => {
               <div key={item.id} className="py-3 first:pt-0 last:pb-0 flex flex-col gap-1.5">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 pr-2">
-                    <h5 className="font-semibold text-slate-800 text-xs leading-tight">{item.productName}</h5>
+                    <h5 className="font-semibold text-slate-800 text-xs leading-tight">{item.name}</h5>
                     {item.variantName && (
                       <span className="text-[10px] text-slate-400 font-medium">Varian: {item.variantName}</span>
                     )}
@@ -428,7 +416,7 @@ export const PosScreen: React.FC = () => {
                     onClick={() =>
                       setNotesModalItem({
                         id: item.id,
-                        name: item.productName,
+                        name: item.name,
                         notes: item.notes || '',
                       })
                     }
