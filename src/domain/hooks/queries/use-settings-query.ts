@@ -23,6 +23,11 @@ import type {
   UpdateTaxPayload,
   GlobalTaxConfig,
   UpdateGlobalTaxConfigPayload,
+  DiscountItem,
+  DiscountSetting,
+  CreateDiscountPayload,
+  UpdateDiscountPayload,
+  QueryDiscountParams,
 } from '@model/Settings';
 import { settingsKeys } from './query-keys';
 
@@ -366,6 +371,67 @@ export function useUpdateGlobalTaxConfigMutation() {
     },
   });
 }
+
+// Discount Queries & Mutations
+export function useDiscounts(params?: QueryDiscountParams) {
+  return useQuery({
+    queryKey: settingsKeys.discounts(params as Record<string, unknown>),
+    queryFn: () => settingsService.getDiscounts(params),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useDiscountDetail(id?: string) {
+  return useQuery({
+    queryKey: settingsKeys.discountDetail(id || ''),
+    queryFn: () => settingsService.getDiscountById(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useApplicableDiscounts(params?: {
+  outletId?: string;
+  orderAmount?: number;
+  checkDate?: string;
+}) {
+  return useQuery({
+    queryKey: settingsKeys.applicableDiscounts(params as Record<string, unknown>),
+    queryFn: () => settingsService.getApplicableDiscounts(params),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useCreateDiscountMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateDiscountPayload) => settingsService.createDiscount(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useUpdateDiscountMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateDiscountPayload }) =>
+      settingsService.updateDiscount(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useDeleteDiscountMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => settingsService.deleteDiscount(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
 
 
 

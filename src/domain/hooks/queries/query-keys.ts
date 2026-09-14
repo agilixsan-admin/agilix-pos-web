@@ -56,6 +56,9 @@ export const settingsKeys = {
   taxes: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'taxes', filters || {}] as const,
   taxDetail: (id: string) => [...settingsKeys.all, 'taxes', 'detail', id] as const,
   taxGlobalConfig: (outletId?: string) => [...settingsKeys.all, 'taxes', 'globalConfig', outletId || 'all'] as const,
+  discounts: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'discounts', filters || {}] as const,
+  discountDetail: (id: string) => [...settingsKeys.all, 'discounts', 'detail', id] as const,
+  applicableDiscounts: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'discounts', 'applicable', filters || {}] as const,
   auditLogs: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'auditLogs', filters || {}] as const,
 };
 

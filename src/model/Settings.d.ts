@@ -69,15 +69,75 @@ export interface UpdateGlobalTaxConfigPayload {
   outletId?: string;
 }
 
-export interface DiscountSetting {
+export type DiscountCalculationType = 'PERCENTAGE' | 'FIXED';
+export type DiscountValidityType = 'ALWAYS_ACTIVE' | 'RECURRING_WEEKLY' | 'DATE_RANGE';
+export type DiscountScope = 'ALL_PRODUCTS' | 'SPECIFIC_PRODUCTS';
+export type DiscountStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface DiscountItem {
   id: string;
+  tenantId: string;
+  outletId?: string | null;
   name: string;
+  type: DiscountCalculationType;
+  value: number;
+  validityType: DiscountValidityType;
+  recurringDays?: string[] | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  minOrderAmount: number;
+  maxDiscountAmount?: number | null;
+  applicableScope: DiscountScope;
+  status: DiscountStatus;
+  productIds?: string[];
+  products?: { id: string; name: string; price: number }[];
   code?: string;
-  type: 'PERCENTAGE' | 'FIXED';
-  value: number; // e.g. 10 (%) or 15000 (Rp)
   minPurchase?: number;
   maxDiscount?: number;
-  isActive: boolean;
+  isActive?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type DiscountSetting = DiscountItem;
+
+export interface CreateDiscountPayload {
+  outletId?: string;
+  name: string;
+  type: DiscountCalculationType;
+  value: number;
+  validityType: DiscountValidityType;
+  recurringDays?: string[];
+  startDate?: string;
+  endDate?: string;
+  minOrderAmount?: number;
+  maxDiscountAmount?: number;
+  applicableScope?: DiscountScope;
+  productIds?: string[];
+  status?: DiscountStatus;
+}
+
+export interface UpdateDiscountPayload {
+  outletId?: string | null;
+  name?: string;
+  type?: DiscountCalculationType;
+  value?: number;
+  validityType?: DiscountValidityType;
+  recurringDays?: string[] | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  minOrderAmount?: number;
+  maxDiscountAmount?: number | null;
+  applicableScope?: DiscountScope;
+  productIds?: string[];
+  status?: DiscountStatus;
+}
+
+export interface QueryDiscountParams {
+  outletId?: string;
+  status?: DiscountStatus;
+  validityType?: DiscountValidityType;
+  search?: string;
 }
 
 export type PrinterType = 'RECEIPT' | 'KITCHEN' | 'BAR';

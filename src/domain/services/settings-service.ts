@@ -23,6 +23,11 @@ import type {
   UpdateTaxPayload,
   GlobalTaxConfig,
   UpdateGlobalTaxConfigPayload,
+  DiscountItem,
+  DiscountSetting,
+  CreateDiscountPayload,
+  UpdateDiscountPayload,
+  QueryDiscountParams,
   AuditLogItem,
 } from '@model/Settings';
 
@@ -215,6 +220,40 @@ export const settingsService = {
   updateGlobalTaxConfig: async (payload: UpdateGlobalTaxConfigPayload): Promise<GlobalTaxConfig> => {
     const res = await httpClient.put('/settings/taxes/global-config', payload);
     return res.data?.data || res.data;
+  },
+
+  getDiscounts: async (params?: QueryDiscountParams): Promise<DiscountItem[]> => {
+    const res = await httpClient.get('/settings/discounts', { params });
+    return res.data?.data || res.data || [];
+  },
+
+  getDiscountById: async (id: string): Promise<DiscountItem> => {
+    const res = await httpClient.get(`/settings/discounts/${id}`);
+    return res.data?.data || res.data;
+  },
+
+  createDiscount: async (payload: CreateDiscountPayload): Promise<DiscountItem> => {
+    const res = await httpClient.post('/settings/discounts', payload);
+    return res.data?.data || res.data;
+  },
+
+  updateDiscount: async (id: string, payload: UpdateDiscountPayload): Promise<DiscountItem> => {
+    const res = await httpClient.put(`/settings/discounts/${id}`, payload);
+    return res.data?.data || res.data;
+  },
+
+  deleteDiscount: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const res = await httpClient.delete(`/settings/discounts/${id}`);
+    return res.data || { success: true, message: 'Discount berhasil dihapus' };
+  },
+
+  getApplicableDiscounts: async (params?: {
+    outletId?: string;
+    orderAmount?: number;
+    checkDate?: string;
+  }): Promise<DiscountItem[]> => {
+    const res = await httpClient.get('/settings/discounts/applicable', { params });
+    return res.data?.data || res.data || [];
   },
 
   getAuditLogs: async (params?: {
