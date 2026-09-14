@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import type { AuditLogItem } from '@model/Settings';
-import { settingsService } from '@domain/services/settings-service';
+import { useAuditLogs, useDebounce } from '@domain/hooks';
 import { ShieldAlert, Eye, Calendar, User } from 'lucide-react';
 import {
   Button,
@@ -13,32 +13,18 @@ import {
 } from '@presentation/components/ui';
 
 export const AuditLogsScreen: React.FC = () => {
-  const [logs, setLogs] = useState<AuditLogItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
   const [selectedAction, setSelectedAction] = useState('ALL');
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 200);
   const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const res = await settingsService.getAuditLogs({
-        action: selectedAction === 'ALL' ? undefined : selectedAction,
-      });
-      setLogs(res.items);
-    } catch (err) {
-      console.error('Failed to load audit logs', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [selectedAction]);
+  const { data, isLoading: loading } = useAuditLogs({
+    action: selectedAction === 'ALL' ? undefined : selectedAction,
+  });
+  const logs = data?.items || [];
 
   const filteredLogs = logs.filter((log) => {
-    const q = search.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
     const actionMatch = log.action?.toLowerCase().includes(q);
     const actorMatch =
       log.actorType?.toLowerCase().includes(q) ||

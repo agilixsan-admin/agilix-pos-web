@@ -1,7 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import type { Table } from '@model/Settings';
-import { settingsService } from '@domain/services/settings-service';
 import { useAuthStore } from '@domain/state/auth-store';
+import {
+  useSettingsTables,
+  useCreateTableMutation,
+  useUpdateTableMutation,
+  useDeleteTableMutation,
+} from '@domain/hooks';
 import { LayoutGrid, Plus, Edit2, Trash2 } from 'lucide-react';
 import {
   Button,
@@ -15,28 +20,15 @@ import {
 
 export const TablesScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const [tables, setTables] = useState<Table[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: tables = [], isLoading: loading } = useSettingsTables(currentOutlet?.id);
+  const createTableMutation = useCreateTableMutation();
+  const updateTableMutation = useUpdateTableMutation();
+  const deleteTableMutation = useDeleteTableMutation();
+  const submitting = createTableMutation.isPending || updateTableMutation.isPending;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<Table | null>(null);
   const [formData, setFormData] = useState({ name: '', capacity: '4' });
-  const [submitting, setSubmitting] = useState(false);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const data = await settingsService.getTables(currentOutlet?.id);
-      setTables(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [currentOutlet?.id]);
 
   const handleOpenAdd = () => {
     setEditingTable(null);
@@ -52,39 +44,34 @@ export const TablesScreen: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     try {
       if (editingTable) {
-        await settingsService.updateTable(editingTable.id, {
-          name: formData.name,
-          capacity: Number(formData.capacity),
+        await updateTableMutation.mutateAsync({
+          id: editingTable.id,
+          data: {
+            name: formData.name,
+            capacity: Number(formData.capacity),
+            status: editingTable.status || 'AVAILABLE',
+          },
         });
       } else {
-        await settingsService.createTable({
-          outletId: currentOutlet?.id || '',
+        await createTableMutation.mutateAsync({
           name: formData.name,
           capacity: Number(formData.capacity),
+          outletId: currentOutlet?.id || '',
           status: 'AVAILABLE',
-          isActive: true,
         });
       }
       setIsModalOpen(false);
-      loadData();
     } catch (err: unknown) {
-      alert(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Gagal menyimpan meja.'
-      );
-    } finally {
-      setSubmitting(false);
+      alert('Gagal menyimpan meja.');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Hapus meja ini?')) return;
+    if (!confirm('Apakah Anda yakin ingin menghapus meja ini?')) return;
     try {
-      await settingsService.deleteTable(id);
-      loadData();
+      await deleteTableMutation.mutateAsync(id);
     } catch (err: unknown) {
       alert('Gagal menghapus meja.');
     }

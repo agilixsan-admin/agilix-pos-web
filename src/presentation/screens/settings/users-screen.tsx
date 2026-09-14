@@ -1,7 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import type { UserManagementItem, Role } from '@model/Settings';
-import type { Outlet } from '@model/Auth';
-import { settingsService } from '@domain/services/settings-service';
+import React, { useState } from 'react';
+import type { UserManagementItem } from '@model/Settings';
+import {
+  useUsers,
+  useRoles,
+  useOutlets,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+} from '@domain/hooks';
 import { Users, Plus, Edit2 } from 'lucide-react';
 import {
   Button,
@@ -15,11 +20,14 @@ import {
 } from '@presentation/components/ui';
 
 export const UsersScreen: React.FC = () => {
-  const [users, setUsers] = useState<UserManagementItem[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const { data: users = [], isLoading: usersLoading } = useUsers();
+  const { data: roles = [], isLoading: rolesLoading } = useRoles();
+  const { data: outlets = [], isLoading: outletsLoading } = useOutlets();
+  const loading = usersLoading || rolesLoading || outletsLoading;
+
+  const createUserMutation = useCreateUserMutation();
+  const updateUserMutation = useUpdateUserMutation();
+  const submitting = createUserMutation.isPending || updateUserMutation.isPending;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserManagementItem | null>(null);
@@ -31,36 +39,14 @@ export const UsersScreen: React.FC = () => {
     outletId: '',
   });
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [uData, rData, oData] = await Promise.all([
-        settingsService.getUsers(),
-        settingsService.getRoles(),
-        settingsService.getOutlets(),
-      ]);
-      setUsers(uData);
-      setRoles(rData);
-      setOutlets(oData);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const handleOpenAdd = () => {
     setEditingUser(null);
     setFormData({
       name: '',
       email: '',
       password: '',
-      roleId: roles[0]?.id || '',
-      outletId: outlets[0]?.id || '',
+      roleId: roles.length > 0 ? roles[0].id : '',
+      outletId: '',
     });
     setIsModalOpen(true);
   };
@@ -79,34 +65,33 @@ export const UsersScreen: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     try {
       if (editingUser) {
-        await settingsService.updateUser(editingUser.id, {
-          name: formData.name,
-          email: formData.email,
-          roleId: formData.roleId,
-          outletId: formData.outletId || undefined,
+        await updateUserMutation.mutateAsync({
+          id: editingUser.id,
+          data: {
+            name: formData.name,
+            email: formData.email,
+            roleId: formData.roleId || undefined,
+            outletId: formData.outletId || undefined,
+          },
         });
       } else {
-        await settingsService.createUser({
+        await createUserMutation.mutateAsync({
           name: formData.name,
           email: formData.email,
-          password: formData.password,
+          password: formData.password || undefined,
           roleId: formData.roleId,
           outletId: formData.outletId || undefined,
           isActive: true,
         });
       }
       setIsModalOpen(false);
-      loadData();
     } catch (err: unknown) {
       alert(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Gagal menyimpan user.'
+          'Gagal menyimpan pengguna.'
       );
-    } finally {
-      setSubmitting(false);
     }
   };
 

@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import type { Outlet } from '@model/Auth';
-import { settingsService } from '@domain/services/settings-service';
+import {
+  useOutlets,
+  useCreateOutletMutation,
+  useUpdateOutletMutation,
+} from '@domain/hooks';
 import { Building2, Plus, Edit2 } from 'lucide-react';
 import {
   Button,
@@ -13,28 +17,14 @@ import {
 } from '@presentation/components/ui';
 
 export const OutletsScreen: React.FC = () => {
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: outlets = [], isLoading: loading } = useOutlets();
+  const createOutletMutation = useCreateOutletMutation();
+  const updateOutletMutation = useUpdateOutletMutation();
+  const submitting = createOutletMutation.isPending || updateOutletMutation.isPending;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOutlet, setEditingOutlet] = useState<Outlet | null>(null);
   const [formData, setFormData] = useState({ name: '', address: '', phone: '' });
-  const [submitting, setSubmitting] = useState(false);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const data = await settingsService.getOutlets();
-      setOutlets(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const handleOpenAdd = () => {
     setEditingOutlet(null);
@@ -50,22 +40,27 @@ export const OutletsScreen: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     try {
       if (editingOutlet) {
-        await settingsService.updateOutlet(editingOutlet.id, formData);
+        await updateOutletMutation.mutateAsync({
+          id: editingOutlet.id,
+          data: {
+            name: formData.name,
+            address: formData.address || undefined,
+            phone: formData.phone || undefined,
+          },
+        });
       } else {
-        await settingsService.createOutlet({ ...formData, isActive: true });
+        await createOutletMutation.mutateAsync({
+          name: formData.name,
+          address: formData.address || undefined,
+          phone: formData.phone || undefined,
+          isActive: true,
+        });
       }
       setIsModalOpen(false);
-      loadData();
     } catch (err: unknown) {
-      alert(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Gagal menyimpan outlet.'
-      );
-    } finally {
-      setSubmitting(false);
+      alert('Gagal menyimpan outlet.');
     }
   };
 
