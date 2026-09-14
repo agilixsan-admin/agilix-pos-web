@@ -6,7 +6,14 @@ import { productService } from '@domain/services/product-service';
 import { posService } from '@domain/services/pos-service';
 import { useAuthStore } from '@domain/state/auth-store';
 import { useCartStore } from '@domain/state/cart-store';
-import { useDebounce, useKeyboardShortcuts, useBarcodeScanner } from '@domain/hooks';
+import {
+  useDebounce,
+  useKeyboardShortcuts,
+  useBarcodeScanner,
+  useProducts,
+  useCategories,
+  useTables,
+} from '@domain/hooks';
 import { PaymentModal } from './payment-modal';
 import { ReceiptModal } from './receipt-modal';
 import { OpenOrdersModal } from './open-orders-modal';
@@ -54,13 +61,20 @@ export const PosScreen: React.FC = () => {
     getItemCount,
   } = useCartStore();
 
-  // State
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [tables, setTables] = useState<Table[]>([]);
+  // Query Hooks
+  const { data: products = [], isLoading: productsLoading, refetch: refetchProducts } = useProducts({ outletId: currentOutlet?.id });
+  const { data: categories = [], isLoading: categoriesLoading, refetch: refetchCategories } = useCategories();
+  const { data: tables = [], isLoading: tablesLoading, refetch: refetchTables } = useTables(currentOutlet?.id);
+  const loading = productsLoading || categoriesLoading || tablesLoading;
+
+  const loadData = () => {
+    refetchProducts();
+    refetchCategories();
+    refetchTables();
+  };
+
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
 
   // Modals
   const [variantModalProduct, setVariantModalProduct] = useState<Product | null>(null);
@@ -69,28 +83,6 @@ export const PosScreen: React.FC = () => {
   const [completedOrderForReceipt, setCompletedOrderForReceipt] = useState<Order | null>(null);
   const [isOpenOrdersOpen, setIsOpenOrdersOpen] = useState<boolean>(false);
   const [orderProcessing, setOrderProcessing] = useState<boolean>(false);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [prodData, catData, tableData] = await Promise.all([
-        productService.getProducts({ outletId: currentOutlet?.id }),
-        productService.getCategories(),
-        posService.getTables(currentOutlet?.id),
-      ]);
-      setProducts(prodData);
-      setCategories(catData);
-      setTables(tableData);
-    } catch (err: unknown) {
-      console.error('Failed to load POS data', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [currentOutlet?.id]);
 
   const debouncedSearch = useDebounce(searchQuery, 200);
 

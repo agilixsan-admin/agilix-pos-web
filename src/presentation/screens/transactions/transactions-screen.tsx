@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import type { Order } from '@model/Order';
-import { posService } from '@domain/services/pos-service';
 import { useAuthStore } from '@domain/state/auth-store';
+import { useOrderHistory, useDebounce } from '@domain/hooks';
 import { ReceiptModal } from '../pos/receipt-modal';
 import {
   History,
@@ -23,30 +23,16 @@ import {
 
 export const TransactionsScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const { data, isLoading: loading } = useOrderHistory({ outletId: currentOutlet?.id });
+  const orders = data?.items || [];
+
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const debouncedSearch = useDebounce(searchQuery, 200);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
 
-  const fetchTransactions = async () => {
-    setLoading(true);
-    try {
-      const data = await posService.getOrderHistory({ outletId: currentOutlet?.id });
-      setOrders(data.items);
-    } catch (err: unknown) {
-      console.error('Failed to fetch transaction history', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [currentOutlet?.id]);
-
   const filteredOrders = orders.filter((order) => {
-    const q = searchQuery.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
     return (
       order.orderNumber?.toLowerCase().includes(q) ||
       order.customerName?.toLowerCase().includes(q) ||
