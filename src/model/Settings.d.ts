@@ -85,6 +85,11 @@ export interface DiscountItem {
   id: string;
   tenantId: string;
   outletId?: string | null;
+  outlet?: {
+    id: string;
+    name: string;
+  } | null;
+  isGlobal?: boolean;
   name: string;
   type: DiscountCalculationType;
   value: number;
@@ -110,6 +115,7 @@ export type DiscountSetting = DiscountItem;
 
 export interface CreateDiscountPayload {
   outletId?: string;
+  isGlobal?: boolean;
   name: string;
   type: DiscountCalculationType;
   value: number;
@@ -126,6 +132,7 @@ export interface CreateDiscountPayload {
 
 export interface UpdateDiscountPayload {
   outletId?: string | null;
+  isGlobal?: boolean;
   name?: string;
   type?: DiscountCalculationType;
   value?: number;

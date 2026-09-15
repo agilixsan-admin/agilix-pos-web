@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type {
   DiscountItem,
   DiscountCalculationType,
@@ -12,6 +12,7 @@ import {
   useUpdateDiscountMutation,
   useDeleteDiscountMutation,
   useProducts,
+  useOutlets,
 } from '@domain/hooks';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -27,14 +28,14 @@ import {
   Infinity as InfinityIcon,
   Percent,
   DollarSign,
-  Package,
+  Store,
+  Globe,
 } from 'lucide-react';
 import {
   Button,
   Card,
   Modal,
   FormInput,
-  FormSelect,
   LoadingState,
   EmptyState,
 } from '@presentation/components/ui';
@@ -51,11 +52,30 @@ const DAYS_OF_WEEK = [
 
 export const DiscountsScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const outletId = currentOutlet?.id;
+  const { data: outlets = [], isLoading: outletsLoading } = useOutlets();
+
+  // Selected Outlet: '' means "Semua Cabang (Global PT)"
+  const [selectedOutletId, setSelectedOutletId] = useState<string>('');
+
+  // Auto-select outlet on load if not set
+  useEffect(() => {
+    if (!selectedOutletId && currentOutlet?.id) {
+      setSelectedOutletId(currentOutlet.id);
+    }
+  }, [currentOutlet, selectedOutletId]);
+
+  const activeOutlet = outlets.find((o) => o.id === selectedOutletId);
 
   // Queries
-  const { data: discounts = [], isLoading, error } = useDiscounts({ outletId });
-  const { data: products = [] } = useProducts({ outletId });
+  const {
+    data: discounts = [],
+    isLoading: discountsLoading,
+    error,
+  } = useDiscounts(selectedOutletId ? { outletId: selectedOutletId } : undefined);
+
+  const { data: products = [] } = useProducts(
+    selectedOutletId ? { outletId: selectedOutletId } : undefined
+  );
 
   // Mutations
   const createDiscountMutation = useCreateDiscountMutation();
@@ -84,6 +104,8 @@ export const DiscountsScreen: React.FC = () => {
     applicableScope: 'ALL_PRODUCTS' as DiscountScope,
     productIds: [] as string[],
     status: 'ACTIVE' as DiscountStatus,
+    scope: 'GLOBAL' as 'GLOBAL' | 'OUTLET',
+    outletId: '',
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -108,6 +130,8 @@ export const DiscountsScreen: React.FC = () => {
       applicableScope: 'ALL_PRODUCTS',
       productIds: [],
       status: 'ACTIVE',
+      scope: selectedOutletId ? 'OUTLET' : 'GLOBAL',
+      outletId: selectedOutletId || (outlets[0]?.id || ''),
     });
     setFormErrors({});
     setIsModalOpen(true);
@@ -128,6 +152,8 @@ export const DiscountsScreen: React.FC = () => {
       applicableScope: d.applicableScope || 'ALL_PRODUCTS',
       productIds: d.productIds || d.products?.map((p) => p.id) || [],
       status: d.status || (d.isActive ? 'ACTIVE' : 'INACTIVE'),
+      scope: d.isGlobal || !d.outletId ? 'GLOBAL' : 'OUTLET',
+      outletId: d.outletId || selectedOutletId || (outlets[0]?.id || ''),
     });
     setFormErrors({});
     setIsModalOpen(true);
@@ -169,6 +195,10 @@ export const DiscountsScreen: React.FC = () => {
       errors.value = 'Diskon persentase tidak boleh lebih dari 100%';
     }
 
+    if (formData.scope === 'OUTLET' && !formData.outletId) {
+      errors.outletId = 'Silakan pilih cabang outlet';
+    }
+
     if (formData.validityType === 'RECURRING_WEEKLY' && formData.recurringDays.length === 0) {
       errors.recurringDays = 'Pilih minimal satu hari berulang';
     }
@@ -200,6 +230,8 @@ export const DiscountsScreen: React.FC = () => {
     const valueNum = parseFloat(formData.value);
     const minOrderNum = parseFloat(formData.minOrderAmount) || 0;
     const maxDiscountNum = formData.maxDiscountAmount ? parseFloat(formData.maxDiscountAmount) : undefined;
+    const isGlobalScope = formData.scope === 'GLOBAL';
+    const targetOutletId = isGlobalScope ? undefined : formData.outletId;
 
     try {
       if (editingDiscount) {
@@ -218,6 +250,8 @@ export const DiscountsScreen: React.FC = () => {
             applicableScope: formData.applicableScope,
             productIds: formData.applicableScope === 'SPECIFIC_PRODUCTS' ? formData.productIds : [],
             status: formData.status,
+            isGlobal: isGlobalScope,
+            outletId: isGlobalScope ? null : targetOutletId,
           },
         });
         showToast('Diskon berhasil diperbarui');
@@ -235,7 +269,8 @@ export const DiscountsScreen: React.FC = () => {
           applicableScope: formData.applicableScope,
           productIds: formData.applicableScope === 'SPECIFIC_PRODUCTS' ? formData.productIds : undefined,
           status: formData.status,
-          outletId: outletId || undefined,
+          isGlobal: isGlobalScope,
+          outletId: targetOutletId,
         });
         showToast('Diskon baru berhasil ditambahkan');
       }
@@ -281,16 +316,16 @@ export const DiscountsScreen: React.FC = () => {
       const days = d.recurringDays || [];
       let label = 'Weekly';
       if (days.includes('SATURDAY') && days.includes('SUNDAY') && days.length === 2) {
-        label = 'Sat - Sun';
+        label = 'Sabtu - Minggu';
       } else if (
         days.length === 5 &&
         ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'].every((k) => days.includes(k))
       ) {
-        label = 'Mon - Fri';
+        label = 'Senin - Jumat';
       } else if (days.length > 0) {
         label = days
           .map((k) => {
-            const found = DAYS_OF_WEEK.find((d) => d.key === k);
+            const found = DAYS_OF_WEEK.find((item) => item.key === k);
             return found ? found.label : k;
           })
           .join(', ');
@@ -299,7 +334,7 @@ export const DiscountsScreen: React.FC = () => {
       return (
         <div>
           <div className="font-semibold text-slate-900 text-xs">{label}</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Recurring weekly</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">Berulang mingguan</div>
         </div>
       );
     }
@@ -332,7 +367,7 @@ export const DiscountsScreen: React.FC = () => {
               isExpired ? 'text-red-500' : 'text-emerald-600'
             }`}
           >
-            {isExpired ? 'Expired' : 'Active Period'}
+            {isExpired ? 'Kedaluwarsa' : 'Periode Aktif'}
           </div>
         </div>
       );
@@ -359,6 +394,7 @@ export const DiscountsScreen: React.FC = () => {
 
   const isSaving = createDiscountMutation.isPending || updateDiscountMutation.isPending;
   const isDeleting = deleteDiscountMutation.isPending;
+  const isLoading = discountsLoading || outletsLoading;
 
   if (isLoading) {
     return (
@@ -388,23 +424,48 @@ export const DiscountsScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header with Outlet Switcher */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Discounts</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Pengaturan Diskon</h1>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Multi-Outlet
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-1">
-            Manage master data for pricing discounts and promotions.
+            Kelola master diskon dan program promo harga per cabang outlet atau tingkat kebijakan PT.
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={handleOpenAdd}
-          className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm"
-        >
-          + Add Discount
-        </Button>
+        <div className="flex items-center flex-wrap gap-3">
+          {/* Outlet Switcher Dropdown */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
+            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
+            <select
+              value={selectedOutletId}
+              onChange={(e) => setSelectedOutletId(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              <option value="">🌐 Semua Cabang (Kebijakan Global PT)</option>
+              {outlets.map((outlet) => (
+                <option key={outlet.id} value={outlet.id}>
+                  🏪 {outlet.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Button
+            variant="primary"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={handleOpenAdd}
+            className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm"
+          >
+            + Tambah Diskon
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -418,18 +479,29 @@ export const DiscountsScreen: React.FC = () => {
       <Card className="border border-slate-200/90 shadow-sm overflow-hidden" padding="none">
         {/* Card Toolbar */}
         <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Cari nama diskon atau promo..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] transition-all"
-            />
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">
+              Daftar Diskon {activeOutlet ? `— Cabang ${activeOutlet.name}` : '(Seluruh Cabang)'}
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {activeOutlet
+                ? `Menampilkan diskon khusus outlet ${activeOutlet.name} dan diskon global PT.`
+                : 'Menampilkan seluruh program promosi yang berlaku di semua cabang.'}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Cari nama diskon atau promo..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] transition-all"
+              />
+            </div>
+
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
@@ -447,10 +519,10 @@ export const DiscountsScreen: React.FC = () => {
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="py-3.5 px-5">NAME</th>
-                <th className="py-3.5 px-5">TYPE</th>
-                <th className="py-3.5 px-5">VALUE</th>
-                <th className="py-3.5 px-5">VALIDITY</th>
+                <th className="py-3.5 px-5">NAMA & CAKUPAN</th>
+                <th className="py-3.5 px-5">TIPE</th>
+                <th className="py-3.5 px-5">NILAI DISKON</th>
+                <th className="py-3.5 px-5">MASA BERLAKU</th>
                 <th className="py-3.5 px-5">STATUS</th>
                 <th className="py-3.5 px-5 text-right">AKSI</th>
               </tr>
@@ -464,7 +536,7 @@ export const DiscountsScreen: React.FC = () => {
                       description={
                         searchQuery
                           ? `Tidak ditemukan diskon dengan kata kunci "${searchQuery}".`
-                          : 'Klik tombol "+ Add Discount" untuk membuat program diskon atau promosi baru.'
+                          : 'Klik tombol "+ Tambah Diskon" untuk membuat program diskon atau promosi baru.'
                       }
                     />
                   </td>
@@ -472,17 +544,34 @@ export const DiscountsScreen: React.FC = () => {
               ) : (
                 filteredDiscounts.map((discount) => {
                   const isActive = discount.status === 'ACTIVE' || discount.isActive;
+                  const isGlobalDiscount = discount.isGlobal || !discount.outletId;
+                  const outletName = discount.outlet?.name || outlets.find((o) => o.id === discount.outletId)?.name;
+
                   return (
                     <tr
                       key={discount.id}
                       className="hover:bg-slate-50/70 transition-colors group"
                     >
-                      {/* Name */}
+                      {/* Name & Scope */}
                       <td className="py-4 px-5">
-                        <div className="font-bold text-slate-900 text-sm">{discount.name}</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-slate-900 text-sm">{discount.name}</span>
+                          {/* Scope Badge */}
+                          {isGlobalDiscount ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                              <Globe className="w-3 h-3" />
+                              Global PT
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                              <Store className="w-3 h-3" />
+                              Cabang: {outletName || 'Khusus Cabang'}
+                            </span>
+                          )}
+                        </div>
                         {discount.minOrderAmount > 0 && (
                           <div className="text-[11px] text-slate-400 mt-0.5">
-                            Min. order Rp{discount.minOrderAmount.toLocaleString('id-ID')}
+                            Min. order Rp{Number(discount.minOrderAmount).toLocaleString('id-ID')}
                           </div>
                         )}
                       </td>
@@ -551,24 +640,103 @@ export const DiscountsScreen: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingDiscount ? 'Edit Discount' : 'Add Discount'}
+        title={editingDiscount ? 'Edit Diskon' : 'Tambah Diskon Baru'}
         maxWidth="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
           {/* Discount Name */}
           <FormInput
-            label="Discount Name"
+            label="Nama Diskon"
             required
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="e.g. Member 5%, Weekend 10%, Promo Launching"
+            placeholder="Contoh: Promo Member 10%, Weekend Sale, Launching Outlet"
             error={formErrors.name}
           />
+
+          {/* Scope Selector: Global vs Outlet Specific */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Cakupan Penerapan Diskon <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, scope: 'GLOBAL' })}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  formData.scope === 'GLOBAL'
+                    ? 'border-[#0D5C53] bg-teal-50/50 ring-1 ring-[#0D5C53]'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-[#0D5C53]" />
+                    <span className="text-xs font-bold text-slate-900">Global PT</span>
+                  </div>
+                  {formData.scope === 'GLOBAL' && <Check className="w-4 h-4 text-[#0D5C53]" />}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Berlaku umum untuk transaksi di semua cabang outlet PT.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    scope: 'OUTLET',
+                    outletId: formData.outletId || selectedOutletId || (outlets[0]?.id || ''),
+                  })
+                }
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  formData.scope === 'OUTLET'
+                    ? 'border-[#0D5C53] bg-teal-50/50 ring-1 ring-[#0D5C53]'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Store className="w-3.5 h-3.5 text-[#0D5C53]" />
+                    <span className="text-xs font-bold text-slate-900">Khusus Cabang</span>
+                  </div>
+                  {formData.scope === 'OUTLET' && <Check className="w-4 h-4 text-[#0D5C53]" />}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Hanya berlaku khusus pada outlet yang dipilih.
+                </p>
+              </button>
+            </div>
+          </div>
+
+          {/* Outlet Selection when Scope is OUTLET */}
+          {formData.scope === 'OUTLET' && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Pilih Cabang Outlet <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.outletId}
+                onChange={(e) => setFormData({ ...formData, outletId: e.target.value })}
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] outline-none"
+              >
+                {outlets.map((outlet) => (
+                  <option key={outlet.id} value={outlet.id}>
+                    🏪 {outlet.name}
+                  </option>
+                ))}
+              </select>
+              {formErrors.outletId && (
+                <p className="text-[11px] text-red-500 mt-1">{formErrors.outletId}</p>
+              )}
+            </div>
+          )}
 
           {/* Discount Type Selector */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Discount Type <span className="text-red-500">*</span>
+              Tipe Diskon <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -583,7 +751,7 @@ export const DiscountsScreen: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Percent className="w-4 h-4 text-[#0D5C53]" />
-                    <span className="text-xs font-bold text-slate-900">Percentage (%)</span>
+                    <span className="text-xs font-bold text-slate-900">Persentase (%)</span>
                   </div>
                   {formData.type === 'PERCENTAGE' && (
                     <Check className="w-4 h-4 text-[#0D5C53]" />
@@ -606,7 +774,7 @@ export const DiscountsScreen: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-[#0D5C53]" />
-                    <span className="text-xs font-bold text-slate-900">Fixed Amount (Rp)</span>
+                    <span className="text-xs font-bold text-slate-900">Nominal Tetap (Rp)</span>
                   </div>
                   {formData.type === 'FIXED' && (
                     <Check className="w-4 h-4 text-[#0D5C53]" />
@@ -622,7 +790,7 @@ export const DiscountsScreen: React.FC = () => {
           {/* Value & Maximum Discount */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormInput
-              label={`Discount Value (${formData.type === 'PERCENTAGE' ? '%' : 'Rp'})`}
+              label={`Nilai Diskon (${formData.type === 'PERCENTAGE' ? '%' : 'Rp'})`}
               type="number"
               min="0"
               step="any"
@@ -636,17 +804,17 @@ export const DiscountsScreen: React.FC = () => {
 
             {formData.type === 'PERCENTAGE' ? (
               <FormInput
-                label="Maximum Discount Amount (Rp - Opsional)"
+                label="Batas Maksimal Diskon (Rp - Opsional)"
                 type="number"
                 min="0"
                 unit="Rp"
                 value={formData.maxDiscountAmount}
                 onChange={(e) => setFormData({ ...formData, maxDiscountAmount: e.target.value })}
-                placeholder="e.g. 50000 (Kosongkan jika tanpa batas)"
+                placeholder="Contoh: 50000 (Kosongkan jika tanpa batas)"
               />
             ) : (
               <FormInput
-                label="Minimum Order Amount (Rp)"
+                label="Minimal Belanja Order (Rp)"
                 type="number"
                 min="0"
                 unit="Rp"
@@ -659,7 +827,7 @@ export const DiscountsScreen: React.FC = () => {
 
           {formData.type === 'PERCENTAGE' && (
             <FormInput
-              label="Minimum Order Amount (Rp)"
+              label="Minimal Belanja Order (Rp)"
               type="number"
               min="0"
               unit="Rp"
@@ -672,7 +840,7 @@ export const DiscountsScreen: React.FC = () => {
           {/* Validity Type */}
           <div className="pt-2 border-t border-slate-100">
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Validity Rule (Masa Berlaku) <span className="text-red-500">*</span>
+              Aturan Masa Berlaku <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -698,7 +866,7 @@ export const DiscountsScreen: React.FC = () => {
                 }`}
               >
                 <Clock className="w-4 h-4 mx-auto mb-1 opacity-80" />
-                <span className="text-xs">Recurring Weekly</span>
+                <span className="text-xs">Berulang Mingguan</span>
               </button>
 
               <button
@@ -711,7 +879,7 @@ export const DiscountsScreen: React.FC = () => {
                 }`}
               >
                 <Calendar className="w-4 h-4 mx-auto mb-1 opacity-80" />
-                <span className="text-xs">Date Range</span>
+                <span className="text-xs">Rentang Tanggal</span>
               </button>
             </div>
 
@@ -806,7 +974,7 @@ export const DiscountsScreen: React.FC = () => {
                   Centang produk yang memenuhi syarat diskon:
                 </span>
                 {products.length === 0 ? (
-                  <p className="text-xs text-slate-400">Tidak ada produk tersedia.</p>
+                  <p className="text-xs text-slate-400">Tidak ada produk tersedia di cabang ini.</p>
                 ) : (
                   products.map((prod) => (
                     <label
