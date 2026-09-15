@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Table } from '@model/Settings';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
+  useOutlets,
   useSettingsTables,
   useCreateTableMutation,
   useUpdateTableMutation,
   useDeleteTableMutation,
 } from '@domain/hooks';
-import { LayoutGrid, Plus, Edit2, Trash2, Layers } from 'lucide-react';
+import { LayoutGrid, Plus, Edit2, Trash2, Layers, Store } from 'lucide-react';
 import {
   Button,
   Badge,
@@ -20,15 +21,36 @@ import {
 
 export const TablesScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const { data: tables = [], isLoading: loading } = useSettingsTables(currentOutlet?.id);
+  const { data: outlets = [], isLoading: outletsLoading } = useOutlets();
+
+  const [selectedOutletId, setSelectedOutletId] = useState<string>('');
+
+  // Auto-select outlet on load
+  useEffect(() => {
+    if (!selectedOutletId && outlets.length > 0) {
+      const defaultId = currentOutlet?.id || outlets[0].id;
+      setSelectedOutletId(defaultId);
+    }
+  }, [outlets, currentOutlet, selectedOutletId]);
+
+  const effectiveOutletId = selectedOutletId || currentOutlet?.id || (outlets.length > 0 ? outlets[0].id : '');
+  const activeOutlet = outlets.find((o) => o.id === effectiveOutletId) || currentOutlet;
+
+  const { data: tables = [], isLoading: tablesLoading } = useSettingsTables(effectiveOutletId || undefined);
   const createTableMutation = useCreateTableMutation();
   const updateTableMutation = useUpdateTableMutation();
   const deleteTableMutation = useDeleteTableMutation();
   const submitting = createTableMutation.isPending || updateTableMutation.isPending;
+  const loading = outletsLoading || tablesLoading;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<Table | null>(null);
-  const [formData, setFormData] = useState({ name: '', capacity: '4', section: 'Main Area' });
+  const [formData, setFormData] = useState({
+    name: '',
+    capacity: '4',
+    section: 'Main Area',
+    targetOutletId: '',
+  });
   const [selectedSectionFilter, setSelectedSectionFilter] = useState<string>('ALL');
 
   // Extract unique sections dynamically from existing tables in this outlet
@@ -42,6 +64,7 @@ export const TablesScreen: React.FC = () => {
       name: '',
       capacity: '4',
       section: dynamicSections.length > 0 ? dynamicSections[0] : 'Main Area',
+      targetOutletId: effectiveOutletId,
     });
     setIsModalOpen(true);
   };
@@ -52,12 +75,20 @@ export const TablesScreen: React.FC = () => {
       name: t.name || t.tableNumber || '',
       capacity: t.capacity.toString(),
       section: t.section || 'Main Area',
+      targetOutletId: t.outletId || effectiveOutletId,
     });
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const targetOutlet = formData.targetOutletId || effectiveOutletId;
+    if (!targetOutlet) {
+      alert('Silakan pilih outlet terlebih dahulu sebelum menyimpan meja.');
+      return;
+    }
+
     try {
       const sectionName = formData.section.trim() || 'Main Area';
       if (editingTable) {
@@ -77,13 +108,16 @@ export const TablesScreen: React.FC = () => {
           tableNumber: formData.name.trim(),
           capacity: Number(formData.capacity) || 4,
           section: sectionName,
-          outletId: currentOutlet?.id || '',
+          outletId: targetOutlet,
           status: 'AVAILABLE',
         });
       }
       setIsModalOpen(false);
     } catch (err: unknown) {
-      alert('Gagal menyimpan meja.');
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : 'Gagal menyimpan meja.');
+      alert(errorMsg);
     }
   };
 
@@ -92,7 +126,10 @@ export const TablesScreen: React.FC = () => {
     try {
       await deleteTableMutation.mutateAsync(id);
     } catch (err: unknown) {
-      alert('Gagal menghapus meja.');
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : 'Gagal menghapus meja.');
+      alert(errorMsg);
     }
   };
 
@@ -105,21 +142,44 @@ export const TablesScreen: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Top Header & Outlet Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Manajemen Meja Dine-In</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Kelola nomor meja, area/ruangan, & kapasitas kursi untuk pesanan makan di tempat.
+            Kelola denah nomor meja, area/ruangan, & kapasitas kursi per masing-masing outlet.
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={handleOpenAdd}
-        >
-          Tambah Meja
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Outlet Selector Dropdown */}
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs">
+            <Store className="w-4 h-4 text-[#0D5C53]" />
+            <select
+              value={effectiveOutletId}
+              onChange={(e) => {
+                setSelectedOutletId(e.target.value);
+                setSelectedSectionFilter('ALL');
+              }}
+              className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-2"
+            >
+              {outlets.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Button
+            variant="primary"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={handleOpenAdd}
+            disabled={!effectiveOutletId}
+          >
+            Tambah Meja
+          </Button>
+        </div>
       </div>
 
       {/* Dynamic Section Tabs */}
@@ -158,6 +218,14 @@ export const TablesScreen: React.FC = () => {
 
       {loading ? (
         <LoadingState message="Memuat data meja..." className="min-h-[200px]" />
+      ) : !effectiveOutletId ? (
+        <Card>
+          <EmptyState
+            icon={<Store className="w-10 h-10 opacity-30 mx-auto" />}
+            title="Pilih Outlet"
+            description="Silakan pilih outlet di atas untuk melihat atau mengelola daftar meja."
+          />
+        </Card>
       ) : filteredTables.length === 0 ? (
         <Card>
           <EmptyState
@@ -165,7 +233,7 @@ export const TablesScreen: React.FC = () => {
             title="Belum ada meja"
             description={
               selectedSectionFilter === 'ALL'
-                ? 'Klik tombol "+ Tambah Meja" untuk mendaftarkan nomor meja baru.'
+                ? `Klik tombol "+ Tambah Meja" untuk mendaftarkan meja baru di outlet ${activeOutlet?.name || ''}.`
                 : `Tidak ada meja di area "${selectedSectionFilter}".`
             }
             action={
@@ -241,6 +309,26 @@ export const TablesScreen: React.FC = () => {
         maxWidth="sm"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Target Outlet Selector in Modal if adding */}
+          {!editingTable && outlets.length > 1 && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Pilih Outlet Target
+              </label>
+              <select
+                value={formData.targetOutletId}
+                onChange={(e) => setFormData({ ...formData, targetOutletId: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+              >
+                {outlets.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <FormInput
             label="Nomor / Nama Meja"
             required
