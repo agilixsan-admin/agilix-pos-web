@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { TaxItem, TaxType, TaxStatus } from '@model/Settings';
 import {
   useTaxes,
@@ -7,6 +7,7 @@ import {
   useUpdateTaxMutation,
   useDeleteTaxMutation,
   useUpdateGlobalTaxConfigMutation,
+  useOutlets,
 } from '@domain/hooks';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -19,11 +20,11 @@ import {
   AlertCircle,
   Search,
   Check,
-  Percent,
+  Store,
+  Layers,
 } from 'lucide-react';
 import {
   Button,
-  Badge,
   Card,
   Modal,
   FormInput,
@@ -33,11 +34,31 @@ import {
 
 export const TaxesScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const outletId = currentOutlet?.id;
+  const { data: outlets = [], isLoading: outletsLoading } = useOutlets();
+
+  // Selected Outlet for filtering & configuring: '' means "Semua Cabang (Global PT)"
+  const [selectedOutletId, setSelectedOutletId] = useState<string>('');
+
+  // Auto-initialize selected outlet from user's current outlet once loaded
+  useEffect(() => {
+    if (!selectedOutletId && currentOutlet?.id) {
+      setSelectedOutletId(currentOutlet.id);
+    }
+  }, [currentOutlet, selectedOutletId]);
+
+  const activeOutlet = outlets.find((o) => o.id === selectedOutletId);
 
   // Queries
-  const { data: taxes = [], isLoading: taxesLoading, error: taxesError } = useTaxes({ outletId });
-  const { data: globalConfig, isLoading: configLoading } = useGlobalTaxConfig(outletId);
+  const {
+    data: taxes = [],
+    isLoading: taxesLoading,
+    error: taxesError,
+  } = useTaxes(selectedOutletId ? { outletId: selectedOutletId } : undefined);
+
+  const {
+    data: globalConfig,
+    isLoading: configLoading,
+  } = useGlobalTaxConfig(selectedOutletId || undefined);
 
   // Mutations
   const createTaxMutation = useCreateTaxMutation();
@@ -59,7 +80,8 @@ export const TaxesScreen: React.FC = () => {
     rate: '11',
     type: 'EXCLUSIVE' as TaxType,
     status: 'ACTIVE' as TaxStatus,
-    isGlobal: false,
+    scope: 'GLOBAL' as 'GLOBAL' | 'OUTLET',
+    outletId: '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -76,7 +98,8 @@ export const TaxesScreen: React.FC = () => {
       rate: '11',
       type: 'EXCLUSIVE',
       status: 'ACTIVE',
-      isGlobal: false,
+      scope: selectedOutletId ? 'OUTLET' : 'GLOBAL',
+      outletId: selectedOutletId || (outlets[0]?.id || ''),
     });
     setFormErrors({});
     setIsModalOpen(true);
@@ -90,7 +113,8 @@ export const TaxesScreen: React.FC = () => {
       rate: tax.rate.toString(),
       type: tax.type,
       status: tax.status || (tax.isActive ? 'ACTIVE' : 'INACTIVE'),
-      isGlobal: tax.isGlobal || false,
+      scope: tax.isGlobal || !tax.outletId ? 'GLOBAL' : 'OUTLET',
+      outletId: tax.outletId || selectedOutletId || (outlets[0]?.id || ''),
     });
     setFormErrors({});
     setIsModalOpen(true);
@@ -105,6 +129,9 @@ export const TaxesScreen: React.FC = () => {
     if (isNaN(rateNum) || rateNum < 0 || rateNum > 100) {
       errors.rate = 'Tarif harus berupa angka antara 0 - 100%';
     }
+    if (formData.scope === 'OUTLET' && !formData.outletId) {
+      errors.outletId = 'Silakan pilih cabang outlet';
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -114,6 +141,8 @@ export const TaxesScreen: React.FC = () => {
     if (!validateForm()) return;
 
     const rate = parseFloat(formData.rate);
+    const isGlobalScope = formData.scope === 'GLOBAL';
+    const targetOutletId = isGlobalScope ? undefined : formData.outletId;
 
     try {
       if (editingTax) {
@@ -125,7 +154,8 @@ export const TaxesScreen: React.FC = () => {
             rate,
             type: formData.type,
             status: formData.status,
-            isGlobal: formData.isGlobal,
+            isGlobal: isGlobalScope,
+            outletId: isGlobalScope ? null : targetOutletId,
           },
         });
         showToast('Pajak berhasil diperbarui');
@@ -136,8 +166,8 @@ export const TaxesScreen: React.FC = () => {
           rate,
           type: formData.type,
           status: formData.status,
-          isGlobal: formData.isGlobal,
-          outletId: formData.isGlobal ? undefined : outletId,
+          isGlobal: isGlobalScope,
+          outletId: targetOutletId,
         });
         showToast('Pajak baru berhasil ditambahkan');
       }
@@ -171,10 +201,12 @@ export const TaxesScreen: React.FC = () => {
       await updateGlobalTaxConfigMutation.mutateAsync({
         enableTaxCalculation: enabled,
         defaultGlobalTaxId: globalConfig?.defaultGlobalTaxId ?? null,
-        outletId,
+        outletId: selectedOutletId || undefined,
       });
       showToast(
-        enabled ? 'Perhitungan pajak diaktifkan' : 'Perhitungan pajak dinonaktifkan'
+        enabled
+          ? `Perhitungan pajak diaktifkan untuk ${activeOutlet ? activeOutlet.name : 'seluruh cabang'}`
+          : `Perhitungan pajak dinonaktifkan untuk ${activeOutlet ? activeOutlet.name : 'seluruh cabang'}`
       );
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
@@ -190,9 +222,9 @@ export const TaxesScreen: React.FC = () => {
       await updateGlobalTaxConfigMutation.mutateAsync({
         enableTaxCalculation: globalConfig?.enableTaxCalculation ?? true,
         defaultGlobalTaxId: taxId ? taxId : null,
-        outletId,
+        outletId: selectedOutletId || undefined,
       });
-      showToast('Pajak default global berhasil diperbarui');
+      showToast(`Pajak default ${activeOutlet ? activeOutlet.name : 'global'} berhasil diperbarui`);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       showToast(
@@ -202,7 +234,7 @@ export const TaxesScreen: React.FC = () => {
     }
   };
 
-  // Filtered taxes
+  // Filtered taxes based on search query
   const filteredTaxes = taxes.filter((t) => {
     const q = searchQuery.toLowerCase();
     return (
@@ -215,8 +247,9 @@ export const TaxesScreen: React.FC = () => {
   const isSaving = createTaxMutation.isPending || updateTaxMutation.isPending;
   const isDeleting = deleteTaxMutation.isPending;
   const isUpdatingConfig = updateGlobalTaxConfigMutation.isPending;
+  const isLoading = taxesLoading || configLoading || outletsLoading;
 
-  if (taxesLoading || configLoading) {
+  if (isLoading) {
     return (
       <div className="py-12">
         <LoadingState message="Memuat data pengaturan pajak..." />
@@ -244,23 +277,48 @@ export const TaxesScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header with Outlet Switcher */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tax Settings</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Pengaturan Pajak</h1>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Multi-Outlet
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-1">
-            Manage tax master data and global configurations for Agilix POS.
+            Kelola tarif pajak dan konfigurasi pemungutan pajak per cabang outlet atau tingkat kebijakan PT.
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={handleOpenAdd}
-          className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm"
-        >
-          + Add Tax
-        </Button>
+        <div className="flex items-center flex-wrap gap-3">
+          {/* Outlet Switcher Dropdown */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
+            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
+            <select
+              value={selectedOutletId}
+              onChange={(e) => setSelectedOutletId(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              <option value="">🌐 Semua Cabang (Kebijakan Global PT)</option>
+              {outlets.map((outlet) => (
+                <option key={outlet.id} value={outlet.id}>
+                  🏪 {outlet.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Button
+            variant="primary"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={handleOpenAdd}
+            className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm"
+          >
+            + Tambah Pajak
+          </Button>
+        </div>
       </div>
 
       {taxesError && (
@@ -270,15 +328,34 @@ export const TaxesScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Card 1: Global Configuration */}
+      {/* Card 1: Configuration per Selected Outlet or Global */}
       <Card className="border border-slate-200/90 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-teal-50 text-[#0D5C53] flex items-center justify-center border border-teal-100/70">
-            <Globe className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-slate-900">Global Configuration</h2>
-            <p className="text-xs text-slate-500">Konfigurasi perhitungan pajak default untuk seluruh sistem POS.</p>
+        <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-teal-50 text-[#0D5C53] flex items-center justify-center border border-teal-100/70">
+              {activeOutlet ? <Store className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm font-bold text-slate-900">
+                  Konfigurasi Pajak: {activeOutlet ? activeOutlet.name : 'Kebijakan Global PT (Semua Cabang)'}
+                </h2>
+                <span
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                    activeOutlet
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : 'bg-blue-50 text-blue-700 border-blue-200'
+                  }`}
+                >
+                  {activeOutlet ? 'Khusus Cabang Ini' : 'Berlaku Global'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {activeOutlet
+                  ? `Pengaturan pemungutan pajak khusus yang diterapkan pada kasir POS cabang ${activeOutlet.name}.`
+                  : 'Pengaturan pemungutan pajak default yang menjadi acuan standar bagi seluruh cabang.'}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -287,8 +364,10 @@ export const TaxesScreen: React.FC = () => {
             {/* Box 1: Enable Tax Calculation */}
             <div className="p-4.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/80 transition-colors flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-xs font-bold text-slate-900">Enable Tax Calculation</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">Turn on to calculate taxes on orders.</p>
+                <h3 className="text-xs font-bold text-slate-900">Aktifkan Perhitungan Pajak</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Hitung dan kenakan pajak secara otomatis pada transaksi POS di {activeOutlet ? activeOutlet.name : 'seluruh outlet'}.
+                </p>
               </div>
 
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -303,11 +382,13 @@ export const TaxesScreen: React.FC = () => {
               </label>
             </div>
 
-            {/* Box 2: Default Global Tax */}
+            {/* Box 2: Default Tax */}
             <div className="p-4.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/80 transition-colors flex flex-col justify-between gap-3">
               <div>
-                <h3 className="text-xs font-bold text-slate-900">Default Global Tax</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">Applied automatically at POS for taxable items.</p>
+                <h3 className="text-xs font-bold text-slate-900">Pajak Standar (Default Tax)</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Tarif pajak yang otomatis dipilih saat membuat order kasir.
+                </p>
               </div>
 
               <div>
@@ -317,12 +398,12 @@ export const TaxesScreen: React.FC = () => {
                   onChange={(e) => handleDefaultTaxChange(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed transition-all"
                 >
-                  <option value="">-- None (Tidak Ada) --</option>
+                  <option value="">-- None (Tidak Ada Pajak Default) --</option>
                   {taxes
                     .filter((t) => t.status === 'ACTIVE' || t.isActive)
                     .map((tax) => (
                       <option key={tax.id} value={tax.id}>
-                        {tax.name} ({tax.rate}%) - {tax.type === 'INCLUSIVE' ? 'Inclusive' : 'Exclusive'}
+                        {tax.name} ({tax.rate}%) - {tax.type === 'INCLUSIVE' ? 'Inclusive' : 'Exclusive'} {tax.isGlobal ? '[Global]' : ''}
                       </option>
                     ))}
                 </select>
@@ -340,8 +421,12 @@ export const TaxesScreen: React.FC = () => {
               <Receipt className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900">Tax Master List</h2>
-              <p className="text-xs text-slate-500">Daftar semua tarif pajak yang tersedia untuk transaksi POS.</p>
+              <h2 className="text-sm font-bold text-slate-900">Daftar Tarif Pajak (Tax Master)</h2>
+              <p className="text-xs text-slate-500">
+                {activeOutlet
+                  ? `Menampilkan tarif pajak yang berlaku untuk outlet ${activeOutlet.name} (termasuk pajak global PT).`
+                  : 'Menampilkan seluruh master tarif pajak (kebijakan global PT dan cabang).'}
+              </p>
             </div>
           </div>
 
@@ -386,6 +471,9 @@ export const TaxesScreen: React.FC = () => {
             <div className="space-y-3">
               {filteredTaxes.map((tax) => {
                 const isActive = tax.status === 'ACTIVE' || tax.isActive;
+                const isGlobalTax = tax.isGlobal || !tax.outletId;
+                const outletName = tax.outlet?.name || outlets.find((o) => o.id === tax.outletId)?.name;
+
                 return (
                   <div
                     key={tax.id}
@@ -408,9 +496,17 @@ export const TaxesScreen: React.FC = () => {
                           >
                             {isActive ? 'Active' : 'Inactive'}
                           </span>
-                          {tax.isGlobal && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
-                              Global
+
+                          {/* Outlet Scope Badge */}
+                          {isGlobalTax ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                              <Globe className="w-3 h-3" />
+                              Global (Semua Cabang)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                              <Store className="w-3 h-3" />
+                              Cabang: {outletName || 'Khusus Cabang'}
                             </span>
                           )}
                         </div>
@@ -462,28 +558,28 @@ export const TaxesScreen: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingTax ? 'Edit Tax' : 'Add Tax'}
+        title={editingTax ? 'Edit Pajak' : 'Tambah Pajak Baru'}
         maxWidth="md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <FormInput
-            label="Tax Name"
+            label="Nama Pajak"
             required
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="e.g. PPN 11% or Pajak Resto"
+            placeholder="Contoh: PB1 10% atau PPN 11%"
             error={formErrors.name}
           />
 
           <FormInput
-            label="Description"
+            label="Deskripsi (Opsional)"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="e.g. Standard Value Added Tax"
+            placeholder="Contoh: Pajak Restoran Daerah"
           />
 
           <FormInput
-            label="Rate Percentage (%)"
+            label="Tarif Pajak (%)"
             type="number"
             min="0"
             max="100"
@@ -492,14 +588,14 @@ export const TaxesScreen: React.FC = () => {
             required
             value={formData.rate}
             onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-            placeholder="11.00"
+            placeholder="10.00"
             error={formErrors.rate}
           />
 
           {/* Tax Type */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Tax Calculation Type <span className="text-red-500">*</span>
+              Tipe Perhitungan Pajak <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -544,28 +640,91 @@ export const TaxesScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Scope & Status Toggles */}
-          <div className="pt-2 border-t border-slate-100 space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/70 border border-slate-200/70">
-              <div>
-                <span className="text-xs font-semibold text-slate-900">Set as Global Tax</span>
-                <p className="text-[11px] text-slate-500">Berlaku untuk seluruh outlet / dapat dijadikan default global.</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={formData.isGlobal}
-                  onChange={(e) => setFormData({ ...formData, isGlobal: e.target.checked })}
-                />
-                <div className="w-10 h-5.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#0D5C53]"></div>
-              </label>
-            </div>
+          {/* Multi-Outlet Scope Selector */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Cakupan Penerapan Pajak <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, scope: 'GLOBAL' })}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  formData.scope === 'GLOBAL'
+                    ? 'border-[#0D5C53] bg-teal-50/50 ring-1 ring-[#0D5C53]'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-[#0D5C53]" />
+                    <span className="text-xs font-bold text-slate-900">Global PT</span>
+                  </div>
+                  {formData.scope === 'GLOBAL' && <Check className="w-4 h-4 text-[#0D5C53]" />}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Berlaku umum untuk semua cabang outlet PT.
+                </p>
+              </button>
 
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    scope: 'OUTLET',
+                    outletId: formData.outletId || selectedOutletId || (outlets[0]?.id || ''),
+                  })
+                }
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  formData.scope === 'OUTLET'
+                    ? 'border-[#0D5C53] bg-teal-50/50 ring-1 ring-[#0D5C53]'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Store className="w-3.5 h-3.5 text-[#0D5C53]" />
+                    <span className="text-xs font-bold text-slate-900">Khusus Cabang</span>
+                  </div>
+                  {formData.scope === 'OUTLET' && <Check className="w-4 h-4 text-[#0D5C53]" />}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Hanya berlaku spesifik untuk outlet tertentu.
+                </p>
+              </button>
+            </div>
+          </div>
+
+          {/* Outlet Selection when Scope is OUTLET */}
+          {formData.scope === 'OUTLET' && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Pilih Cabang Outlet <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.outletId}
+                onChange={(e) => setFormData({ ...formData, outletId: e.target.value })}
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] outline-none"
+              >
+                {outlets.map((outlet) => (
+                  <option key={outlet.id} value={outlet.id}>
+                    🏪 {outlet.name}
+                  </option>
+                ))}
+              </select>
+              {formErrors.outletId && (
+                <p className="text-[11px] text-red-500 mt-1">{formErrors.outletId}</p>
+              )}
+            </div>
+          )}
+
+          {/* Status Toggle */}
+          <div className="pt-2 border-t border-slate-100">
             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/70 border border-slate-200/70">
               <div>
                 <span className="text-xs font-semibold text-slate-900">Status Aktif</span>
-                <p className="text-[11px] text-slate-500">Pajak aktif dapat digunakan saat transaksi penjualan.</p>
+                <p className="text-[11px] text-slate-500">Pajak aktif dapat digunakan saat transaksi penjualan kasir.</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input

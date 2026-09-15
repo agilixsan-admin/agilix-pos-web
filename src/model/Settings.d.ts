@@ -25,6 +25,10 @@ export interface TaxItem {
   id: string;
   tenantId: string;
   outletId?: string | null;
+  outlet?: {
+    id: string;
+    name: string;
+  } | null;
   name: string;
   description?: string | null;
   rate: number;
@@ -57,6 +61,7 @@ export interface UpdateTaxPayload {
   type?: TaxType;
   status?: TaxStatus;
   isGlobal?: boolean;
+  outletId?: string | null;
 }
 
 export interface GlobalTaxConfig {
