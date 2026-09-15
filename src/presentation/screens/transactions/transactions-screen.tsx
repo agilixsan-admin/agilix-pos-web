@@ -40,23 +40,18 @@ export const TransactionsScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
   const { data: outlets = [] } = useOutlets();
 
-  // Multi-Outlet Scoping
+  // Multi-Outlet Scoping: 'ALL' or specific outletId
   const queryOutletId = searchParams.get('outletId');
-  const [selectedOutletId, setSelectedOutletId] = useState<string>(queryOutletId || '');
+  const [selectedOutletId, setSelectedOutletId] = useState<string>(queryOutletId || 'ALL');
 
-  useEffect(() => {
-    if (!selectedOutletId && (currentOutlet?.id || outlets[0]?.id)) {
-      setSelectedOutletId(currentOutlet?.id || outlets[0]?.id || '');
-    }
-  }, [currentOutlet, outlets, selectedOutletId]);
-
-  const effectiveOutletId =
-    selectedOutletId ||
-    currentOutlet?.id ||
-    (outlets.length > 0 ? outlets[0].id : '');
-  const activeOutlet =
-    outlets.find((o) => o.id === effectiveOutletId) || currentOutlet;
-  const activeBranchName = activeOutlet?.name || 'Cabang Utama';
+  const isAllBranches = selectedOutletId === 'ALL' || !selectedOutletId;
+  const effectiveOutletId = isAllBranches ? undefined : selectedOutletId;
+  const activeOutlet = isAllBranches
+    ? null
+    : (outlets.find((o) => o.id === effectiveOutletId) || currentOutlet);
+  const activeBranchName = isAllBranches
+    ? 'Semua Cabang'
+    : (activeOutlet?.name || 'Cabang Terpilih');
 
   // View state: selected order for full detail view, or null for history table list
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -133,6 +128,7 @@ export const TransactionsScreen: React.FC = () => {
     const headers = [
       'No. Transaksi',
       'No. Order',
+      'Cabang',
       'Waktu',
       'Tipe Layanan',
       'Nomor Meja',
@@ -149,6 +145,7 @@ export const TransactionsScreen: React.FC = () => {
     const rows = orders.map((o) => [
       `"${o.transaction?.transactionNumber || `TRX-${o.id.slice(0, 8).toUpperCase()}`}"`,
       `"${o.orderNumber || o.id.slice(0, 8)}"`,
+      `"${o.outlet?.name || activeBranchName}"`,
       `"${new Date(o.createdAt).toLocaleString('id-ID')}"`,
       `"${o.orderType}"`,
       `"${o.tableName || o.tableNumber || '-'}"`,
@@ -204,7 +201,7 @@ export const TransactionsScreen: React.FC = () => {
       <TransactionDetailView
         order={selectedOrder}
         onBack={() => setSelectedOrder(null)}
-        activeBranchName={activeBranchName}
+        activeBranchName={selectedOrder.outlet?.name || activeBranchName}
       />
     );
   }
@@ -224,7 +221,15 @@ export const TransactionsScreen: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Daftar transaksi kasir, rincian pembayaran, dan faktur penjualan cabang <span className="font-semibold text-slate-700">{activeBranchName}</span>.
+            Daftar transaksi kasir, rincian pembayaran, dan faktur penjualan{' '}
+            {isAllBranches ? (
+              <span className="font-semibold text-slate-700">seluruh cabang</span>
+            ) : (
+              <>
+                cabang <span className="font-semibold text-slate-700">{activeBranchName}</span>
+              </>
+            )}
+            .
           </p>
         </div>
 
@@ -234,14 +239,22 @@ export const TransactionsScreen: React.FC = () => {
             <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
             <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
             <select
-              value={effectiveOutletId}
+              aria-label="Pilih Filter Cabang"
+              value={selectedOutletId}
               onChange={(e) => {
-                setSelectedOutletId(e.target.value);
-                setSearchParams({ outletId: e.target.value });
+                const val = e.target.value;
+                setSelectedOutletId(val);
+                if (val === 'ALL') {
+                  searchParams.delete('outletId');
+                  setSearchParams(searchParams);
+                } else {
+                  setSearchParams({ outletId: val });
+                }
                 setCurrentPage(1);
               }}
               className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
             >
+              <option value="ALL">🏢 Semua Cabang</option>
               {outlets.map((outlet) => (
                 <option key={outlet.id} value={outlet.id}>
                   🏪 {outlet.name}
@@ -381,6 +394,7 @@ export const TransactionsScreen: React.FC = () => {
               <tr>
                 <th className="py-3.5 px-4">No. Transaksi</th>
                 <th className="py-3.5 px-4">No. Order</th>
+                {isAllBranches && <th className="py-3.5 px-4">Cabang</th>}
                 <th className="py-3.5 px-4">Waktu</th>
                 <th className="py-3.5 px-4">Layanan / Meja</th>
                 <th className="py-3.5 px-4">Pelanggan</th>
@@ -394,13 +408,13 @@ export const TransactionsScreen: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={10}>
+                  <td colSpan={isAllBranches ? 11 : 10}>
                     <LoadingState message="Memuat riwayat transaksi..." />
                   </td>
                 </tr>
               ) : displayOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={10}>
+                  <td colSpan={isAllBranches ? 11 : 10}>
                     <EmptyState
                       icon={<History className="w-8 h-8 opacity-30 mx-auto" />}
                       title="Transaksi Tidak Ditemukan"
@@ -426,6 +440,14 @@ export const TransactionsScreen: React.FC = () => {
                       <td className="py-3.5 px-4 font-mono text-slate-600">
                         {orderNumber}
                       </td>
+                      {isAllBranches && (
+                        <td className="py-3.5 px-4">
+                          <span className="inline-flex items-center gap-1 font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-[11px] whitespace-nowrap">
+                            <Store className="w-3 h-3 text-[#0D5C53]" />
+                            {order.outlet?.name || '-'}
+                          </span>
+                        </td>
+                      )}
                       <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px] whitespace-nowrap">
                         {new Date(order.createdAt).toLocaleDateString('id-ID', {
                           day: 'numeric',
