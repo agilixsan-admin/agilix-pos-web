@@ -25,35 +25,87 @@ export interface OrderItem {
   variantName?: string;
   quantity: number;
   price: number;
+  unitPrice?: number;
   subtotal: number;
-  notes?: string;
+  notes?: string | null;
   status?: string;
   isVoid?: boolean;
+}
+
+export interface TransactionInfo {
+  id: string;
+  transactionNumber: string;
+  amount: number;
+  status: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+export interface PaymentInfo {
+  id: string;
+  orderId?: string;
+  paymentMethod: PaymentMethod;
+  amount: number;
+  status: PaymentStatus;
+  cashGiven?: number;
+  changeAmount?: number;
+  referenceNo?: string | null;
+  createdAt: string;
+}
+
+export interface OrderCreator {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface OrderOutlet {
+  id: string;
+  name: string;
+  code?: string;
+  address?: string | null;
+  phone?: string | null;
+}
+
+export interface OrderTable {
+  id: string;
+  name: string;
+  tableNumber?: string;
+  capacity?: number;
 }
 
 export interface Order {
   id: string;
   tenantId: string;
   outletId: string;
-  tableId?: string;
-  tableName?: string;
+  tableId?: string | null;
+  tableName?: string | null;
+  tableNumber?: string | null;
   orderNumber: string;
   orderType: OrderType;
   status: OrderStatus;
-  customerName?: string;
-  customerPhone?: string;
+  customerName?: string | null;
+  customerPhone?: string | null;
   items: OrderItem[];
   subtotal: number;
   taxAmount: number;
   serviceCharge: number;
   discountAmount: number;
+  discountId?: string | null;
+  packagingFee?: number;
   totalAmount: number;
   paidAmount?: number;
   changeAmount?: number;
   paymentMethod?: PaymentMethod;
   paymentStatus?: PaymentStatus;
-  cashierId: string;
+  cashierId?: string;
   cashierName?: string;
+  notes?: string | null;
+  transaction?: TransactionInfo | null;
+  payments?: PaymentInfo[];
+  creator?: OrderCreator | null;
+  outlet?: OrderOutlet | null;
+  table?: OrderTable | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -84,3 +136,24 @@ export interface PaymentPayload {
   referenceNo?: string;
 }
 
+export interface QueryOrderParams extends Record<string, unknown> {
+  page?: number;
+  limit?: number;
+  outletId?: string;
+  status?: string;
+  orderType?: string;
+  paymentMethod?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+}
+
+export interface PaginatedOrderResult {
+  items: Order[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

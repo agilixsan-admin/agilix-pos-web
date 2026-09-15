@@ -33,10 +33,12 @@ export const inventoryKeys = {
   opnameDetail: (id: string) => [...inventoryKeys.all, 'opnames', 'detail', id] as const,
 };
 
+import type { QueryOrderParams } from '@model/Order';
+
 export const posKeys = {
   all: ['pos'] as const,
   tables: (outletId?: string) => [...posKeys.all, 'tables', outletId || 'all'] as const,
-  orders: (filters?: Record<string, unknown>) => [...posKeys.all, 'orders', filters || {}] as const,
+  orders: (filters?: QueryOrderParams | Record<string, unknown>) => [...posKeys.all, 'orders', filters || {}] as const,
   openOrders: (outletId?: string) => [...posKeys.all, 'openOrders', outletId || 'all'] as const,
   orderDetail: (id: string) => [...posKeys.all, 'orderDetail', id] as const,
 };

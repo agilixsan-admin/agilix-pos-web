@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { posService } from '@domain/services/pos-service';
-import type { CreateOrderPayload, PaymentPayload } from '@model/Order';
+import type { CreateOrderPayload, PaymentPayload, QueryOrderParams } from '@model/Order';
 import { posKeys } from './query-keys';
 
 export function useTables(outletId?: string) {
@@ -19,14 +19,7 @@ export function useOpenOrders(outletId?: string) {
   });
 }
 
-export function useOrderHistory(params?: {
-  outletId?: string;
-  startDate?: string;
-  endDate?: string;
-  status?: string;
-  page?: number;
-  limit?: number;
-}) {
+export function useOrderHistory(params?: QueryOrderParams) {
   return useQuery({
     queryKey: posKeys.orders(params),
     queryFn: () => posService.getOrderHistory(params),

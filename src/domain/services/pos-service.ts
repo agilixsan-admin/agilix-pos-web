@@ -1,5 +1,12 @@
 import { httpClient } from './http-client';
-import type { Order, CreateOrderPayload, PaymentPayload, OrderItem } from '@model/Order';
+import type {
+  Order,
+  CreateOrderPayload,
+  PaymentPayload,
+  OrderItem,
+  QueryOrderParams,
+  PaginatedOrderResult,
+} from '@model/Order';
 import type { Table } from '@model/Settings';
 
 export const posService = {
@@ -20,20 +27,26 @@ export const posService = {
     return res.data?.data || res.data || [];
   },
 
-  getOrderHistory: async (params?: {
-    outletId?: string;
-    startDate?: string;
-    endDate?: string;
-    status?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<{ items: Order[]; total: number }> => {
+  getOrderHistory: async (params?: QueryOrderParams): Promise<PaginatedOrderResult> => {
     const res = await httpClient.get('/orders', { params });
-    const data = res.data?.data || res.data;
-    if (Array.isArray(data)) {
-      return { items: data, total: data.length };
-    }
-    return { items: data?.items || [], total: data?.total || 0 };
+    const rawData = res.data;
+    const items: Order[] = Array.isArray(rawData?.data)
+      ? rawData.data
+      : Array.isArray(rawData)
+      ? rawData
+      : [];
+
+    const meta = rawData?.meta || {
+      page: params?.page || 1,
+      limit: params?.limit || (items.length || 20),
+      total: items.length,
+      totalPages: Math.ceil((items.length || 1) / (params?.limit || 20)),
+    };
+
+    return {
+      items,
+      meta,
+    };
   },
 
   getOrderById: async (orderId: string): Promise<Order> => {
