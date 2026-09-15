@@ -104,12 +104,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                     {item.productName} {item.variantName ? `(${item.variantName})` : ''}
                   </span>
                   <span>
-                    Rp {(Number(item.price) * item.quantity).toLocaleString('id-ID')}
+                    Rp {Number(item.subtotal ?? (Number(item.unitPrice || item.price || 0) * item.quantity)).toLocaleString('id-ID')}
                   </span>
                 </div>
                 <div className="text-[10px] text-slate-500 flex justify-between">
                   <span>
-                    {item.quantity} x Rp {Number(item.price).toLocaleString('id-ID')}
+                    {item.quantity} x Rp {Number(item.unitPrice || item.price || (item.subtotal ? item.subtotal / item.quantity : 0)).toLocaleString('id-ID')}
                   </span>
                   {item.notes && (
                     <span className="italic text-slate-400 max-w-[120px] truncate">

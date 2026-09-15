@@ -301,6 +301,7 @@ export interface UserItem {
     name: string;
     permissions?: string[];
     description?: string;
+    menuAccess?: string[];
   } | null;
   outlet?: {
     id: string;

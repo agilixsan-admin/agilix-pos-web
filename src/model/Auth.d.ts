@@ -8,6 +8,7 @@ export interface User {
     id: string;
     name: string;
     permissions?: string[];
+    menuAccess?: string[];
   } | null;
   isSuperAdmin?: boolean;
   outletId?: string;

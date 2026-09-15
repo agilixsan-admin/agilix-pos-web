@@ -136,7 +136,7 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
                           {item.quantity}x {item.productName}
                         </span>
                         <span className="font-mono">
-                          Rp {(Number(item.price) * item.quantity).toLocaleString('id-ID')}
+                          Rp {Number(item.subtotal ?? (Number(item.unitPrice || item.price || 0) * item.quantity)).toLocaleString('id-ID')}
                         </span>
                       </div>
                     ))}

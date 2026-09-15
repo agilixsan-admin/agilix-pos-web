@@ -380,7 +380,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       )}
                     </div>
                     <span className="font-mono font-bold text-slate-800">
-                      Rp {(Number(item.price) * item.quantity).toLocaleString('id-ID')}
+                      Rp {Number(item.subtotal ?? (Number(item.unitPrice || item.price || 0) * item.quantity)).toLocaleString('id-ID')}
                     </span>
                   </div>
                 ))}

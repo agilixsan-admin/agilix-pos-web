@@ -403,7 +403,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                       <div key={idx} className="flex justify-between">
                         <span className="truncate pr-1">{item.quantity}x {item.productName}</span>
                         <span className="font-mono text-slate-700">
-                          Rp {(Number(item.price) * item.quantity).toLocaleString('id-ID')}
+                          Rp {Number(item.subtotal ?? (Number(item.unitPrice || item.price || 0) * item.quantity)).toLocaleString('id-ID')}
                         </span>
                       </div>
                     ))}

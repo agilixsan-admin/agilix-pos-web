@@ -249,7 +249,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                           {item.quantity}x {item.productName}
                         </span>
                         <span>
-                          Rp {(Number(item.price) * item.quantity).toLocaleString('id-ID')}
+                          Rp {Number(item.subtotal ?? (Number(item.unitPrice || item.price || 0) * item.quantity)).toLocaleString('id-ID')}
                         </span>
                       </div>
                     ))}
