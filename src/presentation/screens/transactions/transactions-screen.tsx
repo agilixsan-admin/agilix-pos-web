@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { Order, QueryOrderParams } from '@model/Order';
 import { useAuthStore } from '@domain/state/auth-store';
-import { useOrderHistory, useDebounce } from '@domain/hooks';
+import { useOrderHistory, useDebounce, useOutlets } from '@domain/hooks';
 import { TransactionDetailView } from './transaction-detail-view';
 import { ReceiptModal } from '../pos/receipt-modal';
 import {
@@ -23,6 +24,7 @@ import {
   ShoppingBag,
   Banknote,
   QrCode,
+  Store,
 } from 'lucide-react';
 import {
   Button,
@@ -34,7 +36,27 @@ import {
 } from '@presentation/components/ui';
 
 export const TransactionsScreen: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const { data: outlets = [] } = useOutlets();
+
+  // Multi-Outlet Scoping
+  const queryOutletId = searchParams.get('outletId');
+  const [selectedOutletId, setSelectedOutletId] = useState<string>(queryOutletId || '');
+
+  useEffect(() => {
+    if (!selectedOutletId && (currentOutlet?.id || outlets[0]?.id)) {
+      setSelectedOutletId(currentOutlet?.id || outlets[0]?.id || '');
+    }
+  }, [currentOutlet, outlets, selectedOutletId]);
+
+  const effectiveOutletId =
+    selectedOutletId ||
+    currentOutlet?.id ||
+    (outlets.length > 0 ? outlets[0].id : '');
+  const activeOutlet =
+    outlets.find((o) => o.id === effectiveOutletId) || currentOutlet;
+  const activeBranchName = activeOutlet?.name || 'Cabang Utama';
 
   // View state: selected order for full detail view, or null for history table list
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -71,7 +93,7 @@ export const TransactionsScreen: React.FC = () => {
   const { startDate, endDate } = getDateRange(datePreset);
 
   const queryParams: QueryOrderParams = {
-    outletId: currentOutlet?.id,
+    outletId: effectiveOutletId || undefined,
     page: currentPage,
     limit: pageSize,
     search: debouncedSearch || undefined,
@@ -182,25 +204,52 @@ export const TransactionsScreen: React.FC = () => {
       <TransactionDetailView
         order={selectedOrder}
         onBack={() => setSelectedOrder(null)}
+        activeBranchName={activeBranchName}
       />
     );
   }
 
   return (
     <div className="space-y-5 pb-12">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+      {/* Page Header with Outlet Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <History className="w-5 h-5 text-[#0D5C53]" />
-            Riwayat Transaksi
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Daftar transaksi kasir, rincian pembayaran, dan faktur penjualan outlet {currentOutlet?.name || 'Utama'}.
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <History className="w-5 h-5 text-[#0D5C53]" />
+              Riwayat Transaksi
+            </h1>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Multi-Outlet
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Daftar transaksi kasir, rincian pembayaran, dan faktur penjualan cabang <span className="font-semibold text-slate-700">{activeBranchName}</span>.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap gap-3">
+          {/* Outlet Switcher Dropdown */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
+            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
+            <select
+              value={effectiveOutletId}
+              onChange={(e) => {
+                setSelectedOutletId(e.target.value);
+                setSearchParams({ outletId: e.target.value });
+                setCurrentPage(1);
+              }}
+              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              {outlets.map((outlet) => (
+                <option key={outlet.id} value={outlet.id}>
+                  🏪 {outlet.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
