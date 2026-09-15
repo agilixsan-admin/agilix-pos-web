@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   SlidersHorizontal,
@@ -16,6 +16,7 @@ import {
   Printer,
   ExternalLink,
   Building,
+  Store,
 } from 'lucide-react';
 import { useStockAdjustmentDetail } from '@domain/hooks';
 import {
@@ -29,8 +30,11 @@ import {
 export const AdjustmentDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const { data: adjustment, isLoading, error } = useStockAdjustmentDetail(id);
+  const effectiveOutletId =
+    searchParams.get('outletId') || adjustment?.outletId || '';
 
   // Format Date & Time
   const formatDateTime = (dateString?: string | null) => {
@@ -79,7 +83,16 @@ export const AdjustmentDetailScreen: React.FC = () => {
           title="Adjustment Tidak Ditemukan"
           description="Data penyesuaian stok tidak ditemukan atau terjadi kendala jaringan."
           action={
-            <Button variant="primary" onClick={() => navigate('/inventory/adjustments')}>
+            <Button
+              variant="primary"
+              onClick={() =>
+                navigate(
+                  effectiveOutletId
+                    ? `/inventory/adjustments?outletId=${effectiveOutletId}`
+                    : '/inventory/adjustments'
+                )
+              }
+            >
               Kembali ke Daftar Adjustment
             </Button>
           }
@@ -95,14 +108,18 @@ export const AdjustmentDetailScreen: React.FC = () => {
   const curStock = Number(adjustment.currentStock || 0);
   const qty = Number(adjustment.quantity || 0);
 
+  const backUrl = effectiveOutletId
+    ? `/inventory/adjustments?outletId=${effectiveOutletId}`
+    : '/inventory/adjustments';
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-20">
       {/* Top Header & Breadcrumbs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate('/inventory/adjustments')}
+            onClick={() => navigate(backUrl)}
             className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-xs cursor-pointer"
             title="Kembali ke Daftar Adjustment"
           >
@@ -110,7 +127,7 @@ export const AdjustmentDetailScreen: React.FC = () => {
           </button>
           <div>
             <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Link to="/inventory/adjustments" className="hover:text-[#0D5C53]">
+              <Link to={backUrl} className="hover:text-[#0D5C53]">
                 Stock Adjustment
               </Link>
               <span>/</span>
@@ -123,9 +140,13 @@ export const AdjustmentDetailScreen: React.FC = () => {
               <Badge variant="success" dot>
                 {adjustment.status || 'COMPLETED'}
               </Badge>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <Store className="w-3 h-3" />
+                {adjustment.outlet?.name || 'Cabang Utama'}
+              </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              {formatDateTime(adjustment.adjustmentDate)} • Outlet: {adjustment.outlet?.name || 'Utama'}
+              {formatDateTime(adjustment.adjustmentDate)} • Dicatat oleh: {adjustment.creator?.name || 'Admin'}
             </p>
           </div>
         </div>

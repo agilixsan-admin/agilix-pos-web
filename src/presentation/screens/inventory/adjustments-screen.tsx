@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   SlidersHorizontal,
   Plus,
@@ -13,9 +13,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
-import { useStockAdjustments, useReasonCategories } from '@domain/hooks';
+import { useStockAdjustments, useReasonCategories, useOutlets } from '@domain/hooks';
 import type { StockAdjustment } from '@model/Inventory';
 import {
   Card,
@@ -31,7 +32,28 @@ import {
 
 export const AdjustmentsScreen: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const { data: outlets = [] } = useOutlets();
+
+  // Selected Outlet state (Multi-Outlet Scoping)
+  const queryOutletId = searchParams.get('outletId');
+  const [selectedOutletId, setSelectedOutletId] = useState<string>(queryOutletId || '');
+
+  // Auto-select outlet on load
+  useEffect(() => {
+    if (!selectedOutletId && (currentOutlet?.id || outlets[0]?.id)) {
+      setSelectedOutletId(currentOutlet?.id || outlets[0]?.id || '');
+    }
+  }, [currentOutlet, outlets, selectedOutletId]);
+
+  const effectiveOutletId =
+    selectedOutletId ||
+    currentOutlet?.id ||
+    (outlets.length > 0 ? outlets[0].id : '');
+  const activeOutlet =
+    outlets.find((o) => o.id === effectiveOutletId) || currentOutlet;
+  const activeBranchName = activeOutlet?.name || 'Cabang Utama';
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,7 +70,7 @@ export const AdjustmentsScreen: React.FC = () => {
   // Adjustments Query Params
   const queryParams = useMemo(() => {
     return {
-      outletId: currentOutlet?.id,
+      outletId: effectiveOutletId || undefined,
       page,
       limit,
       search: searchTerm.trim() || undefined,
@@ -57,7 +79,7 @@ export const AdjustmentsScreen: React.FC = () => {
       startDate: startDateFilter || undefined,
       endDate: endDateFilter || undefined,
     };
-  }, [currentOutlet?.id, page, limit, searchTerm, typeFilter, reasonFilter, startDateFilter, endDateFilter]);
+  }, [effectiveOutletId, page, limit, searchTerm, typeFilter, reasonFilter, startDateFilter, endDateFilter]);
 
   const { data: adjustmentData, isLoading } = useStockAdjustments(queryParams);
 
@@ -103,8 +125,8 @@ export const AdjustmentsScreen: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16 max-w-7xl mx-auto">
-      {/* Top Header & Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Top Header & Navigation with Outlet Switcher */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <Link to="/inventory/stock" className="hover:text-[#0D5C53]">
@@ -113,21 +135,48 @@ export const AdjustmentsScreen: React.FC = () => {
             <span>/</span>
             <span className="text-slate-800 font-semibold">Stock Adjustment</span>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight mt-0.5">
-            Stock Adjustment
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Catat perubahan stok secara manual (kerusakan, residu, koreksi timbangan, atau alasan operasional lainnya).
+          <div className="flex items-center gap-2.5 mt-0.5">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Penyesuaian Stok (Stock Adjustment)
+            </h1>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Multi-Outlet
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Catat mutasi manual dan opname stok gudang di <span className="font-semibold text-slate-700">{activeBranchName}</span>.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center flex-wrap gap-3">
+          {/* Outlet Switcher Dropdown */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
+            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
+            <select
+              value={effectiveOutletId}
+              onChange={(e) => {
+                setSelectedOutletId(e.target.value);
+                setSearchParams({ outletId: e.target.value });
+                setPage(1);
+              }}
+              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              {outlets.map((outlet) => (
+                <option key={outlet.id} value={outlet.id}>
+                  🏪 {outlet.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <Button
             variant="primary"
             leftIcon={<Plus className="w-4 h-4" />}
-            onClick={() => navigate('/inventory/adjustments/create')}
+            onClick={() => navigate(`/inventory/adjustments/create?outletId=${effectiveOutletId}`)}
+            className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm"
           >
-            Buat Adjustment
+            + Buat Adjustment
           </Button>
         </div>
       </div>
@@ -137,7 +186,7 @@ export const AdjustmentsScreen: React.FC = () => {
         <KpiCard
           title="TOTAL ADJUSTMENT"
           value={summary.totalAdjustments.toLocaleString('id-ID')}
-          subtitle="Riwayat penyesuaian stok"
+          subtitle={`Riwayat penyesuaian di ${activeBranchName}`}
           icon={<SlidersHorizontal className="w-5 h-5" />}
           theme="slate"
         />
@@ -168,83 +217,108 @@ export const AdjustmentsScreen: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <Card padding="sm" className="bg-white">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-center">
-          {/* Search */}
-          <div className="lg:col-span-2">
-            <SearchInput
-              value={searchTerm}
-              onChange={(val) => {
-                setSearchTerm(val);
-                setPage(1);
-              }}
-              onClear={() => {
-                setSearchTerm('');
-                setPage(1);
-              }}
-              placeholder="Cari No. Adjustment, Item, Alasan..."
-            />
-          </div>
+      <Card
+        header={
+          <div className="space-y-3 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Daftar Penyesuaian Stok — {activeBranchName}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Daftar seluruh riwayat penyesuaian stok manual pada cabang terpilih.
+                </p>
+              </div>
+            </div>
 
-          {/* Type Filter */}
-          <div>
-            <FormSelect
-              value={typeFilter}
-              onChange={(e) => {
-                setTypeFilter(e.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="ALL">Semua Tipe (IN / OUT)</option>
-              <option value="IN">Masuk (IN / +)</option>
-              <option value="OUT">Keluar (OUT / -)</option>
-            </FormSelect>
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2">
+              {/* Search Bar */}
+              <div className="lg:col-span-2">
+                <SearchInput
+                  value={searchTerm}
+                  onChange={(val) => {
+                    setSearchTerm(val);
+                    setPage(1);
+                  }}
+                  onClear={() => {
+                    setSearchTerm('');
+                    setPage(1);
+                  }}
+                  placeholder="Cari No. Adjustment / Item / Alasan..."
+                />
+              </div>
 
-          {/* Reason Category Filter */}
-          <div>
-            <FormSelect
-              value={reasonFilter}
-              onChange={(e) => {
-                setReasonFilter(e.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="ALL">Semua Alasan</option>
-              {reasonCategories.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </FormSelect>
-          </div>
+              {/* Type Filter */}
+              <div>
+                <FormSelect
+                  value={typeFilter}
+                  onChange={(e) => {
+                    setTypeFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="ALL">Jenis: Semua (IN/OUT)</option>
+                  <option value="IN">IN (Penambahan Stok)</option>
+                  <option value="OUT">OUT (Pengurangan Stok)</option>
+                </FormSelect>
+              </div>
 
-          {/* Date Filter */}
-          <div>
-            <FormInput
-              type="date"
-              value={startDateFilter}
-              onChange={(e) => {
-                setStartDateFilter(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Pilih Tanggal"
-            />
-          </div>
-        </div>
-      </Card>
+              {/* Reason Category Filter */}
+              <div>
+                <FormSelect
+                  value={reasonFilter}
+                  onChange={(e) => {
+                    setReasonFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="ALL">Alasan: Semua</option>
+                  {reasonCategories.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </FormSelect>
+              </div>
 
-      {/* Adjustment Table Card */}
-      <Card padding="none">
+              {/* Date Filters */}
+              <div className="flex items-center gap-2">
+                <FormInput
+                  type="date"
+                  value={startDateFilter}
+                  onChange={(e) => {
+                    setStartDateFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full text-xs"
+                  placeholder="Dari"
+                />
+                <span className="text-slate-400 text-xs">-</span>
+                <FormInput
+                  type="date"
+                  value={endDateFilter}
+                  onChange={(e) => {
+                    setEndDateFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full text-xs"
+                  placeholder="Sampai"
+                />
+              </div>
+            </div>
+          </div>
+        }
+        padding="none"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="py-3.5 px-4">Adjustment No.</th>
-                <th className="py-3.5 px-4">Tanggal & Waktu</th>
-                <th className="py-3.5 px-4">Item Details</th>
-                <th className="py-3.5 px-4 text-center">Tipe</th>
-                <th className="py-3.5 px-4 text-right">Kuantitas</th>
+                <th className="py-3.5 px-4 font-mono">No. Adjustment</th>
+                <th className="py-3.5 px-4">Waktu</th>
+                <th className="py-3.5 px-4">Item & Detail</th>
+                <th className="py-3.5 px-4 text-center">Jenis</th>
+                <th className="py-3.5 px-4 text-right">Jumlah</th>
                 <th className="py-3.5 px-4">Alasan</th>
                 <th className="py-3.5 px-4 text-center">Sumber</th>
                 <th className="py-3.5 px-4 text-center">Status</th>
@@ -255,7 +329,7 @@ export const AdjustmentsScreen: React.FC = () => {
               {isLoading ? (
                 <tr>
                   <td colSpan={9}>
-                    <LoadingState message="Memuat riwayat stock adjustment..." />
+                    <LoadingState message="Memuat riwayat penyesuaian stok..." />
                   </td>
                 </tr>
               ) : adjustments.length === 0 ? (
@@ -263,44 +337,44 @@ export const AdjustmentsScreen: React.FC = () => {
                   <td colSpan={9}>
                     <EmptyState
                       icon={<SlidersHorizontal className="w-8 h-8 opacity-30 mx-auto text-[#0D5C53]" />}
-                      title="Belum ada riwayat stock adjustment"
+                      title="Belum Ada Penyesuaian Stok"
                       description={
                         searchTerm || typeFilter !== 'ALL' || reasonFilter !== 'ALL' || startDateFilter
-                          ? 'Tidak ada data adjustment yang cocok dengan filter pencarian.'
-                          : 'Catat penyesuaian stok manual barang rusak, susut, atau koreksi hitung.'
+                          ? 'Tidak ada riwayat penyesuaian stok yang cocok dengan kriteria filter.'
+                          : `Belum ada riwayat penyesuaian stok manual yang dicatat pada ${activeBranchName}.`
                       }
                       action={
-                        !searchTerm && typeFilter === 'ALL' && reasonFilter === 'ALL' ? (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            leftIcon={<Plus className="w-3.5 h-3.5" />}
-                            onClick={() => navigate('/inventory/adjustments/create')}
-                          >
-                            Buat Adjustment
-                          </Button>
-                        ) : undefined
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          leftIcon={<Plus className="w-4 h-4" />}
+                          onClick={() => navigate(`/inventory/adjustments/create?outletId=${effectiveOutletId}`)}
+                          className="mt-2"
+                        >
+                          Catat Adjustment Sekarang
+                        </Button>
                       }
                     />
                   </td>
                 </tr>
               ) : (
-                adjustments.map((adj: StockAdjustment) => {
+                adjustments.map((adj) => {
                   const isIn = adj.type === 'IN';
                   const item = adj.inventoryItem;
                   const unit = item?.unit || 'unit';
                   const qtyNumber = Number(adj.quantity || 0);
+                  const detailUrl = `/inventory/adjustments/${adj.id}?outletId=${effectiveOutletId}`;
 
                   return (
                     <tr
                       key={adj.id}
                       className="hover:bg-slate-50/60 transition-colors group cursor-pointer"
-                      onClick={() => navigate(`/inventory/adjustments/${adj.id}`)}
+                      onClick={() => navigate(detailUrl)}
                     >
                       {/* Adjustment Number */}
                       <td className="py-3.5 px-4 font-mono font-bold text-[#0D5C53]">
                         <Link
-                          to={`/inventory/adjustments/${adj.id}`}
+                          to={detailUrl}
                           className="hover:underline flex items-center gap-1.5"
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -377,12 +451,12 @@ export const AdjustmentsScreen: React.FC = () => {
                           className="flex items-center justify-end"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Link to={`/inventory/adjustments/${adj.id}`}>
+                          <Link to={detailUrl}>
                             <Button
                               variant="ghost"
                               size="sm"
                               leftIcon={<Eye className="w-3.5 h-3.5" />}
-                              className="text-[#0D5C53] hover:bg-[#0D5C53]/10"
+                              className="text-[#0D5C53] hover:bg-[#0D5C53]/10 font-medium"
                             >
                               Detail
                             </Button>
@@ -397,11 +471,11 @@ export const AdjustmentsScreen: React.FC = () => {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination Footer */}
         {meta.totalPages > 1 && (
           <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <div>
-              Menampilkan <span className="font-semibold text-slate-700">{(page - 1) * limit + 1}</span> -{' '}
+              Menampilkan <span className="font-semibold text-slate-700">{(page - 1) * limit + 1}</span>-
               <span className="font-semibold text-slate-700">
                 {Math.min(page * limit, meta.total)}
               </span>{' '}

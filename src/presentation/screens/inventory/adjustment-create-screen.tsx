@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   SlidersHorizontal,
@@ -18,6 +18,7 @@ import {
   Clock,
   ArrowRight,
   Plus,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -27,6 +28,7 @@ import {
   useCreateReasonCategoryMutation,
   useCreateStockAdjustmentMutation,
   useUploadAdjustmentProofMutation,
+  useOutlets,
 } from '@domain/hooks';
 import type { RawMaterial, PackagingItem, ReasonCategory } from '@model/Inventory';
 import {
@@ -41,15 +43,35 @@ import {
 
 export const AdjustmentCreateScreen: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
   const user = useAuthStore((state) => state.user);
+  const { data: outlets = [] } = useOutlets();
+
+  // Multi-Outlet Scoping
+  const queryOutletId = searchParams.get('outletId');
+  const [selectedOutletId, setSelectedOutletId] = useState<string>(queryOutletId || '');
+
+  useEffect(() => {
+    if (!selectedOutletId && (currentOutlet?.id || outlets[0]?.id)) {
+      setSelectedOutletId(currentOutlet?.id || outlets[0]?.id || '');
+    }
+  }, [currentOutlet, outlets, selectedOutletId]);
+
+  const effectiveOutletId =
+    selectedOutletId ||
+    currentOutlet?.id ||
+    (outlets.length > 0 ? outlets[0].id : '');
+  const activeOutlet =
+    outlets.find((o) => o.id === effectiveOutletId) || currentOutlet;
+  const activeBranchName = activeOutlet?.name || 'Cabang Utama';
 
   // Step state: 1 = Form & Live Preview, 2 = Review & Confirm
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
-  // Queries
-  const { data: rawMaterials = [] } = useRawMaterials({ outletId: currentOutlet?.id });
-  const { data: packagingItems = [] } = usePackagingItems({ outletId: currentOutlet?.id });
+  // Queries (Scoped to effectiveOutletId)
+  const { data: rawMaterials = [] } = useRawMaterials({ outletId: effectiveOutletId });
+  const { data: packagingItems = [] } = usePackagingItems({ outletId: effectiveOutletId });
   const { data: reasonCategories = [] } = useReasonCategories();
 
   // Mutations
@@ -223,7 +245,7 @@ export const AdjustmentCreateScreen: React.FC = () => {
 
   // Final Submit
   const handleConfirmAdjustment = async () => {
-    if (!selectedItemId || !currentOutlet?.id) {
+    if (!selectedItemId || !effectiveOutletId) {
       setFormError('Outlet atau item tidak valid.');
       return;
     }
@@ -231,7 +253,7 @@ export const AdjustmentCreateScreen: React.FC = () => {
     try {
       setFormError('');
       const payload = {
-        outletId: currentOutlet.id,
+        outletId: effectiveOutletId,
         inventoryItemId: selectedItemId,
         type: adjustmentType,
         quantity: adjQty,
@@ -243,7 +265,7 @@ export const AdjustmentCreateScreen: React.FC = () => {
       };
 
       const result = await createAdjustmentMutation.mutateAsync(payload);
-      navigate(`/inventory/adjustments/${result.id}`);
+      navigate(`/inventory/adjustments/${result.id}?outletId=${effectiveOutletId}`);
     } catch (err: any) {
       setFormError(
         err?.response?.data?.message || err?.message || 'Gagal menyimpan penyesuaian stok'
@@ -270,35 +292,65 @@ export const AdjustmentCreateScreen: React.FC = () => {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-20">
       {/* Top Header & Breadcrumbs */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => {
-            if (currentStep === 2) {
-              setCurrentStep(1);
-            } else {
-              navigate('/inventory/adjustments');
-            }
-          }}
-          className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-xs cursor-pointer"
-          title="Kembali"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Link to="/inventory/adjustments" className="hover:text-[#0D5C53]">
-              Stock Adjustment
-            </Link>
-            <span>/</span>
-            <span className="text-slate-800 font-semibold">
-              {currentStep === 1 ? 'Buat Adjustment' : 'Review Adjustment'}
-            </span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (currentStep === 2) {
+                setCurrentStep(1);
+              } else {
+                navigate(`/inventory/adjustments?outletId=${effectiveOutletId}`);
+              }
+            }}
+            className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-xs cursor-pointer"
+            title="Kembali"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Link to={`/inventory/adjustments?outletId=${effectiveOutletId}`} className="hover:text-[#0D5C53]">
+                Stock Adjustment
+              </Link>
+              <span>/</span>
+              <span className="text-slate-800 font-semibold">
+                {currentStep === 1 ? 'Buat Adjustment' : 'Review Adjustment'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5 mt-0.5">
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                {currentStep === 1 ? 'Buat Adjustment' : 'Review Stock Adjustment'}
+              </h1>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {activeBranchName}
+              </span>
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight mt-0.5">
-            {currentStep === 1 ? 'Buat Adjustment' : 'Review Stock Adjustment'}
-          </h1>
         </div>
+
+        {/* Branch Switcher Dropdown (Available in Step 1) */}
+        {currentStep === 1 && (
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
+            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang Target:</span>
+            <select
+              value={effectiveOutletId}
+              onChange={(e) => {
+                setSelectedOutletId(e.target.value);
+                setSearchParams({ outletId: e.target.value });
+                setSelectedItemId('');
+              }}
+              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              {outlets.map((outlet) => (
+                <option key={outlet.id} value={outlet.id}>
+                  🏪 {outlet.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Stepper Wizard Indicator */}
@@ -709,6 +761,14 @@ export const AdjustmentCreateScreen: React.FC = () => {
                     <User className="w-3.5 h-3.5 text-slate-400" />
                     <span>Dibuat Oleh: <strong>{user?.name || 'Administrator'}</strong></span>
                   </div>
+                </div>
+
+                <div className="sm:col-span-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-slate-400 font-medium">CABANG OUTLET TARGET</span>
+                  <span className="font-semibold text-emerald-700 flex items-center gap-1">
+                    <Store className="w-3.5 h-3.5" />
+                    {activeBranchName}
+                  </span>
                 </div>
 
                 {notes && (
