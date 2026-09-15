@@ -101,8 +101,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               <div key={idx} className="space-y-0.5">
                 <div className="flex justify-between font-semibold">
                   <span className="truncate pr-2">
-                    {item.productName || (item as unknown as { name?: string }).name}{' '}
-                    {item.variantName ? `(${item.variantName})` : ''}
+                    {item.productName} {item.variantName ? `(${item.variantName})` : ''}
                   </span>
                   <span>
                     Rp {(Number(item.price) * item.quantity).toLocaleString('id-ID')}

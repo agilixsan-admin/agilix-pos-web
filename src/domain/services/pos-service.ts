@@ -50,8 +50,16 @@ export const posService = {
   },
 
   voidOrderItem: async (orderId: string, itemId: string, reason: string): Promise<OrderItem> => {
-    const res = await httpClient.post(`/orders/${orderId}/items/${itemId}/void`, { reason });
+    const res = await httpClient.post(`/orders/${orderId}/void`, { orderItemId: itemId, reason });
     return res.data?.data || res.data;
+  },
+
+  printOrderBill: async (
+    orderId: string,
+    options?: { printerId?: string; isDuplicate?: boolean }
+  ): Promise<{ success: boolean; message: string; data?: unknown }> => {
+    const res = await httpClient.post(`/orders/${orderId}/print`, options || {});
+    return res.data;
   },
 
   processPayment: async (payload: PaymentPayload): Promise<{

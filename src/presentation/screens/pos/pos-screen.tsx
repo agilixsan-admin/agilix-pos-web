@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import type { Product, Category, Variant } from '@model/Product';
+import React, { useState } from 'react';
+import type { Product, Variant } from '@model/Product';
 import type { Table } from '@model/Settings';
-import type { Order, OrderType } from '@model/Order';
-import { productService } from '@domain/services/product-service';
+import type { Order, OrderType, OrderItem } from '@model/Order';
 import { posService } from '@domain/services/pos-service';
 import { useAuthStore } from '@domain/state/auth-store';
 import { useCartStore } from '@domain/state/cart-store';
@@ -13,8 +12,16 @@ import {
   useProducts,
   useCategories,
   useTables,
+  useOpenOrders,
 } from '@domain/hooks';
+import { OrderTypeModal } from './order-type-modal';
+import { TableFloorView } from './table-floor-view';
+import { VariantModal } from './variant-modal';
+import { ItemNoteModal } from './item-note-modal';
+import { VoidItemModal } from './void-item-modal';
+import { DiscountModal } from './discount-modal';
 import { PaymentModal } from './payment-modal';
+import { PaymentSuccessModal } from './payment-success-modal';
 import { ReceiptModal } from './receipt-modal';
 import { OpenOrdersModal } from './open-orders-modal';
 import {
@@ -27,13 +34,16 @@ import {
   CreditCard,
   Edit2,
   Coffee,
+  ArrowLeft,
+  Tag,
+  Search,
+  Receipt,
+  LayoutGrid,
 } from 'lucide-react';
 import {
   Button,
   Badge,
   SearchInput,
-  Modal,
-  FormTextarea,
   LoadingState,
   EmptyState,
 } from '@presentation/components/ui';
@@ -46,6 +56,9 @@ export const PosScreen: React.FC = () => {
     tableId,
     tableName,
     customerName,
+    discountId,
+    discountName,
+    discountAmount,
     addItem,
     removeItem,
     updateQuantity,
@@ -53,6 +66,7 @@ export const PosScreen: React.FC = () => {
     setOrderType,
     setTable,
     setCustomerName,
+    setDiscount,
     clearCart,
     getSubtotal,
     getTax,
@@ -61,30 +75,60 @@ export const PosScreen: React.FC = () => {
     getItemCount,
   } = useCartStore();
 
+  // Screen View Mode: 'FLOOR' (Table Floor Plan & Active Orders) | 'CATALOG' (Menu & Cart)
+  const [viewMode, setViewMode] = useState<'FLOOR' | 'CATALOG'>('FLOOR');
+
   // Query Hooks
-  const { data: products = [], isLoading: productsLoading, refetch: refetchProducts } = useProducts({ outletId: currentOutlet?.id });
-  const { data: categories = [], isLoading: categoriesLoading, refetch: refetchCategories } = useCategories();
-  const { data: tables = [], isLoading: tablesLoading, refetch: refetchTables } = useTables(currentOutlet?.id);
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+    refetch: refetchProducts,
+  } = useProducts({ outletId: currentOutlet?.id });
+
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+    refetch: refetchCategories,
+  } = useCategories();
+
+  const {
+    data: tables = [],
+    isLoading: tablesLoading,
+    refetch: refetchTables,
+  } = useTables(currentOutlet?.id);
+
+  const {
+    data: openOrders = [],
+    isLoading: openOrdersLoading,
+    refetch: refetchOpenOrders,
+  } = useOpenOrders(currentOutlet?.id);
+
   const loading = productsLoading || categoriesLoading || tablesLoading;
 
-  const loadData = () => {
+  const refreshAllData = () => {
     refetchProducts();
     refetchCategories();
     refetchTables();
+    refetchOpenOrders();
   };
 
+  // Filter States
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const debouncedSearch = useDebounce(searchQuery, 200);
 
   // Modals
+  const [isOrderTypeModalOpen, setIsOrderTypeModalOpen] = useState<boolean>(false);
+  const [pendingOrderType, setPendingOrderType] = useState<OrderType>('DINE_IN');
   const [variantModalProduct, setVariantModalProduct] = useState<Product | null>(null);
   const [notesModalItem, setNotesModalItem] = useState<{ id: string; name: string; notes: string } | null>(null);
+  const [voidModalItem, setVoidModalItem] = useState<{ orderId: string; itemId: string; name: string } | null>(null);
+  const [isDiscountModalOpen, setIsDiscountModalOpen] = useState<boolean>(false);
   const [activePaymentOrder, setActivePaymentOrder] = useState<Order | null>(null);
-  const [completedOrderForReceipt, setCompletedOrderForReceipt] = useState<Order | null>(null);
+  const [successModalOrder, setSuccessModalOrder] = useState<Order | null>(null);
+  const [receiptModalOrder, setReceiptModalOrder] = useState<Order | null>(null);
   const [isOpenOrdersOpen, setIsOpenOrdersOpen] = useState<boolean>(false);
   const [orderProcessing, setOrderProcessing] = useState<boolean>(false);
-
-  const debouncedSearch = useDebounce(searchQuery, 200);
 
   // Filtered Products
   const filteredProducts = products.filter((product) => {
@@ -95,8 +139,9 @@ export const PosScreen: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // Handle Product Click
   const handleProductClick = (product: Product) => {
-    if (product.variants && product.variants.length > 0) {
+    if (product.variants && product.variants.length > 1) {
       setVariantModalProduct(product);
     } else {
       addItem(product);
@@ -121,32 +166,60 @@ export const PosScreen: React.FC = () => {
     }
   });
 
-  // Keyboard Shortcuts for Cashier (F2=Pay, F4=Hold, Esc=Close Modal)
+  // Keyboard Shortcuts for Cashier
   useKeyboardShortcuts({
     F2: () => {
-      if (cartItems.length > 0) {
+      if (cartItems.length > 0 && viewMode === 'CATALOG') {
         handleCheckoutDirect();
       }
     },
     F4: () => {
-      if (cartItems.length > 0) {
+      if (cartItems.length > 0 && viewMode === 'CATALOG') {
         handleSaveOpenOrder();
       }
     },
     Escape: () => {
       setVariantModalProduct(null);
       setNotesModalItem(null);
+      setVoidModalItem(null);
+      setIsDiscountModalOpen(false);
+      setIsOrderTypeModalOpen(false);
       setActivePaymentOrder(null);
-      setCompletedOrderForReceipt(null);
       setIsOpenOrdersOpen(false);
     },
   });
+
+  // Start New Order Trigger
+  const handleInitiateNewOrder = () => {
+    setPendingOrderType('DINE_IN');
+    setIsOrderTypeModalOpen(true);
+  };
+
+  const handleConfirmOrderType = () => {
+    setIsOrderTypeModalOpen(false);
+    setOrderType(pendingOrderType);
+    if (pendingOrderType === 'TAKE_AWAY') {
+      setTable(null, null);
+      setViewMode('CATALOG');
+    } else {
+      // If Dine In, stay in Floor view to pick table
+      setViewMode('FLOOR');
+    }
+  };
+
+  // Table Floor Plan Table Selection
+  const handleSelectTableForOrder = (table: Table) => {
+    setOrderType('DINE_IN');
+    setTable(table.id, table.name);
+    setViewMode('CATALOG');
+  };
 
   // Direct Instant Checkout
   const handleCheckoutDirect = async () => {
     if (cartItems.length === 0) return;
     if (orderType === 'DINE_IN' && !tableId) {
       alert('Silakan pilih nomor meja untuk pesanan Dine In.');
+      setViewMode('FLOOR');
       return;
     }
 
@@ -154,7 +227,7 @@ export const PosScreen: React.FC = () => {
     try {
       const payloadItems = cartItems.map((item) => ({
         productId: item.productId,
-        variantId: item.variantId,
+        variantId: item.variantId || item.productId,
         quantity: item.quantity,
         notes: item.notes,
       }));
@@ -164,10 +237,14 @@ export const PosScreen: React.FC = () => {
         orderType: orderType as OrderType,
         tableId: tableId || undefined,
         customerName: customerName || undefined,
+        discountId: discountId || undefined,
+        discountAmount: discountAmount || undefined,
+        taxAmount: getTax(),
         items: payloadItems,
       });
 
       clearCart();
+      refreshAllData();
       setActivePaymentOrder(createdOrder);
     } catch (err: unknown) {
       const errorMsg =
@@ -184,6 +261,7 @@ export const PosScreen: React.FC = () => {
     if (cartItems.length === 0) return;
     if (orderType === 'DINE_IN' && !tableId) {
       alert('Silakan pilih nomor meja untuk pesanan Dine In.');
+      setViewMode('FLOOR');
       return;
     }
 
@@ -191,7 +269,7 @@ export const PosScreen: React.FC = () => {
     try {
       const payloadItems = cartItems.map((item) => ({
         productId: item.productId,
-        variantId: item.variantId,
+        variantId: item.variantId || item.productId,
         quantity: item.quantity,
         notes: item.notes,
       }));
@@ -201,15 +279,20 @@ export const PosScreen: React.FC = () => {
         orderType: orderType as OrderType,
         tableId: tableId || undefined,
         customerName: customerName || undefined,
+        discountId: discountId || undefined,
+        discountAmount: discountAmount || undefined,
+        taxAmount: getTax(),
         items: payloadItems,
       });
 
       clearCart();
+      refreshAllData();
+      setViewMode('FLOOR');
       alert('Pesanan berhasil disimpan ke Pesanan Berjalan (Open Orders).');
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Gagal menyimpan open order.';
+        'Gagal menyimpan pesanan berjalan.';
       alert(errorMsg);
     } finally {
       setOrderProcessing(false);
@@ -217,377 +300,448 @@ export const PosScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-6rem)] overflow-hidden">
-      {/* Left: Product Catalog & Category Tabs */}
-      <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-        {/* Top Filter Bar */}
-        <div className="p-4 border-b border-slate-100 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1 max-w-md">
-              <SearchInput
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Cari menu, kopi, makanan..."
-              />
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<Clock className="w-4 h-4 text-amber-600" />}
-              onClick={() => setIsOpenOrdersOpen(true)}
-            >
-              Pesanan Berjalan
-            </Button>
-          </div>
-
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-            <button
-              onClick={() => setSelectedCategory('ALL')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                selectedCategory === 'ALL'
-                  ? 'bg-[#0D5C53] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              Semua Menu
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                  selectedCategory === cat.id
-                    ? 'bg-[#0D5C53] text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Product Grid */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {loading ? (
-            <LoadingState message="Memuat daftar menu..." className="h-full" />
-          ) : filteredProducts.length === 0 ? (
-            <EmptyState
-              icon={<Coffee className="w-12 h-12 stroke-[1.5] mb-2 opacity-40 mx-auto" />}
-              title="Menu tidak ditemukan"
-              description="Coba ubah kata kunci pencarian atau kategori."
-              className="h-full"
-            />
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3.5">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  onClick={() => handleProductClick(product)}
-                  className="bg-white border border-slate-200 hover:border-[#0D5C53]/50 hover:shadow-md rounded-2xl p-3.5 flex flex-col justify-between transition-all cursor-pointer group active:scale-[0.98]"
+    <div className="h-[calc(100vh-6rem)] overflow-hidden flex flex-col">
+      {/* VIEW 1: TABLE FLOOR PLAN & ACTIVE ORDERS (HOME POS) */}
+      {viewMode === 'FLOOR' ? (
+        <TableFloorView
+          tables={tables}
+          openOrders={openOrders}
+          loading={loading || openOrdersLoading}
+          onSelectTableForOrder={handleSelectTableForOrder}
+          onSelectOpenOrderForPayment={(order) => setActivePaymentOrder(order)}
+          onSelectOpenOrderForAppend={(order) => {
+            setOrderType(order.orderType);
+            setTable(order.tableId || null, order.tableName || null);
+            setCustomerName(order.customerName || '');
+            setViewMode('CATALOG');
+          }}
+          onNewOrderClick={handleInitiateNewOrder}
+        />
+      ) : (
+        /* VIEW 2: MENU CATALOG & CART MANAGEMENT */
+        <div className="flex-1 flex gap-4 overflow-hidden p-4 bg-slate-50">
+          {/* Left: Product Catalog & Category Tabs */}
+          <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+            {/* Top Filter Bar */}
+            <div className="p-4 border-b border-slate-100 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<ArrowLeft className="w-4 h-4" />}
+                  onClick={() => setViewMode('FLOOR')}
                 >
-                  <div>
-                    <div className="w-full h-24 bg-slate-100 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden">
-                      {product.image ? (
-                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Coffee className="w-8 h-8 text-slate-300 group-hover:text-[#0D5C53] transition-colors" />
-                      )}
-                    </div>
-                    <h4 className="font-semibold text-slate-800 text-sm leading-tight line-clamp-2 mb-1">
-                      {product.name}
-                    </h4>
-                    {product.categoryName && (
-                      <span className="text-[10px] text-slate-400 font-medium">{product.categoryName}</span>
-                    )}
-                  </div>
+                  Denah Meja
+                </Button>
 
-                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
-                    <span className="font-bold text-[#0D5C53] text-sm">
-                      Rp {Number(product.price).toLocaleString('id-ID')}
-                    </span>
-                    {product.variants && product.variants.length > 0 ? (
-                      <Badge variant="info" size="sm">
-                        {product.variants.length} Varian
-                      </Badge>
-                    ) : (
-                      <div className="w-7 h-7 bg-teal-50 hover:bg-[#0D5C53] text-[#0D5C53] hover:text-white rounded-lg flex items-center justify-center transition-colors">
-                        <Plus className="w-4 h-4" />
-                      </div>
-                    )}
-                  </div>
+                <div className="flex-1 max-w-md">
+                  <SearchInput
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Cari menu kopi, makanan, cemilan..."
+                  />
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Right: Cart & Checkout Panel */}
-      <div className="w-96 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col overflow-hidden flex-shrink-0">
-        {/* Cart Header & Order Type Toggle */}
-        <div className="p-4 border-b border-slate-100 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="w-4 h-4 text-[#0D5C53]" />
-              <span className="font-bold text-slate-800 text-sm">Keranjang ({getItemCount()})</span>
-            </div>
-            {cartItems.length > 0 && (
-              <button
-                onClick={clearCart}
-                className="text-[11px] font-semibold text-rose-500 hover:text-rose-700 cursor-pointer"
-              >
-                Reset
-              </button>
-            )}
-          </div>
-
-          {/* Dine In / Take Away */}
-          <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
-            <button
-              onClick={() => setOrderType('DINE_IN')}
-              className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                orderType === 'DINE_IN'
-                  ? 'bg-white text-[#0D5C53] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Utensils className="w-3.5 h-3.5" />
-              <span>Dine In</span>
-            </button>
-            <button
-              onClick={() => {
-                setOrderType('TAKE_AWAY');
-                setTable(null, null);
-              }}
-              className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                orderType === 'TAKE_AWAY'
-                  ? 'bg-white text-[#0D5C53] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span>Take Away</span>
-            </button>
-          </div>
-
-          {/* Table & Customer Inputs */}
-          <div className="grid grid-cols-2 gap-2">
-            {orderType === 'DINE_IN' && (
-              <div className="relative">
-                <select
-                  aria-label="Pilih Meja"
-                  value={tableId || ''}
-                  onChange={(e) => {
-                    const sel = tables.find((t) => t.id === e.target.value);
-                    setTable(sel ? sel.id : null, sel ? sel.name : null);
-                  }}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Clock className="w-4 h-4 text-amber-600" />}
+                  onClick={() => setIsOpenOrdersOpen(true)}
                 >
-                  <option value="">Pilih Meja...</option>
-                  {tables.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      Meja {t.name} ({t.capacity} Kursi)
-                    </option>
-                  ))}
-                </select>
+                  Pesanan ({openOrders.length})
+                </Button>
               </div>
-            )}
 
-            <div className={orderType === 'DINE_IN' ? '' : 'col-span-2'}>
-              <input
-                type="text"
-                placeholder="Nama Pelanggan (Opsional)"
-                value={customerName || ''}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              />
+              {/* Category Filter Pills */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  onClick={() => setSelectedCategory('ALL')}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                    selectedCategory === 'ALL'
+                      ? 'bg-[#0D5C53] text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Semua Menu
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                      selectedCategory === cat.id
+                        ? 'bg-[#0D5C53] text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Product Grid */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {loading ? (
+                <LoadingState message="Memuat daftar menu..." className="h-full" />
+              ) : filteredProducts.length === 0 ? (
+                <EmptyState
+                  icon={<Coffee className="w-12 h-12 stroke-[1.5] mb-2 opacity-40 mx-auto" />}
+                  title="Menu tidak ditemukan"
+                  description="Coba ubah kata kunci pencarian atau kategori."
+                  className="h-full"
+                />
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3.5">
+                  {filteredProducts.map((product) => {
+                    const imageUrl = product.imageUrl || product.image;
+                    const hasVariants = product.variants && product.variants.length > 1;
+
+                    return (
+                      <div
+                        key={product.id}
+                        onClick={() => handleProductClick(product)}
+                        className="bg-white border border-slate-200 hover:border-[#0D5C53]/60 hover:shadow-md rounded-2xl p-3.5 flex flex-col justify-between transition-all cursor-pointer group active:scale-[0.98]"
+                      >
+                        <div>
+                          {/* Product Thumbnail with Image Fallback */}
+                          <div className="w-full h-28 bg-slate-100 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden relative">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={product.name}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                onError={(e) => {
+                                  // Hide broken image and fallback to icon
+                                  (e.target as HTMLElement).style.display = 'none';
+                                  const parent = (e.target as HTMLElement).parentElement;
+                                  if (parent) {
+                                    parent.classList.add('bg-teal-50/50');
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <Coffee className="w-8 h-8 text-slate-300 group-hover:text-[#0D5C53] transition-colors" />
+                            )}
+
+                            {hasVariants && (
+                              <span className="absolute top-2 right-2 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                                {product.variants?.length} Varian
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="font-bold text-slate-800 text-sm leading-snug line-clamp-2 mb-1 group-hover:text-[#0D5C53] transition-colors">
+                            {product.name}
+                          </h4>
+                          {product.categoryName && (
+                            <span className="text-[10px] text-slate-400 font-medium">{product.categoryName}</span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
+                          <div>
+                            {product.minPrice !== undefined && product.maxPrice !== undefined && product.maxPrice > product.minPrice ? (
+                              <span className="font-bold text-[#0D5C53] text-xs">
+                                Rp {Number(product.minPrice).toLocaleString('id-ID')} - {Number(product.maxPrice).toLocaleString('id-ID')}
+                              </span>
+                            ) : (
+                              <span className="font-bold text-[#0D5C53] text-sm">
+                                Rp {Number(product.price ?? product.minPrice ?? 0).toLocaleString('id-ID')}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="w-7 h-7 bg-teal-50 group-hover:bg-[#0D5C53] text-[#0D5C53] group-hover:text-white rounded-lg flex items-center justify-center transition-colors shadow-xs">
+                            <Plus className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Cart Item List */}
-        <div className="flex-1 overflow-y-auto p-4 divide-y divide-slate-100">
-          {cartItems.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-300 py-8">
-              <ShoppingBag className="w-10 h-10 stroke-[1.5] mb-2 opacity-30" />
-              <p className="text-xs font-semibold text-slate-400">Keranjang Kosong</p>
-              <p className="text-[11px] text-slate-300 text-center mt-0.5">
-                Klik menu di sebelah kiri untuk menambahkan pesanan.
-              </p>
-            </div>
-          ) : (
-            cartItems.map((item) => (
-              <div key={item.id} className="py-3 first:pt-0 last:pb-0 flex flex-col gap-1.5">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 pr-2">
-                    <h5 className="font-semibold text-slate-800 text-xs leading-tight">{item.name}</h5>
-                    {item.variantName && (
-                      <span className="text-[10px] text-slate-400 font-medium">Varian: {item.variantName}</span>
-                    )}
-                    {item.notes && (
-                      <p className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-0.5 inline-block">
-                        {item.notes}
-                      </p>
-                    )}
-                  </div>
-
-                  <span className="font-bold text-slate-800 text-xs">
-                    Rp {(item.price * item.quantity).toLocaleString('id-ID')}
+          {/* Right: Cart & Checkout Panel */}
+          <div className="w-96 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col overflow-hidden shrink-0">
+            {/* Cart Header & Order Type Switcher */}
+            <div className="p-4 border-b border-slate-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-[#0D5C53]" />
+                  <span className="font-bold text-slate-800 text-sm">
+                    Keranjang Pesanan ({getItemCount()})
                   </span>
                 </div>
-
-                {/* Counter & Action Buttons */}
-                <div className="flex items-center justify-between pt-1">
+                {cartItems.length > 0 && (
                   <button
-                    onClick={() =>
-                      setNotesModalItem({
-                        id: item.id,
-                        name: item.name,
-                        notes: item.notes || '',
-                      })
-                    }
-                    className="text-[11px] text-slate-400 hover:text-[#0D5C53] flex items-center gap-1 cursor-pointer"
+                    onClick={clearCart}
+                    className="text-[11px] font-semibold text-rose-500 hover:text-rose-700 cursor-pointer"
                   >
-                    <Edit2 className="w-3 h-3" />
-                    <span>Catatan</span>
+                    Reset
                   </button>
+                )}
+              </div>
 
-                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
+              {/* Dine In / Take Away Switcher */}
+              <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+                <button
+                  onClick={() => setOrderType('DINE_IN')}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    orderType === 'DINE_IN'
+                      ? 'bg-white text-[#0D5C53] shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Utensils className="w-3.5 h-3.5" />
+                  <span>Dine In</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setOrderType('TAKE_AWAY');
+                    setTable(null, null);
+                  }}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    orderType === 'TAKE_AWAY'
+                      ? 'bg-white text-[#0D5C53] shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>Take Away</span>
+                </button>
+              </div>
+
+              {/* Table & Customer Name Inputs */}
+              <div className="grid grid-cols-2 gap-2">
+                {orderType === 'DINE_IN' && (
+                  <div className="relative">
+                    <select
+                      aria-label="Pilih Meja"
+                      value={tableId || ''}
+                      onChange={(e) => {
+                        const sel = tables.find((t) => t.id === e.target.value);
+                        setTable(sel ? sel.id : null, sel ? sel.name : null);
+                      }}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
                     >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="w-6 text-center text-xs font-bold text-slate-800">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="w-6 h-6 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded ml-1 cursor-pointer"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+                      <option value="">Pilih Meja...</option>
+                      {tables.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          Meja {t.name} ({t.capacity} Kursi)
+                        </option>
+                      ))}
+                    </select>
                   </div>
+                )}
+
+                <div className={orderType === 'DINE_IN' ? '' : 'col-span-2'}>
+                  <input
+                    type="text"
+                    placeholder="Nama Pelanggan (Opsional)"
+                    value={customerName || ''}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                  />
                 </div>
               </div>
-            ))
-          )}
-        </div>
-
-        {/* Cart Calculation & Action Footer */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3">
-          <div className="space-y-1.5 text-xs text-slate-500">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span className="font-semibold text-slate-800">Rp {getSubtotal().toLocaleString('id-ID')}</span>
             </div>
-            {getDiscount() > 0 && (
-              <div className="flex justify-between text-emerald-600">
-                <span>Diskon</span>
-                <span>-Rp {getDiscount().toLocaleString('id-ID')}</span>
+
+            {/* Cart Items List */}
+            <div className="flex-1 overflow-y-auto p-4 divide-y divide-slate-100">
+              {cartItems.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-300 py-8">
+                  <ShoppingBag className="w-10 h-10 stroke-[1.5] mb-2 opacity-30" />
+                  <p className="text-xs font-semibold text-slate-400">Keranjang Masih Kosong</p>
+                  <p className="text-[11px] text-slate-300 text-center mt-0.5">
+                    Pilih menu di sebelah kiri untuk membuat pesanan.
+                  </p>
+                </div>
+              ) : (
+                cartItems.map((item) => (
+                  <div key={item.id} className="py-3 first:pt-0 last:pb-0 flex flex-col gap-1.5">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 pr-2">
+                        <h5 className="font-semibold text-slate-800 text-xs leading-tight">{item.name}</h5>
+                        {item.variantName && (
+                          <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+                            Varian: {item.variantName}
+                          </span>
+                        )}
+                        {item.notes && (
+                          <p className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-1 inline-block border border-amber-200">
+                            Catatan: {item.notes}
+                          </p>
+                        )}
+                      </div>
+
+                      <span className="font-bold text-slate-800 text-xs">
+                        Rp {(item.price * item.quantity).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+
+                    {/* Counter & Edit Note Actions */}
+                    <div className="flex items-center justify-between pt-1">
+                      <button
+                        onClick={() =>
+                          setNotesModalItem({
+                            id: item.id,
+                            name: item.name,
+                            notes: item.notes || '',
+                          })
+                        }
+                        className="text-[11px] text-slate-400 hover:text-[#0D5C53] flex items-center gap-1 cursor-pointer"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                        <span>{item.notes ? 'Ubah Catatan' : '+ Catatan'}</span>
+                      </button>
+
+                      <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="w-6 text-center text-xs font-bold text-slate-800">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="w-6 h-6 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded ml-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Cart Calculations & Checkout Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3">
+              <div className="space-y-1.5 text-xs text-slate-500">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-slate-800">Rp {getSubtotal().toLocaleString('id-ID')}</span>
+                </div>
+
+                {/* Discount Trigger / Display */}
+                <div className="flex justify-between items-center text-xs">
+                  <button
+                    onClick={() => setIsDiscountModalOpen(true)}
+                    className="text-teal-700 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    <span>{discountName || '+ Tambah Diskon / Promo'}</span>
+                  </button>
+                  {getDiscount() > 0 && (
+                    <span className="font-bold text-emerald-600">
+                      -Rp {getDiscount().toLocaleString('id-ID')}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Pajak Resto (10%)</span>
+                  <span className="font-semibold text-slate-800">Rp {getTax().toLocaleString('id-ID')}</span>
+                </div>
+
+                <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
+                  <span>Total Tagihan</span>
+                  <span className="text-[#0D5C53] text-base">Rp {getTotal().toLocaleString('id-ID')}</span>
+                </div>
               </div>
-            )}
-            <div className="flex justify-between">
-              <span>Pajak Resto (10%)</span>
-              <span className="font-semibold text-slate-800">Rp {getTax().toLocaleString('id-ID')}</span>
-            </div>
-            <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
-              <span>Total Tagihan</span>
-              <span className="text-[#0D5C53] text-base">Rp {getTotal().toLocaleString('id-ID')}</span>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <Button
-              variant="outline"
-              disabled={cartItems.length === 0 || orderProcessing}
-              leftIcon={<Clock className="w-3.5 h-3.5" />}
-              onClick={handleSaveOpenOrder}
-            >
-              Simpan Pesanan
-            </Button>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  disabled={cartItems.length === 0 || orderProcessing}
+                  leftIcon={<Clock className="w-3.5 h-3.5 text-slate-500" />}
+                  onClick={handleSaveOpenOrder}
+                >
+                  Simpan Pesanan
+                </Button>
 
-            <Button
-              variant="primary"
-              disabled={cartItems.length === 0 || orderProcessing}
-              isLoading={orderProcessing}
-              leftIcon={<CreditCard className="w-4 h-4" />}
-              onClick={handleCheckoutDirect}
-            >
-              Bayar Sekarang
-            </Button>
+                <Button
+                  variant="primary"
+                  disabled={cartItems.length === 0 || orderProcessing}
+                  isLoading={orderProcessing}
+                  leftIcon={<CreditCard className="w-4 h-4" />}
+                  onClick={handleCheckoutDirect}
+                  className="font-bold shadow-md shadow-teal-900/10"
+                >
+                  Bayar Sekarang
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Reusable Variant Selection Modal */}
-      <Modal
+      {/* MODAL 1: ORDER TYPE SELECTOR */}
+      <OrderTypeModal
+        isOpen={isOrderTypeModalOpen}
+        onClose={() => setIsOrderTypeModalOpen(false)}
+        selectedType={pendingOrderType}
+        onSelectType={setPendingOrderType}
+        onContinue={handleConfirmOrderType}
+      />
+
+      {/* MODAL 2: VARIANT SELECTOR */}
+      <VariantModal
         isOpen={!!variantModalProduct}
         onClose={() => setVariantModalProduct(null)}
-        title={`Pilih Varian ${variantModalProduct?.name || ''}`}
-        maxWidth="sm"
-      >
-        <div className="space-y-2">
-          {(variantModalProduct?.variants || []).map((v) => (
-            <button
-              key={v.id}
-              onClick={() => handleSelectVariant(variantModalProduct!, v)}
-              className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-[#0D5C53] hover:bg-teal-50/40 transition-all cursor-pointer text-left"
-            >
-              <span className="font-semibold text-slate-800 text-xs">{v.name}</span>
-              <span className="font-bold text-[#0D5C53] text-xs">
-                Rp {Number(v.price).toLocaleString('id-ID')}
-              </span>
-            </button>
-          ))}
-        </div>
-      </Modal>
+        product={variantModalProduct}
+        onSelectVariant={handleSelectVariant}
+      />
 
-      {/* Reusable Item Notes Modal */}
-      <Modal
+      {/* MODAL 3: ITEM NOTE EDITOR */}
+      <ItemNoteModal
         isOpen={!!notesModalItem}
         onClose={() => setNotesModalItem(null)}
-        title="Catatan Menu"
-        subtitle={notesModalItem?.name}
-        maxWidth="sm"
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setNotesModalItem(null)}>
-              Batal
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                if (notesModalItem) {
-                  updateNotes(notesModalItem.id, notesModalItem.notes);
-                  setNotesModalItem(null);
-                }
-              }}
-            >
-              Simpan
-            </Button>
-          </>
-        }
-      >
-        <FormTextarea
-          value={notesModalItem?.notes || ''}
-          onChange={(e) =>
-            setNotesModalItem((prev) => (prev ? { ...prev, notes: e.target.value } : null))
+        itemName={notesModalItem?.name}
+        initialNotes={notesModalItem?.notes}
+        onSaveNotes={(notes) => {
+          if (notesModalItem) {
+            updateNotes(notesModalItem.id, notes);
           }
-          placeholder="Contoh: Kurang manis, tanpa es batu, dll."
-          rows={3}
-        />
-      </Modal>
+        }}
+      />
 
-      {/* Payment Modal */}
+      {/* MODAL 4: DISCOUNT & PROMO SELECTOR */}
+      <DiscountModal
+        isOpen={isDiscountModalOpen}
+        onClose={() => setIsDiscountModalOpen(false)}
+        subtotal={getSubtotal()}
+        selectedDiscountId={discountId}
+        onApplyDiscount={({ id, name, amount }) => {
+          setDiscount(id, name, amount);
+        }}
+      />
+
+      {/* MODAL 5: VOID ITEM CONFIRMATION */}
+      {voidModalItem && (
+        <VoidItemModal
+          isOpen={!!voidModalItem}
+          onClose={() => setVoidModalItem(null)}
+          itemName={voidModalItem.name}
+          onConfirmVoid={async (reason) => {
+            await posService.voidOrderItem(voidModalItem.orderId, voidModalItem.itemId, reason);
+            refreshAllData();
+            alert('Item berhasil dibatalkan (void).');
+          }}
+        />
+      )}
+
+      {/* MODAL 6: PAYMENT CHECKOUT */}
       {activePaymentOrder && (
         <PaymentModal
           order={activePaymentOrder}
@@ -595,29 +749,46 @@ export const PosScreen: React.FC = () => {
           onClose={() => setActivePaymentOrder(null)}
           onPaymentSuccess={(completed) => {
             setActivePaymentOrder(null);
-            setCompletedOrderForReceipt(completed);
-            loadData();
+            setSuccessModalOrder(completed);
+            refreshAllData();
           }}
         />
       )}
 
-      {/* Receipt Print Modal */}
-      {completedOrderForReceipt && (
-        <ReceiptModal
-          order={completedOrderForReceipt}
-          isOpen={!!completedOrderForReceipt}
-          onClose={() => setCompletedOrderForReceipt(null)}
+      {/* MODAL 7: PAYMENT SUCCESS (FROM FIGMA IMAGE 3) */}
+      {successModalOrder && (
+        <PaymentSuccessModal
+          order={successModalOrder}
+          isOpen={!!successModalOrder}
+          onClose={() => setSuccessModalOrder(null)}
+          onNewOrder={() => {
+            setSuccessModalOrder(null);
+            clearCart();
+            setViewMode('FLOOR');
+          }}
+          onViewReceipt={() => {
+            setReceiptModalOrder(successModalOrder);
+          }}
         />
       )}
 
-      {/* Open Orders Drawer / Modal */}
+      {/* MODAL 8: FULL THERMAL RECEIPT PRINT PREVIEW */}
+      {receiptModalOrder && (
+        <ReceiptModal
+          order={receiptModalOrder}
+          isOpen={!!receiptModalOrder}
+          onClose={() => setReceiptModalOrder(null)}
+        />
+      )}
+
+      {/* MODAL 9: OPEN ORDERS MODAL */}
       <OpenOrdersModal
         isOpen={isOpenOrdersOpen}
         onClose={() => setIsOpenOrdersOpen(false)}
         onSelectForPayment={(order) => {
           setActivePaymentOrder(order);
         }}
-        onOrderUpdated={loadData}
+        onOrderUpdated={refreshAllData}
       />
     </div>
   );

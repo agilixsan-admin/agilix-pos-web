@@ -63,6 +63,11 @@ export interface CreateOrderPayload {
   tableId?: string;
   orderType: OrderType;
   customerName?: string;
+  discountId?: string;
+  discountAmount?: number;
+  taxAmount?: number;
+  packagingFee?: number;
+  notes?: string;
   items: {
     productId: string;
     variantId?: string;

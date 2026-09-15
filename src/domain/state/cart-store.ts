@@ -11,6 +11,8 @@ interface CartStoreState {
   customerName: string;
   taxPercent: number; // default 10% (PB1)
   servicePercent: number; // default 0% or customizable
+  discountId: string | null;
+  discountName: string | null;
   discountAmount: number;
 
   // Actions
@@ -21,7 +23,10 @@ interface CartStoreState {
   setOrderType: (type: OrderType) => void;
   setTable: (tableId: string | null, tableName: string | null) => void;
   setCustomerName: (name: string) => void;
+  setDiscount: (discountId: string | null, discountName: string | null, amount: number) => void;
   setDiscountAmount: (discount: number) => void;
+  setTaxPercent: (taxPercent: number) => void;
+  setServicePercent: (servicePercent: number) => void;
   clearCart: () => void;
 
   // Getters & Calculations
@@ -43,13 +48,17 @@ export const useCartStore = create<CartStoreState>()(
       customerName: '',
       taxPercent: 10,
       servicePercent: 0,
+      discountId: null,
+      discountName: null,
       discountAmount: 0,
 
       addItem: (product, variant, quantity = 1, notes = '') => {
         set((state) => {
-          const itemId = variant ? `${product.id}-${variant.id}` : `${product.id}-default`;
+          const selectedVariant = variant || (product.variants && product.variants.length > 0 ? product.variants[0] : undefined);
+          const variantId = selectedVariant?.id;
+          const itemId = variantId ? `${product.id}-${variantId}` : `${product.id}-default`;
           const existingIndex = state.items.findIndex((item) => item.id === itemId);
-          const price = variant ? Number(variant.price) : Number(product.price);
+          const price = selectedVariant ? Number(selectedVariant.price) : Number(product.price ?? 0);
 
           if (existingIndex > -1) {
             const updated = [...state.items];
@@ -64,11 +73,11 @@ export const useCartStore = create<CartStoreState>()(
           const newItem: CartItem = {
             id: itemId,
             productId: product.id,
-            variantId: variant?.id,
+            variantId: variantId,
             name: product.name,
-            variantName: variant?.name,
+            variantName: selectedVariant?.name,
             price,
-            costPrice: variant?.costPrice || product.costPrice || 0,
+            costPrice: selectedVariant?.costPrice || product.costPrice || 0,
             quantity,
             notes,
           };
@@ -110,7 +119,14 @@ export const useCartStore = create<CartStoreState>()(
 
       setCustomerName: (customerName) => set({ customerName }),
 
+      setDiscount: (discountId, discountName, discountAmount) =>
+        set({ discountId, discountName, discountAmount }),
+
       setDiscountAmount: (discountAmount) => set({ discountAmount }),
+
+      setTaxPercent: (taxPercent) => set({ taxPercent }),
+
+      setServicePercent: (servicePercent) => set({ servicePercent }),
 
       clearCart: () =>
         set({
@@ -118,6 +134,8 @@ export const useCartStore = create<CartStoreState>()(
           customerName: '',
           tableId: null,
           tableName: null,
+          discountId: null,
+          discountName: null,
           discountAmount: 0,
         }),
 
@@ -170,6 +188,8 @@ export const useCartStore = create<CartStoreState>()(
         customerName: state.customerName,
         taxPercent: state.taxPercent,
         servicePercent: state.servicePercent,
+        discountId: state.discountId,
+        discountName: state.discountName,
         discountAmount: state.discountAmount,
       }),
     }

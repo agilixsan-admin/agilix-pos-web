@@ -71,7 +71,7 @@ export interface PackagingItem {
   status?: 'ACTIVE' | 'INACTIVE' | string;
   isActive?: boolean;
   inventoryItemId?: string;
-  inventoryItem?: any;
+  inventoryItem?: InventoryItem;
   createdAt?: string;
   updatedAt?: string;
   stocks?: { outletId: string; quantity: number }[];

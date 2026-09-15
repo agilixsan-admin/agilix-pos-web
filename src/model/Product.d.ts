@@ -20,7 +20,7 @@ export interface Variant {
   stock?: number;
   status?: string;
   isActive?: boolean;
-  recipes?: any[];
+  recipes?: RecipeItem[];
 }
 
 export interface RecipeItem {
@@ -48,6 +48,7 @@ export interface Product {
   totalCogs?: number;
   profitMarginPercentage?: number;
   image?: string;
+  imageUrl?: string;
   description?: string;
   status?: 'ACTIVE' | 'INACTIVE' | string;
   isActive?: boolean;
