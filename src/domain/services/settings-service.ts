@@ -219,7 +219,14 @@ export const settingsService = {
 
   getPrinters: async (outletId?: string): Promise<PrinterSetting[]> => {
     const res = await httpClient.get('/printers', { params: { outletId } });
-    return res.data?.data || res.data || [];
+    const rawData = res.data?.data ?? res.data;
+    if (Array.isArray(rawData)) {
+      return rawData;
+    }
+    if (rawData && Array.isArray(rawData.printers)) {
+      return rawData.printers;
+    }
+    return [];
   },
 
   getPrinterById: async (id: string): Promise<PrinterSetting> => {
@@ -249,12 +256,26 @@ export const settingsService = {
 
   getPrinterRoutingRules: async (outletId: string): Promise<PrinterRoutingRule[]> => {
     const res = await httpClient.get('/printers/routing-rules', { params: { outletId } });
-    return res.data?.data || res.data || [];
+    const rawData = res.data?.data ?? res.data;
+    if (Array.isArray(rawData)) {
+      return rawData;
+    }
+    if (rawData && Array.isArray(rawData.rules)) {
+      return rawData.rules;
+    }
+    return [];
   },
 
   updatePrinterRoutingRules: async (payload: UpdatePrinterRoutingPayload): Promise<PrinterRoutingRule[]> => {
     const res = await httpClient.put('/printers/routing-rules', payload);
-    return res.data?.data || res.data || [];
+    const rawData = res.data?.data ?? res.data;
+    if (Array.isArray(rawData)) {
+      return rawData;
+    }
+    if (rawData && Array.isArray(rawData.rules)) {
+      return rawData.rules;
+    }
+    return [];
   },
 
   getTaxes: async (params?: { outletId?: string; status?: string; type?: string; search?: string }): Promise<TaxItem[]> => {

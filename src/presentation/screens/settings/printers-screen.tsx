@@ -4,6 +4,7 @@ import type {
   PrinterType,
   PrinterConnectionType,
   PrinterPaperSize,
+  PrinterRoutingRule,
 } from '@model/Settings';
 import {
   usePrinters,
@@ -48,7 +49,8 @@ import {
 
 export const PrintersScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const { data: outlets = [], isLoading: outletsLoading } = useOutlets();
+  const { data: rawOutlets = [], isLoading: outletsLoading } = useOutlets();
+  const outlets = Array.isArray(rawOutlets) ? rawOutlets : [];
 
   // Selected Outlet state
   const [selectedOutletId, setSelectedOutletId] = useState<string>('');
@@ -65,18 +67,30 @@ export const PrintersScreen: React.FC = () => {
 
   // Queries
   const {
-    data: printers = [],
+    data: rawPrinters,
     isLoading: printersLoading,
     refetch,
   } = usePrinters(effectiveOutletId || undefined);
+  const printers: PrinterSetting[] = Array.isArray(rawPrinters)
+    ? rawPrinters
+    : Array.isArray((rawPrinters as unknown as { printers?: PrinterSetting[] })?.printers)
+    ? ((rawPrinters as unknown as { printers: PrinterSetting[] }).printers)
+    : [];
 
   const {
-    data: routingRules = [],
+    data: rawRoutingRules,
     isLoading: routingLoading,
     refetch: refetchRouting,
   } = usePrinterRoutingRules(effectiveOutletId || undefined);
+  const routingRules: PrinterRoutingRule[] = Array.isArray(rawRoutingRules)
+    ? rawRoutingRules
+    : Array.isArray((rawRoutingRules as unknown as { rules?: PrinterRoutingRule[] })?.rules)
+    ? ((rawRoutingRules as unknown as { rules: PrinterRoutingRule[] }).rules)
+    : [];
 
-  const { data: categories = [] } = useCategories();
+  const { data: rawCategories = [] } = useCategories();
+  const categories = Array.isArray(rawCategories) ? rawCategories : [];
+  const configuredRules = routingRules.filter((r) => Boolean(r && r.printerId && r.printerName));
 
   // Mutations
   const createPrinterMutation = useCreatePrinterMutation();
@@ -244,9 +258,13 @@ export const PrintersScreen: React.FC = () => {
 
   const handleOpenRouting = () => {
     const map: Record<string, string> = {};
-    routingRules.forEach((r) => {
-      map[r.categoryId] = r.printerId;
-    });
+    if (Array.isArray(routingRules)) {
+      routingRules.forEach((r) => {
+        if (r && r.categoryId && r.printerId) {
+          map[r.categoryId] = r.printerId;
+        }
+      });
+    }
     setRoutingState(map);
     setIsRoutingModalOpen(true);
   };
@@ -579,17 +597,17 @@ export const PrintersScreen: React.FC = () => {
                 <p className="text-[11px] text-slate-400">Pengalihan tiket stasiun pesanan</p>
               </div>
               <Badge variant="info">
-                {routingRules.length} Dikonfigurasi
+                {configuredRules.length} Dikonfigurasi
               </Badge>
             </div>
 
             <div className="space-y-2.5 text-xs">
-              {routingRules.length === 0 ? (
+              {configuredRules.length === 0 ? (
                 <div className="text-slate-400 text-xs py-2 italic">
                   Default: Semua pesanan diarahkan ke printer default.
                 </div>
               ) : (
-                routingRules.map((rule) => (
+                configuredRules.map((rule) => (
                   <div
                     key={rule.categoryId}
                     className="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-0"
