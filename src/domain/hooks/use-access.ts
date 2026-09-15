@@ -8,20 +8,24 @@ export const useAccess = () => {
     if (!requiredPermission) return true;
     if (!user) return false;
 
+    const roleNameUpper = (user.role?.name || user.roleName || '').toUpperCase();
+
     // Super Admin / Owner bypass (Matching Backend PermissionGuard)
     if (
       user.isSuperAdmin === true ||
-      user.roleName?.toUpperCase() === 'SUPER_ADMIN' ||
-      user.roleName?.toUpperCase() === 'SUPER ADMIN' ||
-      user.roleName?.toUpperCase() === 'OWNER' ||
+      roleNameUpper === 'SUPER_ADMIN' ||
+      roleNameUpper === 'SUPER ADMIN' ||
+      roleNameUpper === 'OWNER' ||
       user.permissions?.includes('*') ||
       user.permissions?.includes('ALL') ||
-      user.menuAccess?.includes('*')
+      user.menuAccess?.includes('*') ||
+      user.role?.menuAccess?.includes('*') ||
+      user.role?.permissions?.includes('*')
     ) {
       return true;
     }
 
-    // Check specific permission in user permissions array or menuAccess
+    // Check specific permission in user permissions array, menuAccess, or user.role.menuAccess
     const normalize = (p: string) => p.replace(':', '.').toLowerCase();
     const reqNormalized = normalize(requiredPermission);
 
@@ -39,10 +43,20 @@ export const useAccess = () => {
 
     const targetList = [reqNormalized, ...(aliases[reqNormalized] || [])];
 
-    const hasPerm = user.permissions?.some((p) => targetList.includes(normalize(p)));
-    const hasMenu = user.menuAccess?.some((m) => targetList.includes(normalize(m)));
+    // Collect all permissions from user root or user.role
+    const rawPermissions = [
+      ...(user.permissions || []),
+      ...(user.menuAccess || []),
+      ...(user.role?.menuAccess || []),
+      ...(user.role?.permissions || []),
+    ];
 
-    return !!(hasPerm || hasMenu);
+    return rawPermissions.some((p) => {
+      const normP = normalize(p);
+      if (normP === '*' || normP === 'all') return true;
+      if (normP.endsWith('.*') && reqNormalized.startsWith(normP.slice(0, -1))) return true;
+      return targetList.includes(normP);
+    });
   };
 
   const hasAnyAccess = (permissions: string[]): boolean => {
