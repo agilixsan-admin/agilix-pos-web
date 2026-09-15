@@ -103,7 +103,7 @@ export const PosScreen: React.FC = () => {
     data: products = [],
     isLoading: productsLoading,
     refetch: refetchProducts,
-  } = useProducts({ outletId: effectiveOutlet?.id });
+  } = useProducts();
 
   const {
     data: categories = [],

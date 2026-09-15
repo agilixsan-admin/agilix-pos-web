@@ -3,7 +3,9 @@ import type { Product, Category } from '@model/Product';
 
 export const productService = {
   getProducts: async (params?: { outletId?: string; categoryId?: string; search?: string }): Promise<Product[]> => {
-    const res = await httpClient.get('/products', { params });
+    // Strip outletId because backend /api/v1/products is tenant-scoped with forbidNonWhitelisted ValidationPipe
+    const { outletId, ...queryParams } = params || {};
+    const res = await httpClient.get('/products', { params: queryParams });
     return res.data?.data || res.data || [];
   },
 

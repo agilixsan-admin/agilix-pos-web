@@ -73,9 +73,7 @@ export const DiscountsScreen: React.FC = () => {
     error,
   } = useDiscounts(selectedOutletId ? { outletId: selectedOutletId } : undefined);
 
-  const { data: products = [] } = useProducts(
-    selectedOutletId ? { outletId: selectedOutletId } : undefined
-  );
+  const { data: products = [] } = useProducts();
 
   // Mutations
   const createDiscountMutation = useCreateDiscountMutation();

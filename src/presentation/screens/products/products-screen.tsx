@@ -29,7 +29,7 @@ export const ProductsScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
 
   // Query Hooks
-  const { data: products = [], isLoading: productsLoading } = useProducts({ outletId: currentOutlet?.id });
+  const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const loading = productsLoading || categoriesLoading;
 
