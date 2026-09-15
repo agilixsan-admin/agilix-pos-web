@@ -49,21 +49,91 @@ export const settingsService = {
 
   getTables: async (outletId?: string): Promise<Table[]> => {
     const res = await httpClient.get('/tables', { params: { outletId } });
-    return res.data?.data || res.data || [];
+    const items = (res.data?.data || res.data || []) as Array<{
+      id: string;
+      outletId: string;
+      tableNumber?: string;
+      name?: string;
+      capacity: number;
+      status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED';
+      section?: string;
+      currentOrderId?: string;
+      isActive?: boolean;
+    }>;
+    return items.map((t) => ({
+      ...t,
+      name: t.name || t.tableNumber || '',
+      tableNumber: t.tableNumber || t.name || '',
+      section: t.section || 'Main Area',
+    }));
   },
 
   createTable: async (tableData: Partial<Table>): Promise<Table> => {
-    const res = await httpClient.post('/tables', tableData);
-    return res.data?.data || res.data;
+    const payload = {
+      outletId: tableData.outletId,
+      tableNumber: tableData.tableNumber || tableData.name,
+      capacity: tableData.capacity,
+      status: tableData.status,
+      section: tableData.section || 'Main Area',
+    };
+    const res = await httpClient.post('/tables', payload);
+    const data = (res.data?.data || res.data) as {
+      id: string;
+      outletId: string;
+      tableNumber?: string;
+      name?: string;
+      capacity: number;
+      status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED';
+      section?: string;
+      currentOrderId?: string;
+      isActive?: boolean;
+    };
+    return {
+      ...data,
+      name: data.name || data.tableNumber || '',
+      tableNumber: data.tableNumber || data.name || '',
+      section: data.section || 'Main Area',
+    };
   },
 
   updateTable: async (id: string, tableData: Partial<Table>): Promise<Table> => {
-    const res = await httpClient.put(`/tables/${id}`, tableData);
-    return res.data?.data || res.data;
+    const payload: Record<string, unknown> = {};
+    if (tableData.tableNumber || tableData.name) {
+      payload.tableNumber = tableData.tableNumber || tableData.name;
+    }
+    if (tableData.capacity !== undefined) {
+      payload.capacity = tableData.capacity;
+    }
+    if (tableData.status !== undefined) {
+      payload.status = tableData.status;
+    }
+    if (tableData.section !== undefined) {
+      payload.section = tableData.section;
+    }
+
+    const res = await httpClient.put(`/tables/${id}`, payload);
+    const data = (res.data?.data || res.data) as {
+      id: string;
+      outletId: string;
+      tableNumber?: string;
+      name?: string;
+      capacity: number;
+      status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED';
+      section?: string;
+      currentOrderId?: string;
+      isActive?: boolean;
+    };
+    return {
+      ...data,
+      name: data.name || data.tableNumber || '',
+      tableNumber: data.tableNumber || data.name || '',
+      section: data.section || 'Main Area',
+    };
   },
 
-  deleteTable: async (id: string): Promise<void> => {
-    await httpClient.delete(`/tables/${id}`);
+  deleteTable: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const res = await httpClient.delete(`/tables/${id}`);
+    return res.data || { success: true, message: 'Table deleted successfully' };
   },
 
   getRoles: async (params?: { outletId?: string }): Promise<Role[]> => {

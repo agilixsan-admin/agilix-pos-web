@@ -12,7 +12,23 @@ import type { Table } from '@model/Settings';
 export const posService = {
   getTables: async (outletId?: string): Promise<Table[]> => {
     const res = await httpClient.get('/tables', { params: { outletId } });
-    return res.data?.data || res.data || [];
+    const items = (res.data?.data || res.data || []) as Array<{
+      id: string;
+      outletId: string;
+      tableNumber?: string;
+      name?: string;
+      capacity: number;
+      status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED';
+      section?: string;
+      currentOrderId?: string;
+      isActive?: boolean;
+    }>;
+    return items.map((t) => ({
+      ...t,
+      name: t.name || t.tableNumber || '',
+      tableNumber: t.tableNumber || t.name || '',
+      section: t.section || 'Main Area',
+    }));
   },
 
   createOrder: async (payload: CreateOrderPayload): Promise<Order> => {

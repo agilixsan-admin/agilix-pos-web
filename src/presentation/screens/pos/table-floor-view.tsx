@@ -8,12 +8,8 @@ import {
   Clock,
   Users,
   Search,
-  CreditCard,
-  PlusCircle,
-  ShoppingBag,
-  CheckCircle2,
-  AlertCircle,
   Coffee,
+  Layers,
 } from 'lucide-react';
 import { Button, Badge, LoadingState, EmptyState } from '@presentation/components/ui';
 
@@ -41,19 +37,19 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'RESERVED'>('ALL');
   const [searchTable, setSearchTable] = useState<string>('');
 
-  // Extract floors / sections if available, or default
-  const FLOORS = [
-    { id: 'ALL', label: 'Semua Area' },
-    { id: 'MAIN', label: 'Main Floor' },
-    { id: 'OUTDOOR', label: 'Outdoor / Smoking' },
-    { id: 'VIP', label: 'VIP / Lantai 2' },
-  ];
+  // Dynamically extract unique custom sections from the actual table list in this outlet
+  const dynamicSections = Array.from(
+    new Set(tables.map((t) => (t.section?.trim() ? t.section.trim() : 'Main Area')))
+  );
 
-  // Filter Tables
+  // Filter Tables by Search, Status, and Dynamic Section
   const filteredTables = tables.filter((t) => {
-    const matchesSearch = t.name.toLowerCase().includes(searchTable.toLowerCase());
+    const tableName = t.name || t.tableNumber || '';
+    const matchesSearch = tableName.toLowerCase().includes(searchTable.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const tableSec = t.section?.trim() || 'Main Area';
+    const matchesFloor = selectedFloor === 'ALL' || tableSec.toLowerCase() === selectedFloor.toLowerCase();
+    return matchesSearch && matchesStatus && matchesFloor;
   });
 
   // Calculate Stats
@@ -96,31 +92,46 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
         </div>
       </div>
 
-      {/* Main Split Grid: Active Orders Banner (if any) & Table Floor Grid */}
+      {/* Main Split Grid: Active Orders Banner & Table Floor Grid */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
         {/* Left / Main Floor Grid */}
         <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
           {/* Controls Bar */}
           <div className="p-4 border-b border-slate-100 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              {/* Floor Tabs */}
+              {/* Dynamic Floor / Section Tabs */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                {FLOORS.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => setSelectedFloor(f.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                      selectedFloor === f.id
-                        ? 'bg-[#0D5C53] text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
+                <button
+                  onClick={() => setSelectedFloor('ALL')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    selectedFloor === 'ALL'
+                      ? 'bg-[#0D5C53] text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Semua Area ({tables.length})
+                </button>
+                {dynamicSections.map((sec) => {
+                  const count = tables.filter(
+                    (t) => (t.section?.trim() || 'Main Area').toLowerCase() === sec.toLowerCase()
+                  ).length;
+                  return (
+                    <button
+                      key={sec}
+                      onClick={() => setSelectedFloor(sec)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                        selectedFloor.toLowerCase() === sec.toLowerCase()
+                          ? 'bg-[#0D5C53] text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {sec} ({count})
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Search & Status Filters */}
+              {/* Search */}
               <div className="flex items-center gap-2">
                 <div className="relative w-44">
                   <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -191,7 +202,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
               <EmptyState
                 icon={<Utensils className="w-10 h-10 opacity-30 text-slate-400 mx-auto" />}
                 title="Tidak Ada Meja Ditemukan"
-                description="Coba ubah filter status atau kata kunci pencarian."
+                description={
+                  selectedFloor === 'ALL'
+                    ? 'Coba ubah filter status atau kata kunci pencarian.'
+                    : `Tidak ada meja pada area "${selectedFloor}".`
+                }
                 className="h-full"
               />
             ) : (
@@ -209,13 +224,20 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                         className="bg-[#0D5C53] text-white rounded-2xl p-4 flex flex-col justify-between shadow-md hover:shadow-lg transition-all cursor-pointer group hover:scale-[1.02] border border-teal-700"
                       >
                         <div>
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center justify-between mb-1.5">
                             <span className="font-bold text-sm text-teal-100">
-                              Meja {table.name}
+                              Meja {table.name || table.tableNumber}
                             </span>
                             <span className="text-[10px] bg-teal-800/80 text-teal-200 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                               <Users className="w-2.5 h-2.5" />
                               {table.capacity} Kursi
+                            </span>
+                          </div>
+
+                          <div className="mb-2">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-teal-200/80 bg-teal-900/40 px-2 py-0.5 rounded-md">
+                              <Layers className="w-2.5 h-2.5" />
+                              {table.section || 'Main Area'}
                             </span>
                           </div>
 
@@ -265,13 +287,20 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                       }`}
                     >
                       <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1.5">
                           <span className="font-bold text-sm text-slate-800">
-                            Meja {table.name}
+                            Meja {table.name || table.tableNumber}
                           </span>
                           <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                             <Users className="w-2.5 h-2.5" />
                             {table.capacity} Kursi
+                          </span>
+                        </div>
+
+                        <div className="mb-2">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                            <Layers className="w-2.5 h-2.5 text-slate-400" />
+                            {table.section || 'Main Area'}
                           </span>
                         </div>
 
@@ -280,7 +309,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                         </div>
                       </div>
 
-                      <div className="mt-5 pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <div className="mt-4 pt-2 border-t border-slate-100 flex items-center justify-between">
                         <Badge variant={isReserved ? 'warning' : 'success'} size="sm">
                           {isReserved ? 'Reservasi' : 'Tersedia'}
                         </Badge>
@@ -392,4 +421,3 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
     </div>
   );
 };
-

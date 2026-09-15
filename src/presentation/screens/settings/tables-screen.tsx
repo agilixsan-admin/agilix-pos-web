@@ -7,7 +7,7 @@ import {
   useUpdateTableMutation,
   useDeleteTableMutation,
 } from '@domain/hooks';
-import { LayoutGrid, Plus, Edit2, Trash2 } from 'lucide-react';
+import { LayoutGrid, Plus, Edit2, Trash2, Layers } from 'lucide-react';
 import {
   Button,
   Badge,
@@ -28,36 +28,55 @@ export const TablesScreen: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<Table | null>(null);
-  const [formData, setFormData] = useState({ name: '', capacity: '4' });
+  const [formData, setFormData] = useState({ name: '', capacity: '4', section: 'Main Area' });
+  const [selectedSectionFilter, setSelectedSectionFilter] = useState<string>('ALL');
+
+  // Extract unique sections dynamically from existing tables in this outlet
+  const dynamicSections = Array.from(
+    new Set(tables.map((t) => (t.section?.trim() ? t.section.trim() : 'Main Area')))
+  );
 
   const handleOpenAdd = () => {
     setEditingTable(null);
-    setFormData({ name: '', capacity: '4' });
+    setFormData({
+      name: '',
+      capacity: '4',
+      section: dynamicSections.length > 0 ? dynamicSections[0] : 'Main Area',
+    });
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (t: Table) => {
     setEditingTable(t);
-    setFormData({ name: t.name, capacity: t.capacity.toString() });
+    setFormData({
+      name: t.name || t.tableNumber || '',
+      capacity: t.capacity.toString(),
+      section: t.section || 'Main Area',
+    });
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const sectionName = formData.section.trim() || 'Main Area';
       if (editingTable) {
         await updateTableMutation.mutateAsync({
           id: editingTable.id,
           data: {
-            name: formData.name,
-            capacity: Number(formData.capacity),
+            name: formData.name.trim(),
+            tableNumber: formData.name.trim(),
+            capacity: Number(formData.capacity) || 4,
+            section: sectionName,
             status: editingTable.status || 'AVAILABLE',
           },
         });
       } else {
         await createTableMutation.mutateAsync({
-          name: formData.name,
-          capacity: Number(formData.capacity),
+          name: formData.name.trim(),
+          tableNumber: formData.name.trim(),
+          capacity: Number(formData.capacity) || 4,
+          section: sectionName,
           outletId: currentOutlet?.id || '',
           status: 'AVAILABLE',
         });
@@ -77,13 +96,20 @@ export const TablesScreen: React.FC = () => {
     }
   };
 
+  // Filter tables by selected section tab
+  const filteredTables = tables.filter((t) => {
+    if (selectedSectionFilter === 'ALL') return true;
+    const sec = t.section?.trim() || 'Main Area';
+    return sec.toLowerCase() === selectedSectionFilter.toLowerCase();
+  });
+
   return (
     <div className="space-y-6 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Manajemen Meja Dine-In</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Kelola denah nomor meja & kapasitas kursi untuk pesanan makan di tempat.
+            Kelola nomor meja, area/ruangan, & kapasitas kursi untuk pesanan makan di tempat.
           </p>
         </div>
 
@@ -96,14 +122,52 @@ export const TablesScreen: React.FC = () => {
         </Button>
       </div>
 
+      {/* Dynamic Section Tabs */}
+      {dynamicSections.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-slate-200">
+          <button
+            onClick={() => setSelectedSectionFilter('ALL')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              selectedSectionFilter === 'ALL'
+                ? 'bg-[#0D5C53] text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            Semua Area ({tables.length})
+          </button>
+          {dynamicSections.map((sec) => {
+            const count = tables.filter(
+              (t) => (t.section?.trim() || 'Main Area').toLowerCase() === sec.toLowerCase()
+            ).length;
+            return (
+              <button
+                key={sec}
+                onClick={() => setSelectedSectionFilter(sec)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedSectionFilter.toLowerCase() === sec.toLowerCase()
+                    ? 'bg-[#0D5C53] text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {sec} ({count})
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {loading ? (
         <LoadingState message="Memuat data meja..." className="min-h-[200px]" />
-      ) : tables.length === 0 ? (
+      ) : filteredTables.length === 0 ? (
         <Card>
           <EmptyState
             icon={<LayoutGrid className="w-10 h-10 opacity-30 mx-auto" />}
             title="Belum ada meja"
-            description='Klik tombol "+ Tambah Meja" untuk mendaftarkan nomor meja baru.'
+            description={
+              selectedSectionFilter === 'ALL'
+                ? 'Klik tombol "+ Tambah Meja" untuk mendaftarkan nomor meja baru.'
+                : `Tidak ada meja di area "${selectedSectionFilter}".`
+            }
             action={
               <Button
                 variant="primary"
@@ -118,7 +182,7 @@ export const TablesScreen: React.FC = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {tables.map((t) => (
+          {filteredTables.map((t) => (
             <Card
               key={t.id}
               className="flex flex-col justify-between hover:border-[#0D5C53]/40 transition-colors p-4"
@@ -152,8 +216,16 @@ export const TablesScreen: React.FC = () => {
                 </div>
 
                 <div className="text-center py-2">
-                  <h3 className="font-bold text-slate-900 text-lg">{t.name}</h3>
+                  <h3 className="font-bold text-slate-900 text-lg">{t.name || t.tableNumber}</h3>
                   <p className="text-xs text-slate-500 mt-0.5">{t.capacity} Kursi</p>
+                </div>
+
+                {/* Section Badge */}
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-center">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md truncate max-w-full">
+                    <Layers className="w-3 h-3 text-slate-400" />
+                    {t.section || 'Main Area'}
+                  </span>
                 </div>
               </div>
             </Card>
@@ -161,7 +233,7 @@ export const TablesScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Reusable Modal */}
+      {/* Dynamic Table Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -175,8 +247,38 @@ export const TablesScreen: React.FC = () => {
             autoFocus
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Contoh: Meja 01, VIP 1"
+            placeholder="Contoh: Meja 01, Teras 1, VIP 1"
           />
+
+          <div>
+            <FormInput
+              label="Area / Ruangan (Section)"
+              required
+              value={formData.section}
+              onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+              placeholder="Contoh: Main Floor, Outdoor, VIP, Lantai 2"
+            />
+            {/* Quick Suggestions from existing sections */}
+            {dynamicSections.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5 items-center">
+                <span className="text-[10px] text-slate-600 font-medium">Pilih area:</span>
+                {dynamicSections.map((sec) => (
+                  <button
+                    type="button"
+                    key={sec}
+                    onClick={() => setFormData({ ...formData, section: sec })}
+                    className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                      formData.section === sec
+                        ? 'bg-teal-50 border-[#0D5C53] text-[#0D5C53] font-semibold'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {sec}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <FormInput
             label="Kapasitas Kursi"

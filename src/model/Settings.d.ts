@@ -2,10 +2,12 @@ export interface Table {
   id: string;
   outletId: string;
   name: string;
+  tableNumber?: string;
   capacity: number;
+  section?: string;
   status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED';
   currentOrderId?: string;
-  isActive: boolean;
+  isActive?: boolean;
 }
 
 export interface OrderTypeSetting {
