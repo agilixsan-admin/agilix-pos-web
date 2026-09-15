@@ -215,10 +215,12 @@ export const OpnameCountScreen: React.FC = () => {
       setSaveSuccessMsg('Progres perhitungan fisik berhasil disimpan.');
       setTimeout(() => setSaveSuccessMsg(''), 3500);
       return true;
-    } catch (err: any) {
-      setErrorMessage(
-        err?.response?.data?.message || err?.message || 'Gagal menyimpan progres stock opname'
-      );
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
+        (err as { message?: string })?.message ||
+        'Gagal menyimpan progres stock opname';
+      setErrorMessage(errorMsg);
       return false;
     }
   };
@@ -242,10 +244,12 @@ export const OpnameCountScreen: React.FC = () => {
       });
       setIsCancelModalOpen(false);
       navigate('/inventory/opname');
-    } catch (err: any) {
-      setErrorMessage(
-        err?.response?.data?.message || err?.message || 'Gagal membatalkan sesi stock opname'
-      );
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
+        (err as { message?: string })?.message ||
+        'Gagal membatalkan sesi stock opname';
+      setErrorMessage(errorMsg);
     }
   };
 
