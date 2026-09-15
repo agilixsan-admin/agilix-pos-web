@@ -42,6 +42,7 @@ import {
   Receipt,
   LayoutGrid,
   Building2,
+  Send,
 } from 'lucide-react';
 import {
   Button,
@@ -344,11 +345,11 @@ export const PosScreen: React.FC = () => {
       clearCart();
       refreshAllData();
       setViewMode('FLOOR');
-      alert('Pesanan berhasil disimpan ke Pesanan Berjalan (Open Orders).');
+      alert('Pesanan berhasil dikirim ke station dapur/bar.');
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Gagal menyimpan pesanan berjalan.';
+        'Gagal mengirim pesanan ke station.';
       alert(errorMsg);
     } finally {
       setOrderProcessing(false);
@@ -748,10 +749,10 @@ export const PosScreen: React.FC = () => {
                 <Button
                   variant="outline"
                   disabled={cartItems.length === 0 || orderProcessing}
-                  leftIcon={<Clock className="w-3.5 h-3.5 text-slate-500" />}
+                  leftIcon={<Send className="w-3.5 h-3.5 text-teal-700" />}
                   onClick={handleSaveOpenOrder}
                 >
-                  Simpan Pesanan
+                  Kirim Pesanan
                 </Button>
 
                 <Button
