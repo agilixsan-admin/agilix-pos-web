@@ -345,11 +345,11 @@ export const PosScreen: React.FC = () => {
       clearCart();
       refreshAllData();
       setViewMode('FLOOR');
-      alert('Pesanan berhasil dikirim ke station dapur/bar.');
+      alert('Pesanan berhasil dikirim.');
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Gagal mengirim pesanan ke station.';
+        'Gagal mengirim pesanan.';
       alert(errorMsg);
     } finally {
       setOrderProcessing(false);
