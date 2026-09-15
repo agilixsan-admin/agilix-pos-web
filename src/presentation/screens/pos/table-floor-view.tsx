@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Table } from '@model/Settings';
 import type { Order } from '@model/Order';
 import { useAuthStore } from '@domain/state/auth-store';
+import { useOutlets } from '@domain/hooks';
 import {
   Plus,
   Utensils,
@@ -33,7 +34,12 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
   onSelectOpenOrderForAppend,
   onNewOrderClick,
 }) => {
-  const { user, currentOutlet, outlets, setCurrentOutlet } = useAuthStore();
+  const { user, currentOutlet, setCurrentOutlet } = useAuthStore();
+  const { data: rawOutlets = [] } = useOutlets();
+  const outlets = Array.isArray(rawOutlets) && rawOutlets.length > 0
+    ? rawOutlets
+    : useAuthStore.getState().outlets || [];
+  const effectiveOutlet = currentOutlet || (outlets.length > 0 ? outlets[0] : null);
   const [selectedFloor, setSelectedFloor] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'RESERVED'>('ALL');
   const [searchTable, setSearchTable] = useState<string>('');
@@ -64,11 +70,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#0D5C53] text-white flex items-center justify-center font-bold text-base shadow-xs">
-            {currentOutlet?.name?.charAt(0) || 'A'}
+            {effectiveOutlet?.name?.charAt(0) || 'A'}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900">{currentOutlet?.name || 'Agilix Outlet'}</h2>
+              <h2 className="text-base font-bold text-slate-900">{effectiveOutlet?.name || 'Agilix Outlet'}</h2>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
                 Online • Kasir Aktif
               </span>
@@ -87,7 +93,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
               <span className="text-xs text-slate-500 font-medium">Cabang:</span>
               <select
                 aria-label="Pilih Cabang POS"
-                value={currentOutlet?.id || ''}
+                value={effectiveOutlet?.id || ''}
                 onChange={(e) => {
                   const found = outlets.find((o) => o.id === e.target.value);
                   if (found) setCurrentOutlet(found);

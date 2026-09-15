@@ -25,7 +25,9 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
   onSelectForPayment,
   onOrderUpdated,
 }) => {
-  const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const authOutlet = useAuthStore((state) => state.currentOutlet);
+  const outlets = useAuthStore((state) => state.outlets);
+  const currentOutlet = authOutlet || (outlets && outlets.length > 0 ? outlets[0] : null);
   const { items: cartItems, clearCart } = useCartStore();
 
   const [openOrders, setOpenOrders] = useState<Order[]>([]);

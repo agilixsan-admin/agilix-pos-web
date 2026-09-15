@@ -14,6 +14,7 @@ import {
   useTables,
   useOpenOrders,
   useGlobalTaxConfig,
+  useOutlets,
 } from '@domain/hooks';
 import { OrderTypeModal } from './order-type-modal';
 import { TableFloorView } from './table-floor-view';
@@ -51,7 +52,21 @@ import {
 } from '@presentation/components/ui';
 
 export const PosScreen: React.FC = () => {
-  const { currentOutlet, outlets, setCurrentOutlet } = useAuthStore();
+  const { currentOutlet, setCurrentOutlet } = useAuthStore();
+  const { data: rawOutlets = [] } = useOutlets();
+  const outlets = Array.isArray(rawOutlets) && rawOutlets.length > 0
+    ? rawOutlets
+    : useAuthStore.getState().outlets || [];
+
+  const effectiveOutlet = currentOutlet || (outlets.length > 0 ? outlets[0] : null);
+
+  // Auto-select outlet on load if not set
+  useEffect(() => {
+    if (!currentOutlet && outlets.length > 0) {
+      setCurrentOutlet(outlets[0]);
+    }
+  }, [currentOutlet, outlets, setCurrentOutlet]);
+
   const {
     items: cartItems,
     orderType,
@@ -88,7 +103,7 @@ export const PosScreen: React.FC = () => {
     data: products = [],
     isLoading: productsLoading,
     refetch: refetchProducts,
-  } = useProducts({ outletId: currentOutlet?.id });
+  } = useProducts({ outletId: effectiveOutlet?.id });
 
   const {
     data: categories = [],
@@ -100,15 +115,15 @@ export const PosScreen: React.FC = () => {
     data: tables = [],
     isLoading: tablesLoading,
     refetch: refetchTables,
-  } = useTables(currentOutlet?.id);
+  } = useTables(effectiveOutlet?.id);
 
   const {
     data: openOrders = [],
     isLoading: openOrdersLoading,
     refetch: refetchOpenOrders,
-  } = useOpenOrders(currentOutlet?.id);
+  } = useOpenOrders(effectiveOutlet?.id);
 
-  const { data: taxConfig } = useGlobalTaxConfig(currentOutlet?.id);
+  const { data: taxConfig } = useGlobalTaxConfig(effectiveOutlet?.id);
 
   // Sync Tax Configuration with Cart Store
   useEffect(() => {
@@ -241,9 +256,13 @@ export const PosScreen: React.FC = () => {
 
   // Direct Instant Checkout
   const handleCheckoutDirect = async () => {
-    if (!currentOutlet?.id) {
+    const activeOutlet = currentOutlet || effectiveOutlet;
+    if (!activeOutlet?.id) {
       alert('Silakan pilih cabang/outlet aktif terlebih dahulu.');
       return;
+    }
+    if (!currentOutlet && activeOutlet) {
+      setCurrentOutlet(activeOutlet);
     }
     if (cartItems.length === 0) return;
     if (orderType === 'DINE_IN' && !tableId) {
@@ -262,7 +281,7 @@ export const PosScreen: React.FC = () => {
       }));
 
       const createdOrder = await posService.createOrder({
-        outletId: currentOutlet.id,
+        outletId: activeOutlet.id,
         orderType: orderType as OrderType,
         tableId: tableId || undefined,
         customerName: customerName || undefined,
@@ -287,9 +306,13 @@ export const PosScreen: React.FC = () => {
 
   // Save as Open Order
   const handleSaveOpenOrder = async () => {
-    if (!currentOutlet?.id) {
+    const activeOutlet = currentOutlet || effectiveOutlet;
+    if (!activeOutlet?.id) {
       alert('Silakan pilih cabang/outlet aktif terlebih dahulu.');
       return;
+    }
+    if (!currentOutlet && activeOutlet) {
+      setCurrentOutlet(activeOutlet);
     }
     if (cartItems.length === 0) return;
     if (orderType === 'DINE_IN' && !tableId) {
@@ -308,7 +331,7 @@ export const PosScreen: React.FC = () => {
       }));
 
       await posService.createOrder({
-        outletId: currentOutlet.id,
+        outletId: activeOutlet.id,
         orderType: orderType as OrderType,
         tableId: tableId || undefined,
         customerName: customerName || undefined,
@@ -372,7 +395,7 @@ export const PosScreen: React.FC = () => {
                     <Building2 className="w-3.5 h-3.5 text-[#0D5C53]" />
                     <select
                       aria-label="Pilih Cabang POS"
-                      value={currentOutlet?.id || ''}
+                      value={effectiveOutlet?.id || ''}
                       onChange={(e) => {
                         const found = outlets.find((o) => o.id === e.target.value);
                         if (found) setCurrentOutlet(found);
@@ -389,7 +412,7 @@ export const PosScreen: React.FC = () => {
                 ) : (
                   <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 shrink-0 text-xs font-semibold text-slate-700">
                     <Building2 className="w-3.5 h-3.5 text-[#0D5C53]" />
-                    <span>{currentOutlet?.name || 'Outlet Utama'}</span>
+                    <span>{effectiveOutlet?.name || 'Outlet Utama'}</span>
                   </div>
                 )}
 
