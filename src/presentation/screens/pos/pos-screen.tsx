@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Product, Variant } from '@model/Product';
 import type { Table } from '@model/Settings';
 import type { Order, OrderType, OrderItem } from '@model/Order';
@@ -13,6 +13,7 @@ import {
   useCategories,
   useTables,
   useOpenOrders,
+  useGlobalTaxConfig,
 } from '@domain/hooks';
 import { OrderTypeModal } from './order-type-modal';
 import { TableFloorView } from './table-floor-view';
@@ -59,6 +60,8 @@ export const PosScreen: React.FC = () => {
     discountId,
     discountName,
     discountAmount,
+    taxPercent,
+    taxName,
     addItem,
     removeItem,
     updateQuantity,
@@ -67,6 +70,7 @@ export const PosScreen: React.FC = () => {
     setTable,
     setCustomerName,
     setDiscount,
+    setTax,
     clearCart,
     getSubtotal,
     getTax,
@@ -102,6 +106,21 @@ export const PosScreen: React.FC = () => {
     isLoading: openOrdersLoading,
     refetch: refetchOpenOrders,
   } = useOpenOrders(currentOutlet?.id);
+
+  const { data: taxConfig } = useGlobalTaxConfig(currentOutlet?.id);
+
+  // Sync Tax Configuration with Cart Store
+  useEffect(() => {
+    if (taxConfig?.enableTaxCalculation && taxConfig.defaultGlobalTax) {
+      setTax(
+        Number(taxConfig.defaultGlobalTax.rate) || 0,
+        taxConfig.defaultGlobalTax.name,
+        taxConfig.defaultGlobalTax.type,
+      );
+    } else {
+      setTax(0, null, null);
+    }
+  }, [taxConfig, setTax]);
 
   const loading = productsLoading || categoriesLoading || tablesLoading;
 
@@ -649,10 +668,12 @@ export const PosScreen: React.FC = () => {
                   )}
                 </div>
 
-                <div className="flex justify-between">
-                  <span>Pajak Resto (10%)</span>
-                  <span className="font-semibold text-slate-800">Rp {getTax().toLocaleString('id-ID')}</span>
-                </div>
+                {getTax() > 0 && (
+                  <div className="flex justify-between">
+                    <span>{taxName || 'Pajak'} ({taxPercent}%)</span>
+                    <span className="font-semibold text-slate-800">Rp {getTax().toLocaleString('id-ID')}</span>
+                  </div>
+                )}
 
                 <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
                   <span>Total Tagihan</span>

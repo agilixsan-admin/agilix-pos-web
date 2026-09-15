@@ -9,8 +9,10 @@ interface CartStoreState {
   tableId: string | null;
   tableName: string | null;
   customerName: string;
-  taxPercent: number; // default 10% (PB1)
-  servicePercent: number; // default 0% or customizable
+  taxPercent: number;
+  taxName: string | null;
+  taxType: 'INCLUSIVE' | 'EXCLUSIVE' | null;
+  servicePercent: number;
   discountId: string | null;
   discountName: string | null;
   discountAmount: number;
@@ -25,6 +27,7 @@ interface CartStoreState {
   setCustomerName: (name: string) => void;
   setDiscount: (discountId: string | null, discountName: string | null, amount: number) => void;
   setDiscountAmount: (discount: number) => void;
+  setTax: (taxPercent: number, taxName?: string | null, taxType?: 'INCLUSIVE' | 'EXCLUSIVE' | null) => void;
   setTaxPercent: (taxPercent: number) => void;
   setServicePercent: (servicePercent: number) => void;
   clearCart: () => void;
@@ -46,7 +49,9 @@ export const useCartStore = create<CartStoreState>()(
       tableId: null,
       tableName: null,
       customerName: '',
-      taxPercent: 10,
+      taxPercent: 0,
+      taxName: null,
+      taxType: null,
       servicePercent: 0,
       discountId: null,
       discountName: null,
@@ -124,6 +129,9 @@ export const useCartStore = create<CartStoreState>()(
 
       setDiscountAmount: (discountAmount) => set({ discountAmount }),
 
+      setTax: (taxPercent, taxName = null, taxType = null) =>
+        set({ taxPercent, taxName: taxName || null, taxType: taxType || null }),
+
       setTaxPercent: (taxPercent) => set({ taxPercent }),
 
       setServicePercent: (servicePercent) => set({ servicePercent }),
@@ -158,19 +166,25 @@ export const useCartStore = create<CartStoreState>()(
       },
 
       getTax: () => {
+        const rate = get().taxPercent;
+        if (!rate || rate <= 0) return 0;
         const subtotal = get().getSubtotal();
         const discount = get().getDiscount();
         const service = get().getServiceCharge();
         const taxable = Math.max(0, subtotal - discount + service);
-        const rate = get().taxPercent / 100;
-        return Math.round(taxable * rate);
+
+        if (get().taxType === 'INCLUSIVE') {
+          return Math.round(taxable - taxable / (1 + rate / 100));
+        }
+        return Math.round((taxable * rate) / 100);
       },
 
       getTotal: () => {
         const subtotal = get().getSubtotal();
         const discount = get().getDiscount();
         const service = get().getServiceCharge();
-        const tax = get().getTax();
+        const isInclusive = get().taxType === 'INCLUSIVE';
+        const tax = isInclusive ? 0 : get().getTax();
         return Math.max(0, subtotal - discount + service + tax);
       },
 
@@ -187,6 +201,8 @@ export const useCartStore = create<CartStoreState>()(
         tableName: state.tableName,
         customerName: state.customerName,
         taxPercent: state.taxPercent,
+        taxName: state.taxName,
+        taxType: state.taxType,
         servicePercent: state.servicePercent,
         discountId: state.discountId,
         discountName: state.discountName,
