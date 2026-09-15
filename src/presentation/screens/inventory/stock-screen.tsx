@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Boxes,
@@ -6,14 +6,12 @@ import {
   Coins,
   AlertTriangle,
   XCircle,
-  Eye,
   ChevronLeft,
   ChevronRight,
-  TrendingDown,
-  TrendingUp,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
-import { useStockOverview } from '@domain/hooks';
+import { useStockOverview, useOutlets } from '@domain/hooks';
 import type { StockStatus } from '@model/Inventory';
 import {
   Card,
@@ -29,6 +27,24 @@ import {
 export const StockScreen: React.FC = () => {
   const navigate = useNavigate();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const { data: outlets = [] } = useOutlets();
+
+  // Selected Outlet state (Branch Scoping)
+  const [selectedOutletId, setSelectedOutletId] = useState<string>('');
+
+  // Auto-select outlet on load
+  useEffect(() => {
+    if (!selectedOutletId && (currentOutlet?.id || outlets[0]?.id)) {
+      setSelectedOutletId(currentOutlet?.id || outlets[0]?.id || '');
+    }
+  }, [currentOutlet, outlets, selectedOutletId]);
+
+  const effectiveOutletId =
+    selectedOutletId ||
+    currentOutlet?.id ||
+    (outlets.length > 0 ? outlets[0].id : '');
+  const activeOutlet =
+    outlets.find((o) => o.id === effectiveOutletId) || currentOutlet;
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,14 +56,14 @@ export const StockScreen: React.FC = () => {
   // Query Params
   const queryParams = useMemo(() => {
     return {
-      outletId: currentOutlet?.id,
+      outletId: effectiveOutletId || undefined,
       page,
       limit,
       search: searchTerm.trim() || undefined,
       itemType: itemTypeFilter !== 'ALL' ? itemTypeFilter : undefined,
       stockStatus: stockStatusFilter !== 'ALL' ? stockStatusFilter : undefined,
     };
-  }, [currentOutlet?.id, page, limit, searchTerm, itemTypeFilter, stockStatusFilter]);
+  }, [effectiveOutletId, page, limit, searchTerm, itemTypeFilter, stockStatusFilter]);
 
   const { data: stockResponse, isLoading } = useStockOverview(queryParams);
 
@@ -94,21 +110,52 @@ export const StockScreen: React.FC = () => {
     }
   };
 
+  const activeBranchName = activeOutlet?.name || 'Cabang Utama';
+
   return (
     <div className="space-y-6 pb-16 max-w-7xl mx-auto">
-      {/* Top Header & Breadcrumb */}
-      <div>
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <Link to="/inventory/stock" className="hover:text-[#0D5C53]">
-            Inventory
-          </Link>
-          <span>/</span>
-          <span className="text-slate-800 font-semibold">Stok</span>
+      {/* Top Header with Breadcrumb and Outlet Switcher */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Link to="/inventory/stock" className="hover:text-[#0D5C53]">
+              Inventory
+            </Link>
+            <span>/</span>
+            <span className="text-slate-800 font-semibold">Stok</span>
+          </div>
+          <div className="flex items-center gap-2.5 mt-0.5">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Monitoring Stok Fisik</h1>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Multi-Outlet
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Pantau kondisi stok bahan baku dan packaging secara real-time di <span className="font-semibold text-slate-700">{activeBranchName}</span>.
+          </p>
         </div>
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight mt-0.5">Stok</h1>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Pantau kondisi stok bahan baku dan packaging secara real-time di {currentOutlet?.name || 'Outlet Utama'}.
-        </p>
+
+        <div className="flex items-center gap-3">
+          {/* Outlet Switcher Dropdown */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
+            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
+            <select
+              value={effectiveOutletId}
+              onChange={(e) => {
+                setSelectedOutletId(e.target.value);
+                setPage(1);
+              }}
+              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              {outlets.map((outlet) => (
+                <option key={outlet.id} value={outlet.id}>
+                  🏪 {outlet.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* 4 KPI Summary Cards */}
@@ -116,7 +163,7 @@ export const StockScreen: React.FC = () => {
         <KpiCard
           title="TOTAL ITEM"
           value={summary.totalItems.toLocaleString('id-ID')}
-          subtitle="Active Raw Materials + Packaging"
+          subtitle={`Item aktif di ${activeBranchName}`}
           icon={<Box className="w-5 h-5" />}
           theme="slate"
         />
@@ -124,7 +171,7 @@ export const StockScreen: React.FC = () => {
         <KpiCard
           title="TOTAL INVENTORY VALUE"
           value={formatRupiah(summary.totalInventoryValue)}
-          subtitle="Nilai stok saat ini"
+          subtitle={`Nilai stok saat ini di ${activeBranchName}`}
           icon={<Coins className="w-5 h-5" />}
           theme="teal"
         />
@@ -132,7 +179,7 @@ export const StockScreen: React.FC = () => {
         <KpiCard
           title="LOW STOCK"
           value={summary.lowStockCount.toLocaleString('id-ID')}
-          subtitle="Items with Current Stock <= Min Stock"
+          subtitle="Stok <= batas minimum"
           icon={<AlertTriangle className="w-5 h-5" />}
           theme={summary.lowStockCount > 0 ? 'amber' : 'slate'}
           statusBadge={
@@ -147,7 +194,7 @@ export const StockScreen: React.FC = () => {
         <KpiCard
           title="OUT OF STOCK"
           value={summary.outOfStockCount.toLocaleString('id-ID')}
-          subtitle="Items with Current Stock = 0"
+          subtitle="Stok habis (0)"
           icon={<XCircle className="w-5 h-5" />}
           theme={summary.outOfStockCount > 0 ? 'amber' : 'slate'}
           statusBadge={
@@ -166,9 +213,11 @@ export const StockScreen: React.FC = () => {
           <div className="space-y-3 w-full">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Daftar Stok</h3>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Daftar Stok Fisik — {activeBranchName}
+                </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Daftar posisi stok bahan baku dan packaging saat ini.
+                  Daftar posisi kuantitas stok bahan baku dan packaging gudang cabang saat ini.
                 </p>
               </div>
             </div>
@@ -255,7 +304,7 @@ export const StockScreen: React.FC = () => {
                       description={
                         searchTerm || itemTypeFilter !== 'ALL' || stockStatusFilter !== 'ALL'
                           ? 'Tidak ada item inventori yang cocok dengan filter pencarian.'
-                          : 'Belum ada data stok bahan baku atau packaging pada outlet ini.'
+                          : `Belum ada data stok bahan baku atau packaging pada ${activeBranchName}.`
                       }
                     />
                   </td>
@@ -268,11 +317,13 @@ export const StockScreen: React.FC = () => {
                   const itemTypeName =
                     item.itemType === 'PACKAGING' ? 'Packaging' : 'Bahan Baku';
 
+                  const detailUrl = `/inventory/stock/${item.id}?outletId=${effectiveOutletId}`;
+
                   return (
                     <tr
                       key={item.id}
                       className="hover:bg-slate-50/60 transition-colors group cursor-pointer"
-                      onClick={() => navigate(`/inventory/stock/${item.id}`)}
+                      onClick={() => navigate(detailUrl)}
                     >
                       <td className="py-3.5 px-4 font-bold text-slate-900">
                         {item.name}
@@ -313,7 +364,7 @@ export const StockScreen: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <Link
-                          to={`/inventory/stock/${item.id}`}
+                          to={detailUrl}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Button

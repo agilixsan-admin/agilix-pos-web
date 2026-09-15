@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Box,
@@ -12,11 +12,13 @@ import {
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
   useStockItemDetail,
   useStockMovements,
+  useOutlets,
 } from '@domain/hooks';
 import type { StockStatus } from '@model/Inventory';
 import {
@@ -31,13 +33,27 @@ import {
 export const StockDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const { data: outlets = [] } = useOutlets();
+
+  const queryOutletId = searchParams.get('outletId');
+  const effectiveOutletId =
+    queryOutletId ||
+    currentOutlet?.id ||
+    (outlets.length > 0 ? outlets[0].id : '');
+  const activeOutlet =
+    outlets.find((o) => o.id === effectiveOutletId) || currentOutlet;
+  const activeBranchName = activeOutlet?.name || 'Cabang Utama';
 
   // Queries
-  const { data: item, isLoading: loadingItem } = useStockItemDetail(id, currentOutlet?.id);
+  const { data: item, isLoading: loadingItem } = useStockItemDetail(
+    id,
+    effectiveOutletId,
+  );
   const { data: movements = [], isLoading: loadingMovements } = useStockMovements({
     itemId: id,
-    outletId: currentOutlet?.id,
+    outletId: effectiveOutletId,
   });
 
   // Local pagination for movements table
@@ -91,8 +107,46 @@ export const StockDetailScreen: React.FC = () => {
     }
   };
 
+  const getMovementTypeBadge = (type: string) => {
+    const isPositive =
+      type === 'PURCHASE_RECEIPT' ||
+      type === 'TRANSFER_IN' ||
+      type === 'ADJUSTMENT_IN' ||
+      type === 'INITIAL';
+
+    if (isPositive) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+          <ArrowDownLeft className="w-3 h-3 text-emerald-600" />
+          {type === 'PURCHASE_RECEIPT'
+            ? 'Penerimaan PO'
+            : type === 'ADJUSTMENT_IN'
+            ? 'Penyesuaian Masuk'
+            : type === 'TRANSFER_IN'
+            ? 'Transfer Masuk'
+            : 'Stok Awal'}
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
+        <ArrowUpRight className="w-3 h-3 text-rose-600" />
+        {type === 'ORDER_USAGE'
+          ? 'Pemakaian POS'
+          : type === 'ADJUSTMENT_OUT'
+          ? 'Penyesuaian Keluar'
+          : type === 'WASTE'
+          ? 'Waste / Rusak'
+          : type === 'TRANSFER_OUT'
+          ? 'Transfer Keluar'
+          : 'Keluar'}
+      </span>
+    );
+  };
+
   if (loadingItem) {
-    return <LoadingState message="Memuat detail item stok..." className="min-h-[400px]" />;
+    return <LoadingState message="Memuat rincian stok item..." />;
   }
 
   if (!item) {
@@ -103,7 +157,7 @@ export const StockDetailScreen: React.FC = () => {
           title="Item Stok Tidak Ditemukan"
           description="Data item inventori yang Anda cari tidak tersedia atau telah dihapus."
           action={
-            <Link to="/inventory/stock">
+            <Link to={`/inventory/stock?outletId=${effectiveOutletId}`}>
               <Button variant="primary" leftIcon={<ArrowLeft className="w-4 h-4" />}>
                 Kembali ke Daftar Stok
               </Button>
@@ -121,20 +175,25 @@ export const StockDetailScreen: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate('/inventory/stock')}
+            onClick={() => navigate(`/inventory/stock?outletId=${effectiveOutletId}`)}
             className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-xs cursor-pointer"
             title="Kembali ke Daftar Stok"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              {item.name}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                {item.name}
+              </h1>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {activeBranchName}
+              </span>
+            </div>
             <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 font-mono">
               <span>SKU: {item.sku || '-'}</span>
               <span>•</span>
@@ -145,12 +204,32 @@ export const StockDetailScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Top Right Actions */}
-        <div className="flex items-center gap-2.5">
+        {/* Top Right Actions with Branch Switcher */}
+        <div className="flex items-center flex-wrap gap-2.5">
+          {/* Branch Switcher Dropdown */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
+            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
+            <select
+              value={effectiveOutletId}
+              onChange={(e) => {
+                setSearchParams({ outletId: e.target.value });
+                setPage(1);
+              }}
+              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              {outlets.map((outlet) => (
+                <option key={outlet.id} value={outlet.id}>
+                  🏪 {outlet.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <Button
             variant="outline"
             leftIcon={<Sliders className="w-4 h-4" />}
-            onClick={() => navigate('/inventory/adjustments')}
+            onClick={() => navigate(`/inventory/adjustments?outletId=${effectiveOutletId}`)}
           >
             Penyesuaian Stok
           </Button>
@@ -158,7 +237,7 @@ export const StockDetailScreen: React.FC = () => {
           <Button
             variant="primary"
             leftIcon={<ShoppingCart className="w-4 h-4" />}
-            onClick={() => navigate('/inventory/purchases/create')}
+            onClick={() => navigate(`/inventory/purchases/create?outletId=${effectiveOutletId}`)}
           >
             Buat Pembelian
           </Button>
@@ -170,6 +249,7 @@ export const StockDetailScreen: React.FC = () => {
         <KpiCard
           title="CURRENT STOCK"
           value={`${Number(item.currentStock).toLocaleString('id-ID')} ${item.unit}`}
+          subtitle={`Stok fisik di ${activeBranchName}`}
           icon={<Box className="w-5 h-5" />}
           theme={isOutOfStock || isLowStock ? 'amber' : 'teal'}
           statusBadge={getStatusBadge(item.stockStatus)}
@@ -178,15 +258,14 @@ export const StockDetailScreen: React.FC = () => {
         <KpiCard
           title="MINIMUM STOCK"
           value={`${Number(item.minimumStock).toLocaleString('id-ID')} ${item.unit}`}
-          subtitle="Batas peringatan stok"
+          subtitle="Batas peringatan restock"
           icon={<AlertTriangle className="w-5 h-5" />}
           theme="slate"
         />
 
         <KpiCard
           title="UNIT COST"
-          value={`${formatRupiah(item.unitCost)}`}
-          unit={`/${item.unit}`}
+          value={formatRupiah(item.unitCost)}
           subtitle="Moving Average Unit Cost"
           icon={<Coins className="w-5 h-5" />}
           theme="slate"
@@ -245,29 +324,29 @@ export const StockDetailScreen: React.FC = () => {
 
               <div>
                 <span className="text-slate-400 font-medium block uppercase text-[10px]">
-                  CURRENT STOCK
+                  KATEGORI
                 </span>
-                <span className="font-bold text-slate-900 mt-0.5 block">
-                  {Number(item.currentStock).toLocaleString('id-ID')} {item.unit}
+                <span className="font-semibold text-slate-800 mt-0.5 block">
+                  {item.category?.name || '-'}
                 </span>
               </div>
 
               <div>
                 <span className="text-slate-400 font-medium block uppercase text-[10px]">
-                  MINIMUM STOCK
+                  CABANG AKTIF
                 </span>
-                <span className="font-semibold text-slate-700 mt-0.5 block">
-                  {Number(item.minimumStock).toLocaleString('id-ID')} {item.unit}
+                <span className="font-semibold text-emerald-700 mt-0.5 block">
+                  🏪 {activeBranchName}
                 </span>
               </div>
 
               <div className="pt-2 border-t border-slate-100">
                 <span className="text-slate-400 font-medium block uppercase text-[10px]">
-                  STOCK STATUS
+                  DESKRIPSI
                 </span>
-                <div className="mt-1">
-                  {getStatusBadge(item.stockStatus)}
-                </div>
+                <p className="text-slate-600 mt-0.5 text-xs leading-relaxed">
+                  {item.description || 'Tidak ada deskripsi.'}
+                </p>
               </div>
             </div>
           </Card>
@@ -279,9 +358,11 @@ export const StockDetailScreen: React.FC = () => {
             header={
               <div className="flex items-center justify-between w-full">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Pergerakan Stok</h3>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Pergerakan Stok — {activeBranchName}
+                  </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Riwayat perubahan stok item.
+                    Riwayat mutasi keluar/masuk stok item pada cabang terpilih.
                   </p>
                 </div>
 
@@ -289,7 +370,7 @@ export const StockDetailScreen: React.FC = () => {
                   variant="outline"
                   size="sm"
                   leftIcon={<ShoppingCart className="w-3.5 h-3.5" />}
-                  onClick={() => navigate('/inventory/purchases')}
+                  onClick={() => navigate(`/inventory/purchases?outletId=${effectiveOutletId}`)}
                 >
                   Lihat Pembelian
                 </Button>
@@ -319,82 +400,47 @@ export const StockDetailScreen: React.FC = () => {
                     <tr>
                       <td colSpan={5}>
                         <EmptyState
-                          icon={<History className="w-8 h-8 opacity-30 mx-auto" />}
-                          title="Belum ada riwayat pergerakan stok"
-                          description="Setiap pembelian, penjualan POS, dan penyesuaian stok akan tercatat di sini."
+                          icon={<History className="w-8 h-8 opacity-30 mx-auto text-[#0D5C53]" />}
+                          title="Belum Ada Pergerakan Stok"
+                          description={`Belum ada mutasi keluar/masuk untuk item ini di ${activeBranchName}.`}
                         />
                       </td>
                     </tr>
                   ) : (
-                    paginatedMovements.map((m) => {
-                      const isIncoming = m.direction === 'IN' || m.quantity > 0;
-                      const movementTypeLabel =
-                        m.type === 'IN' || m.referenceType === 'PURCHASE'
-                          ? 'Pembelian'
-                          : m.type === 'SALE'
-                          ? 'Penjualan'
-                          : m.type === 'ADJUSTMENT'
-                          ? 'Stock Adjustment'
-                          : m.type === 'WASTE'
-                          ? 'Waste'
-                          : m.type || (isIncoming ? 'Masuk' : 'Keluar');
-
-                      const refCode = m.referenceId || m.reason || '-';
-                      const isPurchaseRef =
-                        refCode.startsWith('PB-') || m.referenceType === 'PURCHASE';
-
-                      return (
-                        <tr key={m.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-3.5 px-4 font-medium text-slate-700">
-                            {formatDate(m.movementDate || m.createdAt)}
-                          </td>
-                          <td className="py-3.5 px-4 font-semibold text-slate-800">
-                            {movementTypeLabel}
-                          </td>
-                          <td className="py-3.5 px-4 font-mono">
-                            {isPurchaseRef ? (
-                              <Link
-                                to="/inventory/purchases"
-                                className="text-[#0D5C53] hover:underline font-semibold"
-                              >
-                                {refCode}
-                              </Link>
-                            ) : (
-                              <span className="text-slate-600">{refCode}</span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-right font-bold font-mono">
-                            {isIncoming ? (
-                              <span className="text-emerald-600">
-                                +{Number(Math.abs(m.quantity)).toLocaleString('id-ID')} {item.unit}
-                              </span>
-                            ) : (
-                              <span className="text-slate-300">-</span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-right font-bold font-mono">
-                            {!isIncoming ? (
-                              <span className="text-rose-600">
-                                -{Number(Math.abs(m.quantity)).toLocaleString('id-ID')} {item.unit}
-                              </span>
-                            ) : (
-                              <span className="text-slate-300">-</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
+                    paginatedMovements.map((movement) => (
+                      <tr key={movement.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3.5 px-4 font-mono text-slate-600">
+                          {formatDate(movement.createdAt)}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {getMovementTypeBadge(movement.movementType)}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-slate-600">
+                          {movement.referenceNumber || movement.reasonCategory?.name || '-'}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-semibold text-emerald-600">
+                          {movement.quantity > 0 ? `+${Number(movement.quantity).toLocaleString('id-ID')}` : '-'}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-semibold text-rose-600">
+                          {movement.quantity < 0 ? Number(movement.quantity).toLocaleString('id-ID') : '-'}
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
             </div>
 
-            {/* Pagination footer */}
-            {totalMovements > limit && (
+            {/* Pagination Footer */}
+            {totalPages > 1 && (
               <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <div>
-                  Showing {(page - 1) * limit + 1} to {Math.min(page * limit, totalMovements)} of{' '}
-                  {totalMovements} entries
+                  Menampilkan{' '}
+                  <span className="font-semibold text-slate-700">{(page - 1) * limit + 1}</span>-
+                  <span className="font-semibold text-slate-700">
+                    {Math.min(page * limit, totalMovements)}
+                  </span>{' '}
+                  dari <span className="font-semibold text-slate-700">{totalMovements}</span> riwayat
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -404,7 +450,7 @@ export const StockDetailScreen: React.FC = () => {
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     leftIcon={<ChevronLeft className="w-3.5 h-3.5" />}
                   >
-                    Previous
+                    Sebelumnya
                   </Button>
                   <span className="font-semibold text-slate-700 px-2">
                     {page} / {totalPages}
@@ -416,7 +462,7 @@ export const StockDetailScreen: React.FC = () => {
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     rightIcon={<ChevronRight className="w-3.5 h-3.5" />}
                   >
-                    Next
+                    Selanjutnya
                   </Button>
                 </div>
               </div>
@@ -427,4 +473,3 @@ export const StockDetailScreen: React.FC = () => {
     </div>
   );
 };
-

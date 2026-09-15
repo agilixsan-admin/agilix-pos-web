@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type {
   PrinterSetting,
   PrinterType,
@@ -14,6 +14,7 @@ import {
   useTestPrintMutation,
   useUpdatePrinterRoutingRulesMutation,
   useCategories,
+  useOutlets,
 } from '@domain/hooks';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -32,6 +33,7 @@ import {
   Monitor,
   PrinterCheck,
   AlertCircle,
+  Store,
 } from 'lucide-react';
 import {
   Button,
@@ -46,11 +48,34 @@ import {
 
 export const PrintersScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const outletId = currentOutlet?.id;
+  const { data: outlets = [], isLoading: outletsLoading } = useOutlets();
+
+  // Selected Outlet state
+  const [selectedOutletId, setSelectedOutletId] = useState<string>('');
+
+  // Auto-select outlet on load
+  useEffect(() => {
+    if (!selectedOutletId && (currentOutlet?.id || outlets[0]?.id)) {
+      setSelectedOutletId(currentOutlet?.id || outlets[0]?.id || '');
+    }
+  }, [currentOutlet, outlets, selectedOutletId]);
+
+  const effectiveOutletId = selectedOutletId || currentOutlet?.id || (outlets.length > 0 ? outlets[0].id : '');
+  const activeOutlet = outlets.find((o) => o.id === effectiveOutletId) || currentOutlet;
 
   // Queries
-  const { data: printers = [], isLoading: printersLoading, refetch } = usePrinters(outletId);
-  const { data: routingRules = [], isLoading: routingLoading, refetch: refetchRouting } = usePrinterRoutingRules(outletId);
+  const {
+    data: printers = [],
+    isLoading: printersLoading,
+    refetch,
+  } = usePrinters(effectiveOutletId || undefined);
+
+  const {
+    data: routingRules = [],
+    isLoading: routingLoading,
+    refetch: refetchRouting,
+  } = usePrinterRoutingRules(effectiveOutletId || undefined);
+
   const { data: categories = [] } = useCategories();
 
   // Mutations
@@ -123,9 +148,9 @@ export const PrintersScreen: React.FC = () => {
 
   const validatePrinterForm = () => {
     const errors: Record<string, string> = {};
-    if (!formData.name.trim()) errors.name = 'Printer name is required';
+    if (!formData.name.trim()) errors.name = 'Nama printer wajib diisi';
     if (formData.connectionType === 'NETWORK' && !formData.ipAddress.trim()) {
-      errors.ipAddress = 'IP address is required for network printers';
+      errors.ipAddress = 'IP Address wajib diisi untuk printer jaringan (LAN)';
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -133,7 +158,7 @@ export const PrintersScreen: React.FC = () => {
 
   const handleSavePrinter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validatePrinterForm() || !outletId) return;
+    if (!validatePrinterForm() || !effectiveOutletId) return;
 
     try {
       if (editingPrinter) {
@@ -150,10 +175,10 @@ export const PrintersScreen: React.FC = () => {
             isDefault: formData.isDefault,
           },
         });
-        showToast(`Printer "${formData.name}" updated successfully.`);
+        showToast(`Printer "${formData.name}" berhasil diperbarui.`);
       } else {
         await createPrinterMutation.mutateAsync({
-          outletId,
+          outletId: effectiveOutletId,
           name: formData.name.trim(),
           type: formData.type,
           connectionType: formData.connectionType,
@@ -163,7 +188,7 @@ export const PrintersScreen: React.FC = () => {
           bluetoothMac: formData.connectionType === 'BLUETOOTH' ? formData.bluetoothMac.trim() : undefined,
           isDefault: formData.isDefault,
         });
-        showToast(`Printer "${formData.name}" added successfully.`);
+        showToast(`Printer "${formData.name}" berhasil ditambahkan ke cabang ${activeOutlet?.name || ''}.`);
       }
 
       setIsPrinterModalOpen(false);
@@ -171,7 +196,7 @@ export const PrintersScreen: React.FC = () => {
     } catch (err: unknown) {
       alert(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Failed to save printer configuration.'
+          'Gagal menyimpan konfigurasi printer.'
       );
     }
   };
@@ -183,22 +208,22 @@ export const PrintersScreen: React.FC = () => {
         id: printer.id,
         data: { status: nextStatus },
       });
-      showToast(`Printer "${printer.name}" is now ${nextStatus === 'ACTIVE' ? 'connected' : 'offline'}.`);
+      showToast(`Printer "${printer.name}" kini ${nextStatus === 'ACTIVE' ? 'Aktif' : 'Nonaktif'}.`);
       refetch();
     } catch (err: unknown) {
-      alert('Failed to update printer status.');
+      alert('Gagal mengubah status printer.');
     }
   };
 
   const handleDeletePrinter = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete printer "${name}"?`)) return;
+    if (!confirm(`Apakah Anda yakin ingin menghapus printer "${name}"?`)) return;
     try {
       await deletePrinterMutation.mutateAsync(id);
       setIsPrinterModalOpen(false);
-      showToast(`Printer "${name}" deleted.`);
+      showToast(`Printer "${name}" berhasil dihapus.`);
       refetch();
     } catch (err: unknown) {
-      alert('Failed to delete printer.');
+      alert('Gagal menghapus printer.');
     }
   };
 
@@ -206,11 +231,11 @@ export const PrintersScreen: React.FC = () => {
     setTestingPrinterId(printer.id);
     try {
       await testPrintMutation.mutateAsync(printer.id);
-      showToast(`Test print sent to "${printer.name}" successfully.`);
+      showToast(`Test print berhasil dikirim ke "${printer.name}".`);
     } catch (err: unknown) {
       alert(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          `Failed to execute test print on "${printer.name}". Check connection.`
+          `Gagal menjalankan test print pada "${printer.name}". Periksa koneksi perangkat.`
       );
     } finally {
       setTestingPrinterId(null);
@@ -228,7 +253,7 @@ export const PrintersScreen: React.FC = () => {
 
   const handleSaveRouting = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!outletId) return;
+    if (!effectiveOutletId) return;
 
     try {
       const routings = Object.entries(routingState)
@@ -236,15 +261,15 @@ export const PrintersScreen: React.FC = () => {
         .map(([cId, pId]) => ({ categoryId: cId, printerId: pId }));
 
       await updateRoutingMutation.mutateAsync({
-        outletId,
+        outletId: effectiveOutletId,
         routings,
       });
 
       setIsRoutingModalOpen(false);
-      showToast('Printer routing rules updated successfully.');
+      showToast(`Aturan routing printer cabang ${activeOutlet?.name || ''} berhasil disimpan.`);
       refetchRouting();
     } catch (err: unknown) {
-      alert('Failed to update routing rules.');
+      alert('Gagal memperbarui aturan routing printer.');
     }
   };
 
@@ -262,17 +287,19 @@ export const PrintersScreen: React.FC = () => {
   const getStationLabel = (type: PrinterType) => {
     switch (type) {
       case 'KITCHEN':
-        return 'Station: Kitchen';
+        return 'Station: Kitchen / Dapur';
       case 'BAR':
-        return 'Station: Bar';
+        return 'Station: Bar / Minuman';
       case 'RECEIPT':
       default:
         return 'Station: Receipt / Kasir';
     }
   };
 
+  const isLoading = printersLoading || outletsLoading;
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-16">
+    <div className="max-w-7xl mx-auto space-y-6 pb-16">
       {/* Toast Notification */}
       {successToast && (
         <div className="fixed top-5 right-5 z-50 flex items-center gap-2.5 bg-emerald-800 text-white px-4 py-3 rounded-xl shadow-xl text-xs font-medium animate-in fade-in slide-in-from-top-4 duration-200">
@@ -281,39 +308,86 @@ export const PrintersScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Page Header with Outlet Switcher */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Printers & Routing</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Manage station printers and connectivity.
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Pengaturan Printer & Routing</h1>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Multi-Outlet
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Kelola perangkat printer fisik (kasir, bar, dapur) dan aturan routing pesanan khusus per cabang outlet.
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={handleOpenAdd}
-          className="bg-[#0D5C53] hover:bg-[#09423C] text-white self-start sm:self-auto rounded-xl font-medium"
-        >
-          Add Printer
-        </Button>
+        <div className="flex items-center flex-wrap gap-3">
+          {/* Outlet Switcher Dropdown */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
+            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
+            <select
+              value={effectiveOutletId}
+              onChange={(e) => setSelectedOutletId(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              {outlets.map((outlet) => (
+                <option key={outlet.id} value={outlet.id}>
+                  🏪 {outlet.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Button
+            variant="outline"
+            leftIcon={<SlidersHorizontal className="w-4 h-4" />}
+            onClick={handleOpenRouting}
+            className="text-xs font-semibold border-slate-200 hover:bg-slate-50"
+          >
+            Routing Kategori
+          </Button>
+
+          <Button
+            variant="primary"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={handleOpenAdd}
+            className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm"
+          >
+            + Tambah Printer
+          </Button>
+        </div>
       </div>
 
-      {/* 2-Column Grid Layout (Matching Figma Mockup) */}
+      {/* 2-Column Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Printer Cards (8 Cols) */}
         <div className="lg:col-span-8 space-y-3.5">
-          {printersLoading ? (
+          <div className="flex items-center justify-between px-1">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">
+                Daftar Perangkat Printer — Cabang {activeOutlet?.name || ''}
+              </h2>
+              <p className="text-xs text-slate-500">
+                Semua tiket pesanan di outlet ini akan dicetak sesuai station masing-masing printer.
+              </p>
+            </div>
+            <Badge variant="info">
+              {printers.length} Printer Terhubung
+            </Badge>
+          </div>
+
+          {isLoading ? (
             <Card padding="lg" className="border-slate-200 text-center">
-              <LoadingState message="Scanning configured printers..." />
+              <LoadingState message={`Memindai printer di cabang ${activeOutlet?.name || ''}...`} />
             </Card>
           ) : printers.length === 0 ? (
             <Card padding="lg" className="border-slate-200 text-center py-12">
               <EmptyState
                 icon={<Printer className="w-10 h-10 text-slate-300 mx-auto" />}
-                title="No printers connected"
-                description="Connect thermal ESC/POS printers via Bluetooth, Ethernet LAN, or USB to automate receipt and kitchen ticket printing."
+                title={`Belum ada printer di cabang ${activeOutlet?.name || ''}`}
+                description="Hubungkan printer thermal ESC/POS via Bluetooth, Ethernet LAN, atau USB untuk mencetak struk kasir dan tiket pesanan dapur secara otomatis."
                 action={
                   <Button
                     variant="primary"
@@ -321,7 +395,7 @@ export const PrintersScreen: React.FC = () => {
                     leftIcon={<Plus className="w-4 h-4" />}
                     className="bg-[#0D5C53] text-white"
                   >
-                    Add First Printer
+                    Tambah Printer Pertama
                   </Button>
                 }
               />
@@ -381,6 +455,13 @@ export const PrintersScreen: React.FC = () => {
                           {getConnectionIcon(printer.connectionType)}
                           <span className="capitalize">{printer.connectionType.toLowerCase()}</span>
                         </span>
+
+                        {/* IP or MAC address if present */}
+                        {printer.ipAddress && (
+                          <span className="text-[11px] text-slate-400 font-mono">
+                            {printer.ipAddress}:{printer.port || 9100}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -404,7 +485,7 @@ export const PrintersScreen: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleOpenEdit(printer)}
-                          title="Edit Configuration"
+                          title="Edit Konfigurasi"
                           className="p-2 text-slate-500 hover:text-slate-800 rounded-xl border-slate-200"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -414,7 +495,7 @@ export const PrintersScreen: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleToggleStatus(printer)}
-                          title="Disconnect / Power Off"
+                          title="Putuskan / Nonaktifkan"
                           className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border-slate-200"
                         >
                           <Power className="w-3.5 h-3.5" />
@@ -428,14 +509,14 @@ export const PrintersScreen: React.FC = () => {
                           onClick={() => handleToggleStatus(printer)}
                           className="bg-[#0D5C53] hover:bg-[#09423C] text-white text-xs font-semibold px-4 py-1.5 rounded-xl"
                         >
-                          Connect
+                          Hubungkan
                         </Button>
 
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleOpenEdit(printer)}
-                          title="Edit Configuration"
+                          title="Edit Konfigurasi"
                           className="p-2 text-slate-500 hover:text-slate-800 rounded-xl border-slate-200"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -451,17 +532,17 @@ export const PrintersScreen: React.FC = () => {
 
         {/* Right Column: Widgets (4 Cols) */}
         <div className="lg:col-span-4 space-y-4">
-          {/* Card 1: Bluetooth & Connection Info Card */}
+          {/* Card 1: Connection Info Card */}
           <Card padding="md" className="border-slate-200 space-y-3 bg-white shadow-2xs">
             <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
               <div className="w-6 h-6 rounded-full bg-teal-50 text-[#0D5C53] flex items-center justify-center shrink-0">
                 <Info className="w-3.5 h-3.5" />
               </div>
-              <span>Bluetooth Connectivity</span>
+              <span>Konektivitas Printer Cabang</span>
             </div>
 
             <p className="text-xs text-slate-500 leading-relaxed">
-              Ensure printers are within 30 feet of this terminal. Metal surfaces may interfere with the signal.
+              Pastikan printer Bluetooth berada dalam jangkauan 10 meter dari tablet/terminal POS di kasir cabang <strong>{activeOutlet?.name}</strong>.
             </p>
 
             {/* Schematic Illustration Box */}
@@ -471,7 +552,7 @@ export const PrintersScreen: React.FC = () => {
                   <div className="w-10 h-10 rounded-lg bg-teal-100 text-[#0D5C53] flex items-center justify-center shadow-xs">
                     <Monitor className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-600">Terminal</span>
+                  <span className="text-[10px] font-semibold text-slate-600">POS Terminal</span>
                 </div>
 
                 <div className="flex items-center gap-1 text-[#0D5C53]">
@@ -484,7 +565,7 @@ export const PrintersScreen: React.FC = () => {
                   <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shadow-xs">
                     <Printer className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-600">Printer</span>
+                  <span className="text-[10px] font-semibold text-slate-600">ESC/POS</span>
                 </div>
               </div>
             </div>
@@ -493,16 +574,19 @@ export const PrintersScreen: React.FC = () => {
           {/* Card 2: Routing Rules Card */}
           <Card padding="md" className="border-slate-200 space-y-4 bg-white shadow-2xs">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">Routing Rules</h3>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Routing Kategori</h3>
+                <p className="text-[11px] text-slate-400">Pengalihan tiket stasiun pesanan</p>
+              </div>
               <Badge variant="info">
-                {routingRules.length} Configured
+                {routingRules.length} Dikonfigurasi
               </Badge>
             </div>
 
             <div className="space-y-2.5 text-xs">
               {routingRules.length === 0 ? (
                 <div className="text-slate-400 text-xs py-2 italic">
-                  Default: All orders route to default printer.
+                  Default: Semua pesanan diarahkan ke printer default.
                 </div>
               ) : (
                 routingRules.map((rule) => (
@@ -524,7 +608,7 @@ export const PrintersScreen: React.FC = () => {
               leftIcon={<SlidersHorizontal className="w-3.5 h-3.5" />}
               className="w-full text-xs font-semibold py-2 rounded-xl border-slate-200 hover:bg-slate-50"
             >
-              Manage Routing
+              Kelola Routing Kategori
             </Button>
           </Card>
         </div>
@@ -534,15 +618,23 @@ export const PrintersScreen: React.FC = () => {
       <Modal
         isOpen={isPrinterModalOpen}
         onClose={() => setIsPrinterModalOpen(false)}
-        title={editingPrinter ? 'Edit Printer' : 'Add New Printer'}
+        title={editingPrinter ? 'Edit Printer' : 'Tambah Printer Baru'}
         maxWidth="md"
       >
         <form onSubmit={handleSavePrinter} className="space-y-4 py-1">
+          {/* Outlet Target Badge */}
+          <div className="p-3 bg-teal-50 border border-teal-200/80 rounded-xl flex items-center gap-2 text-xs text-[#0D5C53] font-medium">
+            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+            <span>
+              Cabang Penempatan: <strong>{activeOutlet?.name || 'Cabang Terpilih'}</strong>
+            </span>
+          </div>
+
           <FormInput
-            label="Printer Name"
+            label="Nama Perangkat Printer"
             required
             autoFocus
-            placeholder="e.g. Kitchen Printer, Bar Thermal"
+            placeholder="Contoh: Printer Kasir Depan, Thermal Dapur, Bar Printer"
             value={formData.name}
             onChange={(e) => {
               setFormData({ ...formData, name: e.target.value });
@@ -553,7 +645,7 @@ export const PrintersScreen: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormSelect
-              label="Station / Target Role"
+              label="Station / Peran Target"
               required
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value as PrinterType })}
@@ -564,7 +656,7 @@ export const PrintersScreen: React.FC = () => {
             </FormSelect>
 
             <FormSelect
-              label="Connection Type"
+              label="Tipe Sambungan"
               required
               value={formData.connectionType}
               onChange={(e) =>
@@ -582,19 +674,19 @@ export const PrintersScreen: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormSelect
-              label="Paper Size"
+              label="Ukuran Kertas Thermal"
               value={formData.paperSize}
               onChange={(e) =>
                 setFormData({ ...formData, paperSize: e.target.value as PrinterPaperSize })
               }
             >
-              <option value="58mm">58mm (Small Thermal)</option>
-              <option value="80mm">80mm (Standard POS Thermal)</option>
+              <option value="58mm">58mm (Kecil / Standar Portabel)</option>
+              <option value="80mm">80mm (Lebar / Standar Kasir POS)</option>
             </FormSelect>
 
             {formData.connectionType === 'NETWORK' && (
               <FormInput
-                label="Port"
+                label="Port Socket"
                 type="number"
                 value={formData.port}
                 onChange={(e) => setFormData({ ...formData, port: Number(e.target.value) })}
@@ -605,7 +697,7 @@ export const PrintersScreen: React.FC = () => {
           {/* Conditional Connection Details */}
           {formData.connectionType === 'NETWORK' && (
             <FormInput
-              label="IP Address"
+              label="IP Address Printer"
               required
               placeholder="192.168.1.200"
               value={formData.ipAddress}
@@ -614,17 +706,17 @@ export const PrintersScreen: React.FC = () => {
                 if (formErrors.ipAddress) setFormErrors({ ...formErrors, ipAddress: '' });
               }}
               error={formErrors.ipAddress}
-              helperText="Static IP address assigned to the printer on the local network."
+              helperText="Alamat IP statis printer pada jaringan Wi-Fi/LAN lokal cabang."
             />
           )}
 
           {formData.connectionType === 'BLUETOOTH' && (
             <FormInput
-              label="Bluetooth MAC / Device Name (Optional)"
-              placeholder="e.g. 00:11:22:33:44:55 or RPP02N"
+              label="Bluetooth MAC / Nama Perangkat (Opsional)"
+              placeholder="Contoh: 00:11:22:33:44:55 atau RPP02N"
               value={formData.bluetoothMac}
               onChange={(e) => setFormData({ ...formData, bluetoothMac: e.target.value })}
-              helperText="Pair device in OS Settings before testing print."
+              helperText="Lakukan pairing perangkat di Bluetooth OS sebelum melakukan tes cetak."
             />
           )}
 
@@ -638,7 +730,7 @@ export const PrintersScreen: React.FC = () => {
                 className="w-4 h-4 rounded text-[#0D5C53] focus:ring-[#0D5C53]/20"
               />
               <span className="text-xs font-semibold text-slate-700">
-                Set as Default Terminal Printer
+                Jadikan sebagai Printer Default di Cabang Ini
               </span>
             </label>
           </div>
@@ -650,7 +742,7 @@ export const PrintersScreen: React.FC = () => {
                 onClick={() => handleDeletePrinter(editingPrinter.id, editingPrinter.name)}
                 className="text-xs text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1 font-medium cursor-pointer"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Delete Printer
+                <Trash2 className="w-3.5 h-3.5" /> Hapus Printer
               </button>
             ) : (
               <div />
@@ -663,7 +755,7 @@ export const PrintersScreen: React.FC = () => {
                 onClick={() => setIsPrinterModalOpen(false)}
                 disabled={createPrinterMutation.isPending || updatePrinterMutation.isPending}
               >
-                Cancel
+                Batal
               </Button>
               <Button
                 type="submit"
@@ -671,7 +763,7 @@ export const PrintersScreen: React.FC = () => {
                 isLoading={createPrinterMutation.isPending || updatePrinterMutation.isPending}
                 className="bg-[#0D5C53] hover:bg-[#09423C] text-white px-5"
               >
-                {editingPrinter ? 'Save Changes' : 'Add Printer'}
+                {editingPrinter ? 'Simpan Perubahan' : 'Tambah Printer'}
               </Button>
             </div>
           </div>
@@ -682,14 +774,14 @@ export const PrintersScreen: React.FC = () => {
       <Modal
         isOpen={isRoutingModalOpen}
         onClose={() => setIsRoutingModalOpen(false)}
-        title="Manage Print Routing Rules"
-        subtitle="Direct order items from specific categories to designated kitchen or bar printers."
+        title="Aturan Routing Kategori Pesanan"
+        subtitle={`Arahkan tiket pesanan per kategori menu ke printer dapur atau bar khusus cabang ${activeOutlet?.name || ''}.`}
         maxWidth="lg"
       >
         <form onSubmit={handleSaveRouting} className="space-y-4 py-2">
           {categories.length === 0 ? (
             <div className="text-center py-6 text-slate-500 text-xs">
-              No categories found. Create categories first in Product Management.
+              Belum ada kategori produk. Buat kategori terlebih dahulu di Manajemen Produk.
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
@@ -707,7 +799,7 @@ export const PrintersScreen: React.FC = () => {
                       }
                       className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20"
                     >
-                      <option value="">-- Default Printer --</option>
+                      <option value="">-- Printer Default --</option>
                       {printers.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name} ({p.type})
@@ -726,7 +818,7 @@ export const PrintersScreen: React.FC = () => {
               variant="outline"
               onClick={() => setIsRoutingModalOpen(false)}
             >
-              Cancel
+              Batal
             </Button>
             <Button
               type="submit"
@@ -734,7 +826,7 @@ export const PrintersScreen: React.FC = () => {
               isLoading={updateRoutingMutation.isPending}
               className="bg-[#0D5C53] hover:bg-[#09423C] text-white"
             >
-              Save Routing Rules
+              Simpan Aturan Routing
             </Button>
           </div>
         </form>
