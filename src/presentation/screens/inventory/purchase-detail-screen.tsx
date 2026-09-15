@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Edit2,
@@ -37,11 +37,18 @@ import {
 export const PurchaseDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Queries & Mutations
   const { data: purchase, isLoading, refetch } = usePurchaseDetail(id);
   const deleteMutation = useDeletePurchaseMutation();
   const receiveMutation = useReceivePurchaseMutation();
+
+  const queryOutletId = searchParams.get('outletId');
+  const effectiveOutletId = queryOutletId || purchase?.outletId || '';
+  const backUrl = effectiveOutletId
+    ? `/inventory/purchases?outletId=${effectiveOutletId}`
+    : '/inventory/purchases';
 
   // Receive Modal State
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
@@ -189,11 +196,11 @@ export const PurchaseDetailScreen: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Top Header & Breadcrumb */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate('/inventory/purchases')}
+            onClick={() => navigate(backUrl)}
             className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-xs cursor-pointer"
             title="Kembali ke Daftar Pembelian"
           >
@@ -201,7 +208,7 @@ export const PurchaseDetailScreen: React.FC = () => {
           </button>
           <div>
             <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Link to="/inventory/purchases" className="hover:text-[#0D5C53]">
+              <Link to={backUrl} className="hover:text-[#0D5C53]">
                 Pembelian
               </Link>
               <span>/</span>
@@ -212,6 +219,10 @@ export const PurchaseDetailScreen: React.FC = () => {
                 {purchase.purchaseNumber}
               </h1>
               {getStatusBadge(purchase.status)}
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <Store className="w-3 h-3" />
+                {purchase.outlet?.name || 'Cabang Utama'}
+              </span>
             </div>
           </div>
         </div>
@@ -232,7 +243,7 @@ export const PurchaseDetailScreen: React.FC = () => {
               <Button
                 variant="outline"
                 leftIcon={<Edit2 className="w-4 h-4" />}
-                onClick={() => navigate(`/inventory/purchases/${id}/edit`)}
+                onClick={() => navigate(`/inventory/purchases/${id}/edit?outletId=${effectiveOutletId}`)}
               >
                 Edit
               </Button>

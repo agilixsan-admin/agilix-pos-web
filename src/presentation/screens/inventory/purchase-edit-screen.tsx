@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Plus,
@@ -7,6 +7,7 @@ import {
   AlertCircle,
   Boxes,
   FileText,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -41,13 +42,16 @@ interface PurchaseFormItem {
 export const PurchaseEditScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
 
   // Queries
   const { data: purchase, isLoading: loadingPurchase } = usePurchaseDetail(id);
+  const targetOutletId = purchase?.outletId || searchParams.get('outletId') || currentOutlet?.id;
+
   const { data: suppliers = [] } = useSuppliers({ status: 'ACTIVE' });
-  const { data: rawMaterials = [] } = useRawMaterials();
-  const { data: packagingItems = [] } = usePackagingItems();
+  const { data: rawMaterials = [] } = useRawMaterials({ outletId: targetOutletId });
+  const { data: packagingItems = [] } = usePackagingItems({ outletId: targetOutletId });
 
   // Mutation
   const updatePurchaseMutation = useUpdatePurchaseMutation();
@@ -246,7 +250,7 @@ export const PurchaseEditScreen: React.FC = () => {
 
     try {
       const payload = {
-        outletId: currentOutlet?.id || purchase?.outletId,
+        outletId: targetOutletId,
         supplierId,
         purchaseDate,
         notes: notes.trim() || undefined,
@@ -258,7 +262,8 @@ export const PurchaseEditScreen: React.FC = () => {
       };
 
       await updatePurchaseMutation.mutateAsync({ id, data: payload });
-      navigate(`/inventory/purchases/${id}`);
+      const returnUrl = `/inventory/purchases/${id}${targetOutletId ? `?outletId=${targetOutletId}` : ''}`;
+      navigate(returnUrl);
     } catch (err: any) {
       const errorMsg =
         err?.response?.data?.message || err?.message || 'Gagal memperbarui purchase order';
@@ -290,6 +295,7 @@ export const PurchaseEditScreen: React.FC = () => {
   }
 
   if (purchase.status !== 'DRAFT') {
+    const returnUrl = `/inventory/purchases/${id}${targetOutletId ? `?outletId=${targetOutletId}` : ''}`;
     return (
       <Card className="max-w-md mx-auto my-12 text-center p-8">
         <EmptyState
@@ -297,7 +303,7 @@ export const PurchaseEditScreen: React.FC = () => {
           title="Tidak Dapat Mengedit Pembelian"
           description={`Pembelian ini berstatus ${purchase.status}. Hanya pembelian berstatus DRAFT yang dapat diedit.`}
           action={
-            <Link to={`/inventory/purchases/${id}`}>
+            <Link to={returnUrl}>
               <Button variant="primary" leftIcon={<ArrowLeft className="w-4 h-4" />}>
                 Kembali ke Detail Pembelian
               </Button>
@@ -308,33 +314,43 @@ export const PurchaseEditScreen: React.FC = () => {
     );
   }
 
+  const returnUrl = `/inventory/purchases/${id}${targetOutletId ? `?outletId=${targetOutletId}` : ''}`;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Breadcrumb & Top Bar */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigate(`/inventory/purchases/${id}`)}
-          className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-xs cursor-pointer"
-          title="Kembali ke Detail Pembelian"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Link to="/inventory/purchases" className="hover:text-[#0D5C53]">
-              Pembelian
-            </Link>
-            <span>/</span>
-            <Link to={`/inventory/purchases/${id}`} className="hover:text-[#0D5C53]">
-              {purchase.purchaseNumber}
-            </Link>
-            <span>/</span>
-            <span className="text-slate-800 font-semibold">Edit</span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(returnUrl)}
+            className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-xs cursor-pointer"
+            title="Kembali ke Detail Pembelian"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Link to={targetOutletId ? `/inventory/purchases?outletId=${targetOutletId}` : '/inventory/purchases'} className="hover:text-[#0D5C53]">
+                Pembelian
+              </Link>
+              <span>/</span>
+              <Link to={returnUrl} className="hover:text-[#0D5C53]">
+                {purchase.purchaseNumber}
+              </Link>
+              <span>/</span>
+              <span className="text-slate-800 font-semibold">Edit</span>
+            </div>
+            <div className="flex items-center gap-2.5 mt-0.5">
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                Edit Pembelian ({purchase.purchaseNumber})
+              </h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <Store className="w-3 h-3" />
+                {purchase.outlet?.name || 'Cabang Utama'}
+              </span>
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight mt-0.5">
-            Edit Pembelian ({purchase.purchaseNumber})
-          </h1>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Plus,
@@ -10,6 +10,7 @@ import {
   FileText,
   Boxes,
   CheckCircle2,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -17,6 +18,7 @@ import {
   useRawMaterials,
   usePackagingItems,
   useCreatePurchaseMutation,
+  useOutlets,
 } from '@domain/hooks';
 import {
   Card,
@@ -41,12 +43,32 @@ interface PurchaseFormItem {
 
 export const PurchaseCreateScreen: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const { data: outlets = [] } = useOutlets();
 
-  // Queries
+  // Multi-Outlet Scoping
+  const queryOutletId = searchParams.get('outletId');
+  const [selectedOutletId, setSelectedOutletId] = useState<string>(queryOutletId || '');
+
+  useEffect(() => {
+    if (!selectedOutletId && (currentOutlet?.id || outlets[0]?.id)) {
+      setSelectedOutletId(currentOutlet?.id || outlets[0]?.id || '');
+    }
+  }, [currentOutlet, outlets, selectedOutletId]);
+
+  const effectiveOutletId =
+    selectedOutletId ||
+    currentOutlet?.id ||
+    (outlets.length > 0 ? outlets[0].id : '');
+  const activeOutlet =
+    outlets.find((o) => o.id === effectiveOutletId) || currentOutlet;
+  const activeBranchName = activeOutlet?.name || 'Cabang Utama';
+
+  // Queries (Scoped to effectiveOutletId)
   const { data: suppliers = [], isLoading: loadingSuppliers } = useSuppliers({ status: 'ACTIVE' });
-  const { data: rawMaterials = [] } = useRawMaterials();
-  const { data: packagingItems = [] } = usePackagingItems();
+  const { data: rawMaterials = [] } = useRawMaterials({ outletId: effectiveOutletId });
+  const { data: packagingItems = [] } = usePackagingItems({ outletId: effectiveOutletId });
 
   // Mutation
   const createPurchaseMutation = useCreatePurchaseMutation();
@@ -212,14 +234,14 @@ export const PurchaseCreateScreen: React.FC = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    if (!currentOutlet?.id) {
-      alert('Outlet aktif belum terdeteksi. Silakan pilih outlet terlebih dahulu.');
+    if (!effectiveOutletId) {
+      alert('Cabang outlet penerima belum dipilih.');
       return;
     }
 
     try {
       const payload = {
-        outletId: currentOutlet.id,
+        outletId: effectiveOutletId,
         supplierId,
         purchaseNumber: purchaseNumber.trim() || undefined,
         purchaseDate,
@@ -232,7 +254,7 @@ export const PurchaseCreateScreen: React.FC = () => {
       };
 
       const result = await createPurchaseMutation.mutateAsync(payload);
-      navigate(`/inventory/purchases/${result.id}`);
+      navigate(`/inventory/purchases/${result.id}?outletId=${effectiveOutletId}`);
     } catch (err: any) {
       const errorMsg =
         err?.response?.data?.message || err?.message || 'Gagal membuat purchase order';
@@ -243,26 +265,53 @@ export const PurchaseCreateScreen: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Breadcrumb & Top Bar */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigate('/inventory/purchases')}
-          className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-xs cursor-pointer"
-          title="Kembali ke Daftar Pembelian"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Link to="/inventory/purchases" className="hover:text-[#0D5C53]">
-              Pembelian
-            </Link>
-            <span>/</span>
-            <span className="text-slate-800 font-semibold">Buat Pembelian</span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(`/inventory/purchases?outletId=${effectiveOutletId}`)}
+            className="p-2 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-xs cursor-pointer"
+            title="Kembali ke Daftar Pembelian"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Link to={`/inventory/purchases?outletId=${effectiveOutletId}`} className="hover:text-[#0D5C53]">
+                Pembelian
+              </Link>
+              <span>/</span>
+              <span className="text-slate-800 font-semibold">Buat Pembelian (PO)</span>
+            </div>
+            <div className="flex items-center gap-2.5 mt-0.5">
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                Buat Pesanan Pembelian
+              </h1>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {activeBranchName}
+              </span>
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight mt-0.5">
-            Buat Pembelian
-          </h1>
+        </div>
+
+        {/* Branch Switcher Dropdown */}
+        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
+          <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+          <span className="text-xs font-medium text-slate-600 shrink-0">Cabang Penerima:</span>
+          <select
+            value={effectiveOutletId}
+            onChange={(e) => {
+              setSelectedOutletId(e.target.value);
+              setSearchParams({ outletId: e.target.value });
+            }}
+            className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
+          >
+            {outlets.map((outlet) => (
+              <option key={outlet.id} value={outlet.id}>
+                🏪 {outlet.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
