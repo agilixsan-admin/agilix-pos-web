@@ -40,6 +40,7 @@ import {
   Search,
   Receipt,
   LayoutGrid,
+  Building2,
 } from 'lucide-react';
 import {
   Button,
@@ -50,7 +51,7 @@ import {
 } from '@presentation/components/ui';
 
 export const PosScreen: React.FC = () => {
-  const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const { currentOutlet, outlets, setCurrentOutlet } = useAuthStore();
   const {
     items: cartItems,
     orderType,
@@ -121,6 +122,11 @@ export const PosScreen: React.FC = () => {
       setTax(0, null, null);
     }
   }, [taxConfig, setTax]);
+
+  // Reset cart when switching outlet so that items, tables, and settings do not contaminate another branch
+  useEffect(() => {
+    clearCart();
+  }, [currentOutlet?.id, clearCart]);
 
   const loading = productsLoading || categoriesLoading || tablesLoading;
 
@@ -235,6 +241,10 @@ export const PosScreen: React.FC = () => {
 
   // Direct Instant Checkout
   const handleCheckoutDirect = async () => {
+    if (!currentOutlet?.id) {
+      alert('Silakan pilih cabang/outlet aktif terlebih dahulu.');
+      return;
+    }
     if (cartItems.length === 0) return;
     if (orderType === 'DINE_IN' && !tableId) {
       alert('Silakan pilih nomor meja untuk pesanan Dine In.');
@@ -252,7 +262,7 @@ export const PosScreen: React.FC = () => {
       }));
 
       const createdOrder = await posService.createOrder({
-        outletId: currentOutlet?.id || '',
+        outletId: currentOutlet.id,
         orderType: orderType as OrderType,
         tableId: tableId || undefined,
         customerName: customerName || undefined,
@@ -277,6 +287,10 @@ export const PosScreen: React.FC = () => {
 
   // Save as Open Order
   const handleSaveOpenOrder = async () => {
+    if (!currentOutlet?.id) {
+      alert('Silakan pilih cabang/outlet aktif terlebih dahulu.');
+      return;
+    }
     if (cartItems.length === 0) return;
     if (orderType === 'DINE_IN' && !tableId) {
       alert('Silakan pilih nomor meja untuk pesanan Dine In.');
@@ -294,7 +308,7 @@ export const PosScreen: React.FC = () => {
       }));
 
       await posService.createOrder({
-        outletId: currentOutlet?.id || '',
+        outletId: currentOutlet.id,
         orderType: orderType as OrderType,
         tableId: tableId || undefined,
         customerName: customerName || undefined,
@@ -352,6 +366,32 @@ export const PosScreen: React.FC = () => {
                 >
                   Denah Meja
                 </Button>
+
+                {outlets && outlets.length > 1 ? (
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 shrink-0">
+                    <Building2 className="w-3.5 h-3.5 text-[#0D5C53]" />
+                    <select
+                      aria-label="Pilih Cabang POS"
+                      value={currentOutlet?.id || ''}
+                      onChange={(e) => {
+                        const found = outlets.find((o) => o.id === e.target.value);
+                        if (found) setCurrentOutlet(found);
+                      }}
+                      className="bg-transparent text-xs font-bold text-slate-800 focus:outline-hidden cursor-pointer"
+                    >
+                      {outlets.map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {o.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 shrink-0 text-xs font-semibold text-slate-700">
+                    <Building2 className="w-3.5 h-3.5 text-[#0D5C53]" />
+                    <span>{currentOutlet?.name || 'Outlet Utama'}</span>
+                  </div>
+                )}
 
                 <div className="flex-1 max-w-md">
                   <SearchInput

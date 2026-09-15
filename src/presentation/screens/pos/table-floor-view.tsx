@@ -10,6 +10,7 @@ import {
   Search,
   Coffee,
   Layers,
+  Building2,
 } from 'lucide-react';
 import { Button, Badge, LoadingState, EmptyState } from '@presentation/components/ui';
 
@@ -32,7 +33,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
   onSelectOpenOrderForAppend,
   onNewOrderClick,
 }) => {
-  const { user, currentOutlet } = useAuthStore();
+  const { user, currentOutlet, outlets, setCurrentOutlet } = useAuthStore();
   const [selectedFloor, setSelectedFloor] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'RESERVED'>('ALL');
   const [searchTable, setSearchTable] = useState<string>('');
@@ -80,6 +81,28 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
+          {outlets && outlets.length > 1 && (
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
+              <Building2 className="w-4 h-4 text-[#0D5C53]" />
+              <span className="text-xs text-slate-500 font-medium">Cabang:</span>
+              <select
+                aria-label="Pilih Cabang POS"
+                value={currentOutlet?.id || ''}
+                onChange={(e) => {
+                  const found = outlets.find((o) => o.id === e.target.value);
+                  if (found) setCurrentOutlet(found);
+                }}
+                className="bg-transparent text-xs font-bold text-slate-800 focus:outline-hidden cursor-pointer"
+              >
+                {outlets.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <Button
             variant="primary"
             size="md"
