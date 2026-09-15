@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Printer,
   PlayCircle,
+  Store,
 } from 'lucide-react';
 import { useStockOpnameDetail } from '@domain/hooks';
 import type { StockOpnameItem } from '@model/Inventory';
@@ -205,8 +206,13 @@ export const OpnameDetailScreen: React.FC = () => {
               </h1>
               {getStatusBadge(opname.status)}
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Periode: {formatDate(opname.opnameDate)} • Outlet: {opname.outlet?.name || 'Utama'}
+            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+              <span>Periode: {formatDate(opname.opnameDate)}</span>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1 font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                <Store className="w-3 h-3 text-[#0D5C53]" />
+                {opname.outlet?.name || 'Utama'}
+              </span>
             </p>
           </div>
         </div>

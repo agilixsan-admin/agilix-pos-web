@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   AlertCircle,
   PlayCircle,
   CheckCircle2,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -15,6 +16,7 @@ import {
   useRawMaterials,
   usePackagingItems,
   useCreateStockOpnameMutation,
+  useOutlets,
 } from '@domain/hooks';
 import {
   Card,
@@ -28,6 +30,20 @@ import {
 export const OpnameCreateScreen: React.FC = () => {
   const navigate = useNavigate();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const { data: outlets = [] } = useOutlets();
+
+  // Target Outlet Lock State
+  const [targetOutletId, setTargetOutletId] = useState<string>(
+    currentOutlet?.id || (outlets.length > 0 ? outlets[0].id : '')
+  );
+
+  useEffect(() => {
+    if (!targetOutletId && (currentOutlet?.id || outlets[0]?.id)) {
+      setTargetOutletId(currentOutlet?.id || outlets[0]?.id || '');
+    }
+  }, [currentOutlet, outlets, targetOutletId]);
+
+  const targetOutlet = outlets.find((o) => o.id === targetOutletId) || currentOutlet;
 
   // Queries
   const { data: categories = [] } = useInventoryCategories();
@@ -54,8 +70,8 @@ export const OpnameCreateScreen: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentOutlet?.id) {
-      setFormError('Outlet aktif belum terdeteksi. Silakan pilih outlet terlebih dahulu.');
+    if (!targetOutletId) {
+      setFormError('Silakan pilih outlet target penghitungan fisik terlebih dahulu.');
       return;
     }
 
@@ -67,7 +83,7 @@ export const OpnameCreateScreen: React.FC = () => {
     try {
       setFormError('');
       const payload = {
-        outletId: currentOutlet.id,
+        outletId: targetOutletId,
         scope,
         categoryId: scope === 'CATEGORY' ? categoryId : undefined,
         opnameDate,
@@ -76,10 +92,12 @@ export const OpnameCreateScreen: React.FC = () => {
 
       const result = await createMutation.mutateAsync(payload);
       navigate(`/inventory/opname/${result.id}/count`);
-    } catch (err: any) {
-      setFormError(
-        err?.response?.data?.message || err?.message || 'Gagal memulai sesi stock opname'
-      );
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
+        (err as { message?: string })?.message ||
+        'Gagal memulai sesi stock opname';
+      setFormError(errorMsg);
     }
   };
 
@@ -120,6 +138,22 @@ export const OpnameCreateScreen: React.FC = () => {
         {/* Card 1: Detail Periode */}
         <Card header={<h3 className="text-sm font-bold text-slate-900">Detail Periode</h3>}>
           <div className="space-y-4">
+            <div>
+              <FormSelect
+                label="Cabang Target Penghitungan Fisik"
+                value={targetOutletId}
+                onChange={(e) => setTargetOutletId(e.target.value)}
+                required
+                helperText="Pilih cabang gudang tempat penghitungan fisik stok dilakukan."
+              >
+                {outlets.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name} {o.isMain ? '(Pusat)' : ''}
+                  </option>
+                ))}
+              </FormSelect>
+            </div>
+
             <div>
               <FormInput
                 type="date"
@@ -219,8 +253,8 @@ export const OpnameCreateScreen: React.FC = () => {
             <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex items-start gap-2.5 mt-4">
               <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
               <p className="leading-relaxed text-[11px] text-blue-800">
-                Sistem akan membuat <strong>snapshot stok fisik saat ini</strong> untuk mempermudah
-                dalam melakukan evaluasi selisih saat opname berlangsung tanpa mengganggu operasional POS.
+                Sistem akan membuat <strong>snapshot stok fisik saat ini</strong> untuk gudang cabang{' '}
+                <strong>{targetOutlet?.name || 'terpilih'}</strong> guna mempermudah evaluasi selisih saat opname berlangsung tanpa mengganggu operasional POS.
               </p>
             </div>
 

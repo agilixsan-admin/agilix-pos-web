@@ -13,9 +13,10 @@ import {
   PlayCircle,
   ChevronLeft,
   ChevronRight,
+  Store,
 } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
-import { useStockOpnames } from '@domain/hooks';
+import { useStockOpnames, useOutlets } from '@domain/hooks';
 import type { StockOpnameStatus } from '@model/Inventory';
 import {
   Card,
@@ -32,6 +33,15 @@ import {
 export const OpnameScreen: React.FC = () => {
   const navigate = useNavigate();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const { data: outlets = [] } = useOutlets();
+
+  // Multi-Outlet Filter State
+  const [selectedOutletId, setSelectedOutletId] = useState<string>('ALL');
+  const isAllBranches = selectedOutletId === 'ALL';
+  const effectiveOutletId = isAllBranches ? undefined : selectedOutletId;
+  const activeBranchName = isAllBranches
+    ? 'Semua Cabang'
+    : outlets.find((o) => o.id === selectedOutletId)?.name || currentOutlet?.name || 'Cabang Terpilih';
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +54,7 @@ export const OpnameScreen: React.FC = () => {
   // Query Params
   const queryParams = useMemo(() => {
     return {
-      outletId: currentOutlet?.id,
+      outletId: effectiveOutletId,
       page,
       limit,
       search: searchTerm.trim() || undefined,
@@ -52,7 +62,7 @@ export const OpnameScreen: React.FC = () => {
       startDate: startDateFilter || undefined,
       endDate: endDateFilter || undefined,
     };
-  }, [currentOutlet?.id, page, limit, searchTerm, statusFilter, startDateFilter, endDateFilter]);
+  }, [effectiveOutletId, page, limit, searchTerm, statusFilter, startDateFilter, endDateFilter]);
 
   const { data: opnameData, isLoading } = useStockOpnames(queryParams);
 
@@ -117,8 +127,8 @@ export const OpnameScreen: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16 max-w-7xl mx-auto">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Top Header with In-Screen Outlet Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <Link to="/inventory/stock" className="hover:text-[#0D5C53]">
@@ -127,15 +137,51 @@ export const OpnameScreen: React.FC = () => {
             <span>/</span>
             <span className="text-slate-800 font-semibold">Stock Opname</span>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight mt-0.5">
-            Stock Opname
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Lakukan pencatatan stok fisik dan bandingkan dengan stok sistem di {currentOutlet?.name || 'Outlet Utama'}.
+          <div className="flex items-center gap-2.5 mt-1">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <ClipboardCheck className="w-5 h-5 text-[#0D5C53]" />
+              Stock Opname
+            </h1>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Multi-Outlet
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Lakukan pencatatan stok fisik dan bandingkan dengan stok sistem{' '}
+            {isAllBranches ? (
+              <strong className="text-slate-700 font-semibold">seluruh cabang</strong>
+            ) : (
+              <>
+                cabang <strong className="text-slate-700 font-semibold">{activeBranchName}</strong>
+              </>
+            )}
+            .
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center flex-wrap gap-2.5">
+          {/* Outlet Switcher Dropdown */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
+            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
+            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
+            <select
+              aria-label="Pilih Outlet Opname"
+              value={selectedOutletId}
+              onChange={(e) => {
+                setSelectedOutletId(e.target.value);
+                setPage(1);
+              }}
+              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              <option value="ALL">🏢 Semua Cabang</option>
+              {outlets.map((outlet) => (
+                <option key={outlet.id} value={outlet.id}>
+                  🏪 {outlet.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <Button
             variant="primary"
             leftIcon={<Plus className="w-4 h-4" />}
@@ -245,6 +291,7 @@ export const OpnameScreen: React.FC = () => {
             <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="py-3.5 px-4">No. Opname</th>
+                {isAllBranches && <th className="py-3.5 px-4">Cabang</th>}
                 <th className="py-3.5 px-4">Tanggal / Periode</th>
                 <th className="py-3.5 px-4 text-center">Total Item</th>
                 <th className="py-3.5 px-4">Progress Perhitungan</th>
@@ -256,13 +303,13 @@ export const OpnameScreen: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={isAllBranches ? 8 : 7}>
                     <LoadingState message="Memuat daftar stock opname..." />
                   </td>
                 </tr>
               ) : opnames.length === 0 ? (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={isAllBranches ? 8 : 7}>
                     <EmptyState
                       icon={<ClipboardCheck className="w-8 h-8 opacity-30 mx-auto text-[#0D5C53]" />}
                       title="Belum ada sesi stock opname"
@@ -320,6 +367,15 @@ export const OpnameScreen: React.FC = () => {
                           {opname.opnameNumber}
                         </Link>
                       </td>
+
+                      {isAllBranches && (
+                        <td className="py-3.5 px-4">
+                          <span className="inline-flex items-center gap-1 font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-[11px] whitespace-nowrap">
+                            <Store className="w-3 h-3 text-[#0D5C53]" />
+                            {opname.outlet?.name || '-'}
+                          </span>
+                        </td>
+                      )}
 
                       <td className="py-3.5 px-4 text-slate-700 font-medium">
                         {formatDate(opname.opnameDate)}
