@@ -107,7 +107,7 @@ export const StockDetailScreen: React.FC = () => {
     }
   };
 
-  const getMovementTypeBadge = (type: string) => {
+  const getMovementTypeBadge = (type?: string) => {
     const isPositive =
       type === 'PURCHASE_RECEIPT' ||
       type === 'TRANSFER_IN' ||
@@ -413,10 +413,10 @@ export const StockDetailScreen: React.FC = () => {
                           {formatDate(movement.createdAt)}
                         </td>
                         <td className="py-3.5 px-4">
-                          {getMovementTypeBadge(movement.movementType)}
+                          {getMovementTypeBadge(movement.movementType || (movement.type as string))}
                         </td>
                         <td className="py-3.5 px-4 font-mono text-slate-600">
-                          {movement.referenceNumber || movement.reasonCategory?.name || '-'}
+                          {movement.referenceId || movement.reason || movement.notes || '-'}
                         </td>
                         <td className="py-3.5 px-4 text-right font-semibold text-emerald-600">
                           {movement.quantity > 0 ? `+${Number(movement.quantity).toLocaleString('id-ID')}` : '-'}

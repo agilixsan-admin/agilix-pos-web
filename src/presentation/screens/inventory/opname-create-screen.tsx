@@ -148,7 +148,7 @@ export const OpnameCreateScreen: React.FC = () => {
               >
                 {outlets.map((o) => (
                   <option key={o.id} value={o.id}>
-                    {o.name} {o.isMain ? '(Pusat)' : ''}
+                    {o.name}
                   </option>
                 ))}
               </FormSelect>
