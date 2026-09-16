@@ -15,6 +15,7 @@ export const inventoryKeys = {
   all: ['inventory'] as const,
   materials: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'materials', filters || {}] as const,
   materialDetail: (id: string) => [...inventoryKeys.all, 'materials', 'detail', id] as const,
+  materialRecipes: (id: string) => [...inventoryKeys.all, 'materials', 'recipes', id] as const,
   categories: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'categories', filters || {}] as const,
   stock: (filters?: Record<string, unknown>) => [...inventoryKeys.all, 'stock', filters || {}] as const,
   stockDetail: (id: string, outletId?: string) => [...inventoryKeys.all, 'stock', 'detail', id, outletId || ''] as const,

@@ -33,6 +33,14 @@ export function useRawMaterialDetail(id?: string) {
   });
 }
 
+export function useMaterialRecipes(id?: string) {
+  return useQuery({
+    queryKey: inventoryKeys.materialRecipes(id || ''),
+    queryFn: () => inventoryService.getMaterialRecipes(id!),
+    enabled: Boolean(id),
+  });
+}
+
 export function useInventoryCategories(params?: { search?: string }) {
   return useQuery({
     queryKey: inventoryKeys.categories(params),

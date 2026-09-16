@@ -4,6 +4,7 @@ import {
   useRawMaterialDetail,
   useStockMovements,
   usePurchases,
+  useMaterialRecipes,
 } from '@domain/hooks';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -19,6 +20,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   CheckCircle2,
+  ExternalLink,
 } from 'lucide-react';
 import {
   Button,
@@ -42,6 +44,7 @@ export const RawMaterialDetailScreen: React.FC = () => {
     outletId: currentOutlet?.id,
     limit: 50,
   });
+  const { data: recipes = [], isLoading: recipesLoading } = useMaterialRecipes(id);
 
   const [activeTab, setActiveTab] = useState<string>('overview');
 
@@ -207,6 +210,7 @@ export const RawMaterialDetailScreen: React.FC = () => {
             id: 'recipes',
             label: 'Penggunaan Resep (BOM)',
             icon: <ChefHat className="w-4 h-4" />,
+            count: recipes.length,
           },
           {
             id: 'movements',
@@ -341,11 +345,102 @@ export const RawMaterialDetailScreen: React.FC = () => {
             </div>
           }
         >
-          <EmptyState
-            icon={<ChefHat className="w-10 h-10 mx-auto opacity-30 text-[#0D5C53]" />}
-            title="Integrasi Resep Menu"
-            description="Bahan baku ini secara otomatis dipotong saat pesanan menu yang memuatnya berhasil dibayar di POS Kasir."
-          />
+          {recipesLoading ? (
+            <div className="py-12 text-center text-xs text-slate-400">
+              Memuat data menu yang terhubung...
+            </div>
+          ) : recipes.length === 0 ? (
+            <EmptyState
+              icon={<ChefHat className="w-10 h-10 mx-auto opacity-30 text-[#0D5C53]" />}
+              title="Belum Ada Menu yang Terhubung"
+              description="Bahan baku ini belum ditautkan ke resep produk manapun. Anda dapat menambahkannya melalui menu Produk saat membuat atau mengedit resep varian."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+                  <tr>
+                    <th className="py-3 px-4">Produk & Menu</th>
+                    <th className="py-3 px-4">Varian</th>
+                    <th className="py-3 px-4 text-right">Takaran Resep</th>
+                    <th className="py-3 px-4 text-right">HPP Bahan / Porsi</th>
+                    <th className="py-3 px-4 text-right">Harga Jual Menu</th>
+                    <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-3 px-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {recipes.map((item) => {
+                    const prod = item.product;
+                    const v = item.variant;
+                    const categoryTitle = prod?.category?.name || 'Umum';
+                    const qty = Number(item.quantity || 0);
+                    const portionCost = Number(item.portionCost ?? qty * unitCost);
+                    const sellingPrice = Number(v?.price || 0);
+
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-100 flex items-center justify-center text-[#0D5C53] shrink-0 font-bold text-xs">
+                              {prod?.name?.charAt(0).toUpperCase() || 'P'}
+                            </div>
+                            <div>
+                              <span className="font-bold text-slate-900 block text-xs">
+                                {prod?.name || '-'}
+                              </span>
+                              <span className="text-[11px] text-slate-400">
+                                {categoryTitle}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-semibold text-slate-800 block">
+                            {v?.name || '-'}
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-400">
+                            {v?.sku || '-'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-semibold text-slate-900">
+                          {qty.toLocaleString('id-ID')} {item.unit || material.unit}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <span className="font-bold text-teal-700 block">
+                            Rp {portionCost.toLocaleString('id-ID')}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block">
+                            {qty} {item.unit || material.unit} × Rp {unitCost.toLocaleString('id-ID')}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-bold text-slate-900">
+                          Rp {sellingPrice.toLocaleString('id-ID')}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <Badge
+                            variant={v?.status === 'ACTIVE' && prod?.status === 'ACTIVE' ? 'success' : 'neutral'}
+                            dot
+                          >
+                            {v?.status === 'ACTIVE' && prod?.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <Link
+                            to="/products"
+                            className="inline-flex items-center gap-1 text-[#0D5C53] hover:text-[#0a4841] font-semibold text-xs transition-colors"
+                          >
+                            <span>Lihat Menu</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       )}
 

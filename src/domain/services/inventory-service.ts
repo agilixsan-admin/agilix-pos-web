@@ -21,6 +21,7 @@ import type {
   CreateReasonCategoryPayload,
   CreateStockAdjustmentPayload,
   PaginatedStockAdjustmentsResult,
+  MaterialRecipeUsage,
 } from '@model/Inventory';
 
 export interface PaginatedPurchasesResult {
@@ -81,6 +82,11 @@ export const inventoryService = {
 
   deleteRawMaterial: async (id: string): Promise<void> => {
     await httpClient.delete(`/inventory/${id}`);
+  },
+
+  getMaterialRecipes: async (inventoryItemId: string): Promise<MaterialRecipeUsage[]> => {
+    const res = await httpClient.get(`/recipes/materials/${inventoryItemId}`);
+    return res.data?.data || (Array.isArray(res.data) ? res.data : []);
   },
 
   // Inventory Categories

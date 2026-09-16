@@ -429,6 +429,32 @@ export interface PaginatedStockOpnamesResult {
   };
 }
 
+export interface MaterialRecipeUsage {
+  id: string;
+  quantity: number;
+  unit: string;
+  portionCost: number;
+  variantId: string;
+  variant: {
+    id: string;
+    name: string;
+    sku: string | null;
+    price: number;
+    status: string;
+  };
+  product: {
+    id: string;
+    name: string;
+    description: string | null;
+    imageUrl: string | null;
+    status: string;
+    category: {
+      id: string;
+      name: string;
+    } | null;
+  };
+}
+
 
 
 
