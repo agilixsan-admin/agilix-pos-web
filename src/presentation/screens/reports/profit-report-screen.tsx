@@ -177,14 +177,16 @@ export const ProfitReportScreen: React.FC = () => {
                     <th className="py-3 px-4">Nama Menu</th>
                     <th className="py-3 px-4">Varian</th>
                     <th className="py-3 px-4 text-center">Jumlah Terjual</th>
+                    <th className="py-3 px-4 text-right">Total HPP</th>
                     <th className="py-3 px-4 text-right">Total Nilai Omzet</th>
+                    <th className="py-3 px-4 text-right">% Margin</th>
                     <th className="py-3 px-4 text-right">% Kontribusi Omzet</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {byProduct.length === 0 ? (
                     <tr>
-                      <td colSpan={5}>
+                      <td colSpan={7}>
                         <EmptyState
                           icon={<CircleDollarSign className="w-8 h-8 opacity-30 mx-auto text-[#0D5C53]" />}
                           title="Belum Ada Transaksi Produk"
@@ -195,9 +197,16 @@ export const ProfitReportScreen: React.FC = () => {
                   ) : (
                     byProduct.map((item, idx) => {
                       const itemRev = Number(item.revenue || 0);
+                      const itemHpp = Number(item.totalCogs || 0);
                       const percentContrib = totalRevenue > 0
                         ? ((itemRev / totalRevenue) * 100).toFixed(1)
                         : '0.0';
+                      const marginPercent = item.marginPercentage !== undefined
+                        ? Number(item.marginPercentage).toFixed(1)
+                        : itemRev > 0
+                          ? (((itemRev - itemHpp) / itemRev) * 100).toFixed(1)
+                          : '0.0';
+                      const numMargin = Number(marginPercent);
 
                       return (
                         <tr key={`${item.productId}-${item.variantId || idx}`} className="hover:bg-slate-50/70">
@@ -210,8 +219,24 @@ export const ProfitReportScreen: React.FC = () => {
                           <td className="py-3 px-4 text-center font-bold text-slate-800">
                             {Number(item.quantitySold || 0).toLocaleString('id-ID')}
                           </td>
+                          <td className="py-3 px-4 text-right font-medium text-slate-700">
+                            Rp {itemHpp.toLocaleString('id-ID')}
+                          </td>
                           <td className="py-3 px-4 text-right font-bold text-[#0D5C53]">
                             Rp {itemRev.toLocaleString('id-ID')}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                                numMargin >= 40
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : numMargin > 0
+                                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                    : 'bg-rose-50 text-rose-700 border-rose-200'
+                              }`}
+                            >
+                              {marginPercent}%
+                            </span>
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 text-[#0D5C53] border border-teal-200">

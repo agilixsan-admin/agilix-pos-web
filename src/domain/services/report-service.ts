@@ -45,6 +45,10 @@ export interface SalesReportData {
     variantName?: string;
     quantitySold: string | number;
     revenue: string | number;
+    unitCogs?: number;
+    totalCogs?: number;
+    profit?: number;
+    marginPercentage?: number;
   }>;
   byPaymentMethod: Array<{
     method: string;
