@@ -100,8 +100,55 @@ export const reportService = {
   },
 
   getInventoryReport: async (params: InventoryReportParams): Promise<InventoryReportData> => {
-    const res = await httpClient.get<InventoryReportData>('/reports/inventory', { params });
-    return res.data;
+    const res = await httpClient.get<any>('/reports/inventory', { params });
+    const raw = res.data;
+    const rawList: any[] = Array.isArray(raw?.items)
+      ? raw.items
+      : Array.isArray(raw?.data)
+      ? raw.data
+      : Array.isArray(raw)
+      ? raw
+      : [];
+
+    const items = rawList.map((item: any) => {
+      const currentStock = Number(item.currentStock ?? item.totalStock ?? 0);
+      const minimumStock = Number(item.minimumStock ?? 0);
+      const unitCost = Number(item.unitCost ?? 0);
+      const valuation =
+        typeof item.valuation === 'number'
+          ? item.valuation
+          : currentStock * unitCost;
+      const isLowStock =
+        typeof item.isLowStock === 'boolean'
+          ? item.isLowStock
+          : currentStock <= minimumStock;
+
+      return {
+        id: item.id || item.itemId,
+        name: item.name || item.itemName,
+        sku: item.sku || undefined,
+        category:
+          typeof item.category === 'string'
+            ? item.category
+            : item.category?.name || 'Umum',
+        currentStock,
+        minimumStock,
+        unit: item.unit || 'pcs',
+        isLowStock,
+        valuation,
+      };
+    });
+
+    const summary = raw?.summary || {
+      totalItems: items.length,
+      lowStockItems: items.filter((i) => i.isLowStock).length,
+      totalValuation: items.reduce((sum, i) => sum + (i.valuation || 0), 0),
+    };
+
+    return {
+      items,
+      summary,
+    };
   },
 };
 

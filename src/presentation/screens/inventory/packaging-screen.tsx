@@ -96,8 +96,10 @@ export const PackagingScreen: React.FC = () => {
       }
 
       // Stock status filter
-      const current = Number(pkg.currentStock ?? 0);
-      const min = Number(pkg.minimumStock ?? pkg.minStock ?? 0);
+      const current = typeof pkg.currentStock === 'number'
+        ? pkg.currentStock
+        : ((pkg as any).inventoryItem?.stocks || []).reduce((sum: number, s: any) => sum + Number(s.quantity || 0), 0);
+      const min = Number(pkg.minimumStock ?? pkg.minStock ?? (pkg as any).inventoryItem?.minimumStock ?? 0);
       if (filterStockStatus === 'OUT_OF_STOCK' && current > 0) return false;
       if (filterStockStatus === 'LOW_STOCK' && (current <= 0 || current > min)) return false;
       if (filterStockStatus === 'IN_STOCK' && current <= min) return false;
@@ -362,9 +364,12 @@ export const PackagingScreen: React.FC = () => {
                     </tr>
                   ) : (
                     paginatedPackagings.map((item) => {
-                      const current = Number(item.currentStock ?? 0);
-                      const min = Number(item.minimumStock ?? item.minStock ?? 0);
-                      const cost = Number(item.unitCost ?? item.costPrice ?? 0);
+                      const current = typeof item.currentStock === 'number'
+                        ? item.currentStock
+                        : ((item as any).inventoryItem?.stocks || []).reduce((sum: number, s: any) => sum + Number(s.quantity || 0), 0);
+                      const min = Number(item.minimumStock ?? item.minStock ?? (item as any).inventoryItem?.minimumStock ?? 0);
+                      const cost = Number(item.unitCost ?? item.costPrice ?? (item as any).inventoryItem?.unitCost ?? 0);
+                      const unit = item.unit || (item as any).inventoryItem?.unit || 'pcs';
                       const categoryName =
                         typeof item.category === 'object' && item.category !== null
                           ? (item.category as PackagingCategory).name
@@ -397,7 +402,7 @@ export const PackagingScreen: React.FC = () => {
                           </td>
 
                           <td className="py-3.5 px-4 font-medium text-slate-700">
-                            {item.unit || 'pcs'}
+                            {unit}
                           </td>
 
                           <td className="py-3.5 px-4 font-semibold text-slate-900">
@@ -405,11 +410,11 @@ export const PackagingScreen: React.FC = () => {
                           </td>
 
                           <td className="py-3.5 px-4 text-right font-bold text-slate-900">
-                            {current.toLocaleString('id-ID')} <span className="text-[11px] font-normal text-slate-400">{item.unit || 'pcs'}</span>
+                            {current.toLocaleString('id-ID')} <span className="text-[11px] font-normal text-slate-400">{unit}</span>
                           </td>
 
                           <td className="py-3.5 px-4 text-right text-slate-500 font-medium">
-                            {min.toLocaleString('id-ID')} <span className="text-[11px] text-slate-400">{item.unit || 'pcs'}</span>
+                            {min.toLocaleString('id-ID')} <span className="text-[11px] text-slate-400">{unit}</span>
                           </td>
 
                           <td className="py-3.5 px-4 text-center">

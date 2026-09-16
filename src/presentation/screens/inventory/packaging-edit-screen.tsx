@@ -63,8 +63,8 @@ export const PackagingEditScreen: React.FC = () => {
       setCategoryId(catId);
       setDescription(packaging.description || '');
       setStatus(packaging.status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE');
-      setUnit(packaging.unit || 'pcs');
-      setMinimumStock(String(packaging.minimumStock ?? packaging.minStock ?? 0));
+      setUnit(packaging.unit || packaging.inventoryItem?.unit || 'pcs');
+      setMinimumStock(String(packaging.minimumStock ?? packaging.minStock ?? packaging.inventoryItem?.minimumStock ?? 0));
     }
   }, [packaging]);
 

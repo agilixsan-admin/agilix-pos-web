@@ -106,12 +106,26 @@ export const PackagingDetailScreen: React.FC = () => {
     );
   }
 
-  const currentStock = Number(packaging.currentStock ?? 0);
-  const minStock = Number(packaging.minimumStock ?? packaging.minStock ?? 0);
-  const unitCost = Number(packaging.unitCost ?? packaging.costPrice ?? 0);
+  const invStocks: any[] = (packaging as any).inventoryItem?.stocks || (packaging as any).stocks || [];
+  const currentStock = typeof packaging.currentStock === 'number'
+    ? packaging.currentStock
+    : invStocks.reduce((sum: number, s: any) => sum + Number(s.quantity || 0), 0);
+  const minStock = Number(
+    packaging.minimumStock ??
+      packaging.minStock ??
+      (packaging as any).inventoryItem?.minimumStock ??
+      0,
+  );
+  const unitCost = Number(
+    packaging.unitCost ??
+      packaging.costPrice ??
+      (packaging as any).inventoryItem?.unitCost ??
+      0,
+  );
   const stockValue = currentStock * unitCost;
   const isLowStock = currentStock <= minStock;
-  const unit = packaging.unit || 'pcs';
+  const unit =
+    packaging.unit || (packaging as any).inventoryItem?.unit || 'pcs';
 
   const categoryName =
     typeof packaging.category === 'object' && packaging.category !== null

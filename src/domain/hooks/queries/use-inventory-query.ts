@@ -204,6 +204,8 @@ export function useCreatePackagingMutation() {
       status?: string;
       outletId?: string;
       inventoryItemId?: string;
+      unit?: string;
+      minimumStock?: number;
     }) => inventoryService.createPackaging(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.all });

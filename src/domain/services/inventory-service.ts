@@ -95,12 +95,53 @@ export const inventoryService = {
   // Packaging Items
   getPackagingItems: async (params?: { outletId?: string; search?: string; categoryId?: string; status?: string }): Promise<PackagingItem[]> => {
     const res = await httpClient.get('/packagings', { params });
-    return res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+    const rawList: any[] = res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+    return rawList.map((item: any) => {
+      const inv = item.inventoryItem;
+      const stocks: any[] = inv?.stocks || item.stocks || [];
+      const currentStock = typeof item.currentStock === 'number'
+        ? item.currentStock
+        : params?.outletId
+        ? stocks
+            .filter((s: any) => s.outletId === params.outletId)
+            .reduce((sum: number, s: any) => sum + Number(s.quantity || 0), 0)
+        : stocks.reduce((sum: number, s: any) => sum + Number(s.quantity || 0), 0);
+      const minimumStock = Number(item.minimumStock ?? item.minStock ?? inv?.minimumStock ?? 0);
+      const unit = item.unit || inv?.unit || 'pcs';
+      const unitCost = Number(item.unitCost ?? item.costPrice ?? inv?.unitCost ?? 0);
+
+      return {
+        ...item,
+        currentStock,
+        minimumStock,
+        minStock: minimumStock,
+        unit,
+        unitCost,
+      };
+    });
   },
 
   getPackagingById: async (id: string): Promise<PackagingItem> => {
     const res = await httpClient.get(`/packagings/${id}`);
-    return res.data?.data || res.data;
+    const item = res.data?.data || res.data;
+    if (!item) return item;
+    const inv = item.inventoryItem;
+    const stocks: any[] = inv?.stocks || item.stocks || [];
+    const currentStock = typeof item.currentStock === 'number'
+      ? item.currentStock
+      : stocks.reduce((sum: number, s: any) => sum + Number(s.quantity || 0), 0);
+    const minimumStock = Number(item.minimumStock ?? item.minStock ?? inv?.minimumStock ?? 0);
+    const unit = item.unit || inv?.unit || 'pcs';
+    const unitCost = Number(item.unitCost ?? item.costPrice ?? inv?.unitCost ?? 0);
+
+    return {
+      ...item,
+      currentStock,
+      minimumStock,
+      minStock: minimumStock,
+      unit,
+      unitCost,
+    };
   },
 
   createPackaging: async (data: {
