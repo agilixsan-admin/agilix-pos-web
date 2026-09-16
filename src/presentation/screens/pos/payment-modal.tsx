@@ -76,11 +76,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setLoading(true);
 
     try {
+      const paid = method === 'CASH' ? cashGiven : totalAmount;
       const res = await posService.processPayment({
         orderId: order.id,
         paymentMethod: method,
-        amount: totalAmount,
-        cashGiven: method === 'CASH' ? cashGiven : totalAmount,
+        amount: paid,
+        cashGiven: method === 'CASH' ? cashGiven : undefined,
       });
 
       const completedOrder: Order = {
