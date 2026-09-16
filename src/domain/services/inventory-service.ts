@@ -39,12 +39,23 @@ export const inventoryService = {
   // Inventory Items (Raw Materials)
   getRawMaterials: async (params?: { outletId?: string; search?: string; categoryId?: string }): Promise<RawMaterial[]> => {
     const res = await httpClient.get('/inventory', { params: { ...params, itemType: 'RAW_MATERIAL' } });
-    return res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+    const rawList: any[] = res.data?.items || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+    return rawList.map((item: any) => ({
+      ...item,
+      unitCost: Number(item.unitCost ?? item.costPrice ?? 0),
+      costPrice: Number(item.costPrice ?? item.unitCost ?? 0),
+    }));
   },
 
   getRawMaterialById: async (id: string): Promise<RawMaterial> => {
     const res = await httpClient.get(`/inventory/${id}`);
-    return res.data?.data || res.data;
+    const item = res.data?.data || res.data;
+    if (!item) return item;
+    return {
+      ...item,
+      unitCost: Number(item.unitCost ?? item.costPrice ?? 0),
+      costPrice: Number(item.costPrice ?? item.unitCost ?? 0),
+    };
   },
 
   createRawMaterial: async (data: {

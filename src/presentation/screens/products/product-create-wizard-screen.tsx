@@ -145,7 +145,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
 
   // Recipe (BOM) Helpers
   const addRecipeItem = (material: RawMaterial) => {
-    const costPerUnit = Number(material.costPrice || 0);
+    const costPerUnit = Number(material.unitCost ?? material.costPrice ?? 0);
     const defaultQty = 1;
     const current = variants.find((v) => v.id === activeVariantId);
     if (!current) return;
@@ -168,7 +168,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
     if (!current) return;
 
     const mat = availableMaterials.find((m) => m.id === materialId);
-    const costPerUnit = Number(mat?.costPrice || 0);
+    const costPerUnit = Number(mat?.unitCost ?? mat?.costPrice ?? 0);
 
     const updated = current.recipes.map((r) =>
       r.materialId === materialId
@@ -325,7 +325,6 @@ export const ProductCreateWizardScreen: React.FC = () => {
           </button>
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tambah Produk Baru</h1>
-            <p className="text-xs text-slate-500">6-Step Creation Wizard & Kalkulasi HPP Otomatis</p>
           </div>
         </div>
       </div>
@@ -615,7 +614,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
                         <div>
                           <p className="font-bold text-slate-800">{mat.name}</p>
                           <span className="text-[10px] text-slate-400">
-                            Rp {Number(mat.costPrice || 0).toLocaleString('id-ID')} / {mat.unit}
+                            Rp {Number(mat.unitCost ?? mat.costPrice ?? 0).toLocaleString('id-ID')} / {mat.unit}
                           </span>
                         </div>
                         <Plus className="w-3.5 h-3.5 text-[#0D5C53]" />
