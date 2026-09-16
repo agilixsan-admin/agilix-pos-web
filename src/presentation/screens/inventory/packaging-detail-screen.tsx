@@ -306,7 +306,24 @@ export const PackagingDetailScreen: React.FC = () => {
               ) : (
                 <div className="space-y-3.5">
                   {movements.slice(0, 5).map((m) => {
-                    const isIncoming = m.direction === 'IN' || m.quantity > 0;
+                    const typeStr = (m.movementType || m.type || '') as string;
+                    const refType = (m.referenceType || '') as string;
+                    const refId = m.referenceId || '';
+
+                    const normType = typeStr.toUpperCase();
+                    const normRef = refType.toUpperCase();
+                    const isIncoming =
+                      m.direction === 'IN' ||
+                      normType === 'IN' ||
+                      normType === 'PURCHASE' ||
+                      normType === 'PURCHASE_RECEIPT' ||
+                      normType === 'INITIAL' ||
+                      normType === 'TRANSFER_IN' ||
+                      normType === 'ADJUSTMENT_IN' ||
+                      normRef === 'PURCHASE' ||
+                      refId.startsWith('PB-') ||
+                      refId.startsWith('PO-');
+
                     return (
                       <div
                         key={m.id}
@@ -331,7 +348,7 @@ export const PackagingDetailScreen: React.FC = () => {
                               {m.reason || (isIncoming ? 'Stock Masuk / Pembelian' : 'Pengurangan Pesanan POS')}
                             </span>
                             <span className="text-[11px] text-slate-400 mt-0.5 block font-mono">
-                              {formatDateTime(m.createdAt)}
+                              {formatDateTime(m.movementDate || m.createdAt)}
                             </span>
                           </div>
                         </div>
@@ -390,17 +407,73 @@ export const PackagingDetailScreen: React.FC = () => {
                   </tr>
                 ) : (
                   movements.map((m) => {
-                    const isIncoming = m.direction === 'IN' || m.quantity > 0;
+                    const typeStr = (m.movementType || m.type || '') as string;
+                    const refType = (m.referenceType || '') as string;
+                    const refId = m.referenceId || '';
+
+                    let refDisplay = m.referenceId || m.reason || m.notes || '-';
+                    const orderMatch = m.notes?.match(/ORD-[A-Za-z0-9-]+/i);
+                    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(refId);
+                    if (orderMatch && (isUuid || !m.referenceId)) {
+                      refDisplay = orderMatch[0];
+                    }
+
+                    const normType = typeStr.toUpperCase();
+                    const normRef = refType.toUpperCase();
+                    const isIncoming =
+                      m.direction === 'IN' ||
+                      normType === 'IN' ||
+                      normType === 'PURCHASE' ||
+                      normType === 'PURCHASE_RECEIPT' ||
+                      normType === 'INITIAL' ||
+                      normType === 'TRANSFER_IN' ||
+                      normType === 'ADJUSTMENT_IN' ||
+                      normRef === 'PURCHASE' ||
+                      refDisplay.startsWith('PB-') ||
+                      refDisplay.startsWith('PO-');
+
+                    let label = isIncoming ? 'Masuk' : 'Keluar';
+                    if (
+                      normRef === 'STOCK_ADJUSTMENT' ||
+                      normType === 'ADJUSTMENT_IN'
+                    ) {
+                      label = 'Penyesuaian Masuk';
+                    } else if (
+                      normRef === 'PURCHASE' ||
+                      normType === 'PURCHASE_RECEIPT' ||
+                      normType === 'PURCHASE' ||
+                      refDisplay.startsWith('PB-') ||
+                      refDisplay.startsWith('PO-')
+                    ) {
+                      label = 'Penerimaan PO';
+                    } else if (
+                      normRef === 'ORDER' ||
+                      normType === 'SALE' ||
+                      normType === 'ORDER_USAGE' ||
+                      refDisplay.startsWith('ORD-')
+                    ) {
+                      label = 'Penjualan POS';
+                    } else if (normRef === 'VOID' || normType === 'VOID') {
+                      label = 'Void Pesanan';
+                    } else if (normType === 'WASTE') {
+                      label = 'Waste / Rusak';
+                    } else if (
+                      normRef === 'STOCK_ADJUSTMENT' ||
+                      normType === 'ADJUSTMENT_OUT'
+                    ) {
+                      label = 'Penyesuaian Keluar';
+                    }
+
                     return (
                       <tr key={m.id} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-3.5 px-4 font-mono text-slate-700">
-                          {formatDateTime(m.createdAt)}
+                          {formatDateTime(m.movementDate || m.createdAt)}
                         </td>
                         <td className="py-3.5 px-4 font-semibold text-slate-800">
-                          {m.type || (isIncoming ? 'IN' : 'SALE')}
+                          {label}
                         </td>
                         <td className="py-3.5 px-4">
-                          <Badge variant={isIncoming ? 'success' : 'neutral'}>
+                          <Badge variant={isIncoming ? 'success' : 'danger'}>
                             {isIncoming ? 'Masuk' : 'Keluar'}
                           </Badge>
                         </td>
@@ -410,8 +483,8 @@ export const PackagingDetailScreen: React.FC = () => {
                             {Math.abs(m.quantity)} {unit}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600">
-                          {m.reason || m.notes || m.referenceId || '-'}
+                        <td className="py-3.5 px-4 text-slate-600 font-mono">
+                          {refDisplay}
                         </td>
                         <td className="py-3.5 px-4 text-right font-medium text-slate-700">
                           {m.createdBy || 'Kasir / Sistem'}

@@ -386,11 +386,67 @@ export const RawMaterialDetailScreen: React.FC = () => {
                   </tr>
                 ) : (
                   movements.map((m) => {
-                    const isIncoming = m.direction === 'IN' || m.quantity > 0;
+                    const typeStr = (m.movementType || m.type || '') as string;
+                    const refType = (m.referenceType || '') as string;
+                    const refId = m.referenceId || '';
+
+                    let refDisplay = m.referenceId || m.reason || m.notes || '-';
+                    const orderMatch = m.notes?.match(/ORD-[A-Za-z0-9-]+/i);
+                    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(refId);
+                    if (orderMatch && (isUuid || !m.referenceId)) {
+                      refDisplay = orderMatch[0];
+                    }
+
+                    const normType = typeStr.toUpperCase();
+                    const normRef = refType.toUpperCase();
+                    const isIncoming =
+                      m.direction === 'IN' ||
+                      normType === 'IN' ||
+                      normType === 'PURCHASE' ||
+                      normType === 'PURCHASE_RECEIPT' ||
+                      normType === 'INITIAL' ||
+                      normType === 'TRANSFER_IN' ||
+                      normType === 'ADJUSTMENT_IN' ||
+                      normRef === 'PURCHASE' ||
+                      refDisplay.startsWith('PB-') ||
+                      refDisplay.startsWith('PO-');
+
+                    let label = isIncoming ? 'Masuk' : 'Keluar';
+                    if (
+                      normRef === 'STOCK_ADJUSTMENT' ||
+                      normType === 'ADJUSTMENT_IN'
+                    ) {
+                      label = 'Penyesuaian Masuk';
+                    } else if (
+                      normRef === 'PURCHASE' ||
+                      normType === 'PURCHASE_RECEIPT' ||
+                      normType === 'PURCHASE' ||
+                      refDisplay.startsWith('PB-') ||
+                      refDisplay.startsWith('PO-')
+                    ) {
+                      label = 'Penerimaan PO';
+                    } else if (
+                      normRef === 'ORDER' ||
+                      normType === 'SALE' ||
+                      normType === 'ORDER_USAGE' ||
+                      refDisplay.startsWith('ORD-')
+                    ) {
+                      label = 'Penjualan POS';
+                    } else if (normRef === 'VOID' || normType === 'VOID') {
+                      label = 'Void Pesanan';
+                    } else if (normType === 'WASTE') {
+                      label = 'Waste / Rusak';
+                    } else if (
+                      normRef === 'STOCK_ADJUSTMENT' ||
+                      normType === 'ADJUSTMENT_OUT'
+                    ) {
+                      label = 'Penyesuaian Keluar';
+                    }
+
                     return (
                       <tr key={m.id} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-3 px-4 font-mono text-[11px] text-slate-600">
-                          {new Date(m.createdAt).toLocaleString('id-ID', {
+                          {new Date(m.movementDate || m.createdAt).toLocaleString('id-ID', {
                             day: '2-digit',
                             month: 'short',
                             year: 'numeric',
@@ -407,14 +463,14 @@ export const RawMaterialDetailScreen: React.FC = () => {
                             ) : (
                               <ArrowUpRight className="w-3 h-3 text-rose-600 mr-1" />
                             )}
-                            {m.type || (isIncoming ? 'IN' : 'OUT')}
+                            {label}
                           </Badge>
                         </td>
                         <td className={`py-3 px-4 text-right font-bold ${isIncoming ? 'text-emerald-700' : 'text-rose-700'}`}>
                           {isIncoming ? '+' : '-'} {Math.abs(m.quantity).toLocaleString('id-ID')} {material.unit}
                         </td>
-                        <td className="py-3 px-4 text-slate-700">
-                          {m.notes || m.reason || m.referenceId || '-'}
+                        <td className="py-3 px-4 text-slate-700 font-mono">
+                          {refDisplay}
                         </td>
                         <td className="py-3 px-4 text-slate-500 text-[11px]">
                           {m.createdBy || 'Sistem'}

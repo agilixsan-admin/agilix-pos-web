@@ -107,40 +107,72 @@ export const StockDetailScreen: React.FC = () => {
     }
   };
 
-  const getMovementTypeBadge = (type?: string) => {
-    const isPositive =
-      type === 'PURCHASE_RECEIPT' ||
-      type === 'TRANSFER_IN' ||
-      type === 'ADJUSTMENT_IN' ||
-      type === 'INITIAL';
+  const getMovementTypeBadge = (
+    type?: string,
+    referenceType?: string,
+    referenceId?: string | null,
+  ) => {
+    const normType = (type || '').toUpperCase();
+    const normRef = (referenceType || '').toUpperCase();
+    const refId = referenceId || '';
 
-    if (isPositive) {
+    const isIncoming =
+      normType === 'IN' ||
+      normType === 'PURCHASE' ||
+      normType === 'PURCHASE_RECEIPT' ||
+      normType === 'INITIAL' ||
+      normType === 'TRANSFER_IN' ||
+      normType === 'ADJUSTMENT_IN' ||
+      normRef === 'PURCHASE';
+
+    if (isIncoming) {
+      let label = 'Masuk';
+      if (normRef === 'STOCK_ADJUSTMENT' || normType === 'ADJUSTMENT_IN') {
+        label = 'Penyesuaian Masuk';
+      } else if (
+        normRef === 'PURCHASE' ||
+        normType === 'PURCHASE_RECEIPT' ||
+        normType === 'PURCHASE' ||
+        refId.startsWith('PB-') ||
+        refId.startsWith('PO-')
+      ) {
+        label = 'Penerimaan PO';
+      } else if (normType === 'TRANSFER_IN' || normRef === 'TRANSFER_IN') {
+        label = 'Transfer Masuk';
+      } else if (normType === 'INITIAL') {
+        label = 'Stok Awal';
+      }
+
       return (
         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
           <ArrowDownLeft className="w-3 h-3 text-emerald-600" />
-          {type === 'PURCHASE_RECEIPT'
-            ? 'Penerimaan PO'
-            : type === 'ADJUSTMENT_IN'
-            ? 'Penyesuaian Masuk'
-            : type === 'TRANSFER_IN'
-            ? 'Transfer Masuk'
-            : 'Stok Awal'}
+          {label}
         </span>
       );
+    }
+
+    let label = 'Keluar';
+    if (
+      normRef === 'ORDER' ||
+      normType === 'SALE' ||
+      normType === 'ORDER_USAGE' ||
+      refId.startsWith('ORD-')
+    ) {
+      label = 'Penjualan POS';
+    } else if (normRef === 'VOID' || normType === 'VOID') {
+      label = 'Void Pesanan';
+    } else if (normType === 'WASTE') {
+      label = 'Waste / Rusak';
+    } else if (normRef === 'STOCK_ADJUSTMENT' || normType === 'ADJUSTMENT_OUT') {
+      label = 'Penyesuaian Keluar';
+    } else if (normType === 'TRANSFER_OUT' || normRef === 'TRANSFER_OUT') {
+      label = 'Transfer Keluar';
     }
 
     return (
       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
         <ArrowUpRight className="w-3 h-3 text-rose-600" />
-        {type === 'ORDER_USAGE'
-          ? 'Pemakaian POS'
-          : type === 'ADJUSTMENT_OUT'
-          ? 'Penyesuaian Keluar'
-          : type === 'WASTE'
-          ? 'Waste / Rusak'
-          : type === 'TRANSFER_OUT'
-          ? 'Transfer Keluar'
-          : 'Keluar'}
+        {label}
       </span>
     );
   };
@@ -407,25 +439,54 @@ export const StockDetailScreen: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    paginatedMovements.map((movement) => (
-                      <tr key={movement.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-4 font-mono text-slate-600">
-                          {formatDate(movement.createdAt)}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          {getMovementTypeBadge(movement.movementType || (movement.type as string))}
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-slate-600">
-                          {movement.referenceId || movement.reason || movement.notes || '-'}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-semibold text-emerald-600">
-                          {movement.quantity > 0 ? `+${Number(movement.quantity).toLocaleString('id-ID')}` : '-'}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-semibold text-rose-600">
-                          {movement.quantity < 0 ? Number(movement.quantity).toLocaleString('id-ID') : '-'}
-                        </td>
-                      </tr>
-                    ))
+                    paginatedMovements.map((movement) => {
+                      const typeStr = (movement.movementType || movement.type || '') as string;
+                      const refType = (movement.referenceType || '') as string;
+                      const refId = movement.referenceId || '';
+
+                      // Extract ORD-... from notes if referenceId is a UUID or missing
+                      let refDisplay = movement.referenceId || movement.reason || movement.notes || '-';
+                      const orderMatch = movement.notes?.match(/ORD-[A-Za-z0-9-]+/i);
+                      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(refId);
+                      if (orderMatch && (isUuid || !movement.referenceId)) {
+                        refDisplay = orderMatch[0];
+                      }
+
+                      const normType = typeStr.toUpperCase();
+                      const normRef = refType.toUpperCase();
+                      const isIncoming =
+                        normType === 'IN' ||
+                        normType === 'PURCHASE' ||
+                        normType === 'PURCHASE_RECEIPT' ||
+                        normType === 'INITIAL' ||
+                        normType === 'TRANSFER_IN' ||
+                        normType === 'ADJUSTMENT_IN' ||
+                        normRef === 'PURCHASE' ||
+                        refDisplay.startsWith('PB-') ||
+                        refDisplay.startsWith('PO-');
+
+                      const qty = Math.abs(Number(movement.quantity) || 0);
+
+                      return (
+                        <tr key={movement.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3.5 px-4 font-mono text-slate-600">
+                            {formatDate(movement.movementDate || movement.createdAt)}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {getMovementTypeBadge(typeStr, refType, refDisplay)}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-slate-600">
+                            {refDisplay}
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-semibold text-emerald-600">
+                            {isIncoming ? `+${qty.toLocaleString('id-ID')}` : '-'}
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-semibold text-rose-600">
+                            {!isIncoming ? `-${qty.toLocaleString('id-ID')}` : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
