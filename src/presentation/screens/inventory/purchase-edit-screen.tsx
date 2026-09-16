@@ -36,7 +36,7 @@ interface PurchaseFormItem {
   unit: string;
   systemStock: number;
   quantityOrdered: number;
-  unitCost: number;
+  totalPrice: number;
 }
 
 export const PurchaseEditScreen: React.FC = () => {
@@ -77,18 +77,23 @@ export const PurchaseEditScreen: React.FC = () => {
 
       if (purchase.items && purchase.items.length > 0) {
         setItems(
-          purchase.items.map((item) => ({
-            tempId: item.id || Math.random().toString(36).substring(2, 9),
-            itemType:
-              item.inventoryItem?.itemType === 'PACKAGING' ? 'PACKAGING' : 'RAW_MATERIAL',
-            inventoryItemId: item.inventoryItemId,
-            itemName: item.inventoryItem?.name || '',
-            sku: item.inventoryItem?.sku || '',
-            unit: item.inventoryItem?.unit || 'pcs',
-            systemStock: 0,
-            quantityOrdered: Number(item.quantityOrdered),
-            unitCost: Number(item.unitCost),
-          }))
+          purchase.items.map((item) => {
+            const qty = Number(item.quantityOrdered) || 0;
+            const itemTotal =
+              Number(item.subtotal) || (qty * Number(item.unitCost || 0));
+            return {
+              tempId: item.id || Math.random().toString(36).substring(2, 9),
+              itemType:
+                item.inventoryItem?.itemType === 'PACKAGING' ? 'PACKAGING' : 'RAW_MATERIAL',
+              inventoryItemId: item.inventoryItemId,
+              itemName: item.inventoryItem?.name || '',
+              sku: item.inventoryItem?.sku || '',
+              unit: item.inventoryItem?.unit || 'pcs',
+              systemStock: 0,
+              quantityOrdered: qty,
+              totalPrice: itemTotal,
+            };
+          })
         );
       }
       setIsInitialized(true);
@@ -99,7 +104,7 @@ export const PurchaseEditScreen: React.FC = () => {
   const totalItemsCount = items.length;
   const subtotal = useMemo(() => {
     return items.reduce(
-      (acc, item) => acc + (Number(item.quantityOrdered) || 0) * (Number(item.unitCost) || 0),
+      (acc, item) => acc + (Number(item.totalPrice) || 0),
       0
     );
   }, [items]);
@@ -119,6 +124,8 @@ export const PurchaseEditScreen: React.FC = () => {
       type = 'PACKAGING';
     }
 
+    const defaultCost = Number(defaultItem?.unitCost || defaultItem?.costPrice || 0);
+
     const newItem: PurchaseFormItem = {
       tempId: Math.random().toString(36).substring(2, 9),
       itemType: type,
@@ -128,7 +135,7 @@ export const PurchaseEditScreen: React.FC = () => {
       unit: defaultItem?.unit || 'pcs',
       systemStock: Number(defaultItem?.currentStock || 0),
       quantityOrdered: 1,
-      unitCost: Number(defaultItem?.unitCost || defaultItem?.costPrice || 0),
+      totalPrice: defaultCost,
     };
 
     setItems([...items, newItem]);
@@ -151,6 +158,7 @@ export const PurchaseEditScreen: React.FC = () => {
       items.map((item) => {
         if (item.tempId !== tempId) return item;
         const itemId = firstOption ? ((firstOption as any).inventoryItemId || firstOption.id) : '';
+        const defaultCost = Number(firstOption?.unitCost || (firstOption as any)?.costPrice || 0);
         return {
           ...item,
           itemType: newType,
@@ -160,7 +168,7 @@ export const PurchaseEditScreen: React.FC = () => {
           unit: firstOption?.unit || 'pcs',
           systemStock: Number(firstOption?.currentStock || 0),
           quantityOrdered: item.quantityOrdered || 1,
-          unitCost: Number(firstOption?.unitCost || (firstOption as any)?.costPrice || 0),
+          totalPrice: (item.quantityOrdered || 1) * defaultCost,
         };
       })
     );
@@ -184,6 +192,7 @@ export const PurchaseEditScreen: React.FC = () => {
         if (!selected) return item;
 
         const resolvedInventoryItemId = (selected as any).inventoryItemId || selected.id;
+        const defaultCost = Number(selected.unitCost || selected.costPrice || 0);
 
         return {
           ...item,
@@ -192,16 +201,16 @@ export const PurchaseEditScreen: React.FC = () => {
           sku: selected.sku || selected.code || '',
           unit: selected.unit || 'pcs',
           systemStock: Number(selected.currentStock || 0),
-          unitCost: Number(selected.unitCost || selected.costPrice || 0),
+          totalPrice: (item.quantityOrdered || 1) * defaultCost,
         };
       })
     );
   };
 
-  // Handle Qty & Unit Cost changes
+  // Handle Qty & Total Price changes
   const handleItemFieldChange = (
     tempId: string,
-    field: 'quantityOrdered' | 'unitCost',
+    field: 'quantityOrdered' | 'totalPrice',
     value: number
   ) => {
     setItems(
@@ -233,8 +242,8 @@ export const PurchaseEditScreen: React.FC = () => {
         if (item.quantityOrdered <= 0) {
           errors[`qty_${index}`] = `Jumlah baris ${index + 1} harus lebih dari 0`;
         }
-        if (item.unitCost < 0) {
-          errors[`cost_${index}`] = `Harga baris ${index + 1} tidak boleh negatif`;
+        if (item.totalPrice < 0) {
+          errors[`cost_${index}`] = `Total harga baris ${index + 1} tidak boleh negatif`;
         }
       });
     }
@@ -254,11 +263,18 @@ export const PurchaseEditScreen: React.FC = () => {
         supplierId,
         purchaseDate,
         notes: notes.trim() || undefined,
-        items: items.map((item) => ({
-          inventoryItemId: item.inventoryItemId,
-          quantityOrdered: Number(item.quantityOrdered),
-          unitCost: Number(item.unitCost),
-        })),
+        items: items.map((item) => {
+          const qty = Number(item.quantityOrdered) || 0;
+          const total = Number(item.totalPrice) || 0;
+          const computedUnitCost = qty > 0 ? total / qty : 0;
+          return {
+            inventoryItemId: item.inventoryItemId,
+            quantityOrdered: qty,
+            subtotal: total,
+            totalPrice: total,
+            unitCost: computedUnitCost,
+          };
+        }),
       };
 
       await updatePurchaseMutation.mutateAsync({ id, data: payload });
@@ -459,17 +475,14 @@ export const PurchaseEditScreen: React.FC = () => {
                     <tr>
                       <th className="py-2.5 px-3 w-28">Tipe</th>
                       <th className="py-2.5 px-3 min-w-[200px]">Item</th>
-                      <th className="py-2.5 px-2 text-center w-20">Stok</th>
-                      <th className="py-2.5 px-2 w-24">Qty</th>
-                      <th className="py-2.5 px-2 w-32">Unit Cost</th>
-                      <th className="py-2.5 px-3 text-right w-32">Subtotal</th>
+                      <th className="py-2.5 px-2 text-center w-24">Stok Saat Ini</th>
+                      <th className="py-2.5 px-2 w-28 text-center">Qty Dibeli</th>
+                      <th className="py-2.5 px-3 text-right w-36">Total Harga (Rp)</th>
                       <th className="py-2.5 px-2 text-center w-10"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {items.map((item) => {
-                      const itemSubtotal =
-                        (Number(item.quantityOrdered) || 0) * (Number(item.unitCost) || 0);
                       const availableOptions =
                         item.itemType === 'RAW_MATERIAL' ? rawMaterials : packagingItems;
 
@@ -526,7 +539,7 @@ export const PurchaseEditScreen: React.FC = () => {
                               type="number"
                               min="0.01"
                               step="any"
-                              value={item.quantityOrdered}
+                              value={item.quantityOrdered || ''}
                               onChange={(e) =>
                                 handleItemFieldChange(
                                   item.tempId,
@@ -534,6 +547,7 @@ export const PurchaseEditScreen: React.FC = () => {
                                   parseFloat(e.target.value) || 0
                                 )
                               }
+                              placeholder="0"
                               className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-bold text-center focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
                             />
                             <span className="text-[10px] text-slate-400 text-center block mt-0.5">
@@ -541,30 +555,26 @@ export const PurchaseEditScreen: React.FC = () => {
                             </span>
                           </td>
 
-                          {/* Unit Cost Input */}
-                          <td className="py-3 px-2 align-top">
+                          {/* Total Harga (Rp) Input */}
+                          <td className="py-3 px-3 align-top">
                             <input
                               type="number"
                               min="0"
                               step="any"
-                              value={item.unitCost}
+                              value={item.totalPrice || ''}
                               onChange={(e) =>
                                 handleItemFieldChange(
                                   item.tempId,
-                                  'unitCost',
+                                  'totalPrice',
                                   parseFloat(e.target.value) || 0
                                 )
                               }
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-semibold text-right focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
+                              placeholder="0"
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-bold text-right focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
                             />
                             <span className="text-[10px] text-slate-400 text-right block mt-0.5 font-mono">
-                              {formatRupiah(item.unitCost)}
+                              {formatRupiah(item.totalPrice || 0)}
                             </span>
-                          </td>
-
-                          {/* Subtotal */}
-                          <td className="py-3 px-3 text-right align-top pt-4 font-bold text-slate-900 font-mono">
-                            {formatRupiah(itemSubtotal)}
                           </td>
 
                           {/* Action Delete */}

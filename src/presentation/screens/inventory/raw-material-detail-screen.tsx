@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   useRawMaterialDetail,
   useStockMovements,
+  usePurchases,
 } from '@domain/hooks';
+import { useAuthStore } from '@domain/state/auth-store';
 import {
   ArrowLeft,
   Edit2,
@@ -31,12 +33,40 @@ import {
 export const RawMaterialDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const currentOutlet = useAuthStore((state) => state.currentOutlet);
 
   // Query Hooks
   const { data: material = null, isLoading: loading } = useRawMaterialDetail(id);
   const { data: movements = [] } = useStockMovements({ itemId: id });
+  const { data: purchaseData } = usePurchases({
+    outletId: currentOutlet?.id,
+    limit: 50,
+  });
+
   const [activeTab, setActiveTab] = useState<string>('overview');
-  const purchases: any[] = [];
+
+  const purchases = useMemo(() => {
+    if (!purchaseData?.data || !id) return [];
+    return purchaseData.data
+      .filter((po) => po.items?.some((it) => it.inventoryItemId === id))
+      .map((po) => {
+        const item = po.items?.find((it) => it.inventoryItemId === id);
+        const qty = Number(item?.quantityReceived || item?.quantityOrdered || 0);
+        const total = Number(
+          item?.subtotal || qty * Number(item?.unitCost || 0)
+        );
+        return {
+          id: po.id,
+          purchaseNumber: po.purchaseNumber,
+          purchaseDate: po.purchaseDate,
+          createdAt: po.createdAt,
+          supplierName: po.supplier?.name || '-',
+          quantity: qty,
+          subtotal: total,
+          status: po.status,
+        };
+      });
+  }, [purchaseData, id]);
 
   if (loading) {
     return <LoadingState message="Memuat detail bahan baku..." className="min-h-[400px]" />;
@@ -151,7 +181,7 @@ export const RawMaterialDetailScreen: React.FC = () => {
           unit={`/ ${material.unit}`}
           icon={<Layers className="w-4 h-4" />}
           theme="teal"
-          subtitle="Moving Average dari Purchase Order"
+          subtitle="Dihitung otomatis oleh sistem (Moving Average)"
         />
 
         <KpiCard
@@ -419,8 +449,8 @@ export const RawMaterialDetailScreen: React.FC = () => {
                   <th className="py-3 px-4">No. PO / Faktur</th>
                   <th className="py-3 px-4">Tanggal Pembelian</th>
                   <th className="py-3 px-4">Supplier</th>
-                  <th className="py-3 px-4 text-right">Qty Diterima</th>
-                  <th className="py-3 px-4 text-right">Harga Beli / Satuan</th>
+                  <th className="py-3 px-4 text-right">Qty Pembelian</th>
+                  <th className="py-3 px-4 text-right">Total Harga (Rp)</th>
                   <th className="py-3 px-4 text-center">Status</th>
                 </tr>
               </thead>
@@ -439,7 +469,7 @@ export const RawMaterialDetailScreen: React.FC = () => {
                   purchases.map((po) => (
                     <tr key={po.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="py-3 px-4 font-mono font-semibold text-slate-900">
-                        {po.purchaseNumber || po.invoiceNumber || po.id.slice(0, 8)}
+                        {po.purchaseNumber || po.id.slice(0, 8)}
                       </td>
                       <td className="py-3 px-4 text-slate-600">
                         {po.purchaseDate || po.createdAt
@@ -447,17 +477,17 @@ export const RawMaterialDetailScreen: React.FC = () => {
                           : '-'}
                       </td>
                       <td className="py-3 px-4 text-slate-800 font-medium">
-                        {po.supplierName || po.supplier?.name || '-'}
+                        {po.supplierName || '-'}
                       </td>
                       <td className="py-3 px-4 text-right font-semibold text-slate-900">
                         {po.quantity ? `${Number(po.quantity).toLocaleString('id-ID')} ${material.unit}` : '-'}
                       </td>
-                      <td className="py-3 px-4 text-right font-bold text-[#0D5C53]">
-                        {po.unitPrice ? `Rp ${Number(po.unitPrice).toLocaleString('id-ID')}` : '-'}
+                      <td className="py-3 px-4 text-right font-bold text-[#0D5C53] font-mono">
+                        {po.subtotal ? `Rp ${Number(po.subtotal).toLocaleString('id-ID')}` : '-'}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <Badge variant="success">
-                          {po.status || 'RECEIVED'}
+                        <Badge variant={po.status === 'RECEIVED' ? 'success' : 'neutral'}>
+                          {po.status || 'DRAFT'}
                         </Badge>
                       </td>
                     </tr>

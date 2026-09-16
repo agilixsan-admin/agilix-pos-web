@@ -415,8 +415,7 @@ export const PurchaseDetailScreen: React.FC = () => {
                 <th className="py-3.5 px-4">Item</th>
                 <th className="py-3.5 px-4 text-center">Qty Pesanan</th>
                 {isReceived && <th className="py-3.5 px-4 text-center">Qty Diterima</th>}
-                <th className="py-3.5 px-4 text-right">Unit Cost (HPP)</th>
-                <th className="py-3.5 px-4 text-right">Subtotal</th>
+                <th className="py-3.5 px-4 text-right">Total Harga</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -428,8 +427,7 @@ export const PurchaseDetailScreen: React.FC = () => {
                 const unit = item.inventoryItem?.unit || 'pcs';
                 const qtyOrdered = Number(item.quantityOrdered);
                 const qtyReceived = Number(item.quantityReceived);
-                const unitCost = Number(item.unitCost);
-                const subtotal = Number(item.subtotal);
+                const subtotal = Number(item.subtotal || (qtyOrdered * Number(item.unitCost || 0)));
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
@@ -450,9 +448,6 @@ export const PurchaseDetailScreen: React.FC = () => {
                         {qtyReceived} {unit}
                       </td>
                     )}
-                    <td className="py-3.5 px-4 text-right font-semibold text-slate-800 font-mono">
-                      {formatRupiah(unitCost)}
-                    </td>
                     <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono">
                       {formatRupiah(subtotal)}
                     </td>
@@ -503,7 +498,7 @@ export const PurchaseDetailScreen: React.FC = () => {
                   <th className="py-2.5 px-3">Item</th>
                   <th className="py-2.5 px-2 text-center">Qty Pesanan</th>
                   <th className="py-2.5 px-2 text-center w-28">Qty Diterima</th>
-                  <th className="py-2.5 px-3 text-right">Unit Cost</th>
+                  <th className="py-2.5 px-3 text-right">Total Harga</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -512,6 +507,7 @@ export const PurchaseDetailScreen: React.FC = () => {
                   const currentQtyReceived =
                     match !== undefined ? match.quantityReceived : Number(item.quantityOrdered);
                   const unit = item.inventoryItem?.unit || 'pcs';
+                  const itemTotal = Number(item.subtotal || (Number(item.quantityOrdered) * Number(item.unitCost || 0)));
 
                   return (
                     <tr key={item.id}>
@@ -541,8 +537,8 @@ export const PurchaseDetailScreen: React.FC = () => {
                           className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 font-bold text-center focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
                         />
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-700">
-                        {formatRupiah(Number(item.unitCost))}
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-800">
+                        {formatRupiah(itemTotal)}
                       </td>
                     </tr>
                   );
