@@ -241,16 +241,21 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3.5">
                 {filteredTables.map((table) => {
-                  const activeOrder = openOrders.find((o) => o.tableId === table.id);
+                  const activeOrder = openOrders.find(
+                    (o) =>
+                      o.tableId === table.id ||
+                      o.table?.id === table.id ||
+                      (Boolean(o.tableNumber) && (o.tableNumber === table.tableNumber || o.tableNumber === table.name)) ||
+                      (Boolean(o.tableName) && (o.tableName === table.name || o.tableName === table.tableNumber))
+                  );
                   const isOccupied = table.status === 'OCCUPIED' || Boolean(activeOrder);
 
                   if (isOccupied && activeOrder) {
-                    // Occupied Table Card
+                    // Occupied Table Card with Active Order
                     return (
                       <div
                         key={table.id}
-                        onClick={() => onSelectOpenOrderForPayment(activeOrder)}
-                        className="bg-[#0D5C53] text-white rounded-2xl p-4 flex flex-col justify-between shadow-md hover:shadow-lg transition-all cursor-pointer group hover:scale-[1.02] border border-teal-700"
+                        className="bg-[#0D5C53] text-white rounded-2xl p-4 flex flex-col justify-between shadow-md hover:shadow-lg transition-all border border-teal-700"
                       >
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
@@ -286,12 +291,67 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                           </div>
                         </div>
 
-                        <div className="mt-4 pt-2.5 border-t border-teal-700/60 flex items-center justify-between">
-                          <span className="text-xs font-extrabold text-white">
+                        <div className="mt-4 pt-2.5 border-t border-teal-700/60 flex items-center justify-between gap-1">
+                          <span className="text-xs font-extrabold text-white truncate">
                             Rp {Number(activeOrder.totalAmount || 0).toLocaleString('id-ID')}
                           </span>
-                          <span className="text-[10px] bg-white text-[#0D5C53] px-2 py-1 rounded-lg font-bold group-hover:bg-teal-50 transition-colors">
-                            Bayar →
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => onSelectOpenOrderForAppend(activeOrder)}
+                              className="text-[10px] bg-teal-800 hover:bg-teal-700 active:bg-teal-900 text-teal-100 px-2 py-1 rounded-lg font-bold transition-colors cursor-pointer border border-teal-600/60"
+                            >
+                              + Menu
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onSelectOpenOrderForPayment(activeOrder)}
+                              className="text-[10px] bg-white hover:bg-teal-50 text-[#0D5C53] px-2 py-1 rounded-lg font-bold transition-colors cursor-pointer shadow-xs"
+                            >
+                              Bayar →
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (isOccupied && !activeOrder) {
+                    // Table marked OCCUPIED in database but no active order found
+                    return (
+                      <div
+                        key={table.id}
+                        className="bg-amber-50 text-slate-800 rounded-2xl p-4 flex flex-col justify-between border-2 border-amber-300 shadow-xs"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="font-bold text-sm text-slate-800">
+                              Meja {table.name || table.tableNumber}
+                            </span>
+                            <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold">
+                              Terisi
+                            </span>
+                          </div>
+
+                          <div className="mb-2">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-amber-100 px-2 py-0.5 rounded-md">
+                              <Layers className="w-2.5 h-2.5 text-slate-400" />
+                              {table.section || 'Main Area'}
+                            </span>
+                          </div>
+
+                          <div className="text-xs text-amber-800 font-medium mb-1">
+                            Status: Terisi
+                          </div>
+                          <div className="text-[10px] text-amber-700/80">
+                            Meja sedang terisi
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-2.5 border-t border-amber-200/80 flex items-center justify-between">
+                          <span className="text-[10px] text-amber-800 font-semibold">Terkunci</span>
+                          <span className="text-[10px] text-slate-400 italic">
+                            Sedang Digunakan
                           </span>
                         </div>
                       </div>
@@ -386,7 +446,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-xs text-slate-900">
-                      {order.tableName ? `Meja ${order.tableName}` : order.orderType}
+                      {order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber
+                        ? `Meja ${order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber}`
+                        : order.orderType === 'TAKE_AWAY'
+                        ? 'Take Away'
+                        : 'Dine In'}
                     </span>
                     <span className="text-[10px] text-slate-400 font-mono">
                       {order.orderNumber || order.id.slice(0, 8)}

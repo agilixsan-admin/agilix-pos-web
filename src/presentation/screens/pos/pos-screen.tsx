@@ -168,6 +168,7 @@ export const PosScreen: React.FC = () => {
   const [voidModalItem, setVoidModalItem] = useState<{ orderId: string; itemId: string; name: string } | null>(null);
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState<boolean>(false);
   const [activePaymentOrder, setActivePaymentOrder] = useState<Order | null>(null);
+  const [activeAppendOrder, setActiveAppendOrder] = useState<Order | null>(null);
   const [successModalOrder, setSuccessModalOrder] = useState<Order | null>(null);
   const [receiptModalOrder, setReceiptModalOrder] = useState<Order | null>(null);
   const [isOpenOrdersOpen, setIsOpenOrdersOpen] = useState<boolean>(false);
@@ -235,6 +236,8 @@ export const PosScreen: React.FC = () => {
 
   // Start New Order Trigger
   const handleInitiateNewOrder = () => {
+    setActiveAppendOrder(null);
+    clearCart();
     setPendingOrderType('DINE_IN');
     setIsOrderTypeModalOpen(true);
   };
@@ -253,6 +256,8 @@ export const PosScreen: React.FC = () => {
 
   // Table Floor Plan Table Selection
   const handleSelectTableForOrder = (table: Table) => {
+    setActiveAppendOrder(null);
+    clearCart();
     setOrderType('DINE_IN');
     setTable(table.id, table.name);
     setViewMode('CATALOG');
@@ -269,11 +274,6 @@ export const PosScreen: React.FC = () => {
       setCurrentOutlet(activeOutlet);
     }
     if (cartItems.length === 0) return;
-    if (orderType === 'DINE_IN' && !tableId) {
-      alert('Silakan pilih nomor meja untuk pesanan Dine In.');
-      setViewMode('FLOOR');
-      return;
-    }
 
     setOrderProcessing(true);
     try {
@@ -283,6 +283,22 @@ export const PosScreen: React.FC = () => {
         quantity: item.quantity,
         notes: item.notes,
       }));
+
+      if (activeAppendOrder) {
+        // APPEND MODE: Tambah item ke order berjalan terlebih dahulu, lalu buka pembayaran
+        const updatedOrder = await posService.addItemsToOrder(activeAppendOrder.id, payloadItems);
+        clearCart();
+        setActiveAppendOrder(null);
+        refreshAllData();
+        setActivePaymentOrder(updatedOrder);
+        return;
+      }
+
+      if (orderType === 'DINE_IN' && !tableId) {
+        alert('Silakan pilih nomor meja untuk pesanan Dine In.');
+        setViewMode('FLOOR');
+        return;
+      }
 
       const createdOrder = await posService.createOrder({
         outletId: activeOutlet.id,
@@ -319,11 +335,6 @@ export const PosScreen: React.FC = () => {
       setCurrentOutlet(activeOutlet);
     }
     if (cartItems.length === 0) return;
-    if (orderType === 'DINE_IN' && !tableId) {
-      alert('Silakan pilih nomor meja untuk pesanan Dine In.');
-      setViewMode('FLOOR');
-      return;
-    }
 
     setOrderProcessing(true);
     try {
@@ -333,6 +344,23 @@ export const PosScreen: React.FC = () => {
         quantity: item.quantity,
         notes: item.notes,
       }));
+
+      if (activeAppendOrder) {
+        // APPEND MODE: Tambah item ke order berjalan yang sudah ada
+        await posService.addItemsToOrder(activeAppendOrder.id, payloadItems);
+        clearCart();
+        setActiveAppendOrder(null);
+        refreshAllData();
+        setViewMode('FLOOR');
+        alert('Tambahan menu berhasil dikirim ke pesanan.');
+        return;
+      }
+
+      if (orderType === 'DINE_IN' && !tableId) {
+        alert('Silakan pilih nomor meja untuk pesanan Dine In.');
+        setViewMode('FLOOR');
+        return;
+      }
 
       await posService.createOrder({
         outletId: activeOutlet.id,
@@ -390,8 +418,31 @@ export const PosScreen: React.FC = () => {
           </div>
         </div>
 
+        {/* Append Mode Banner in Cart */}
+        {activeAppendOrder && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between">
+            <div className="flex flex-col min-w-0 pr-2">
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-800">
+                Mode Tambah Menu
+              </span>
+              <span className="text-xs font-bold text-amber-950 truncate">
+                Pesanan #{activeAppendOrder.orderNumber} ({activeAppendOrder.tableName || activeAppendOrder.tableNumber ? `Meja ${activeAppendOrder.tableName || activeAppendOrder.tableNumber}` : activeAppendOrder.orderType})
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                setActiveAppendOrder(null);
+                clearCart();
+              }}
+              className="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer shrink-0"
+            >
+              Batal
+            </button>
+          </div>
+        )}
+
         {/* Dine In / Take Away Switcher */}
-        <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+        <div className={`grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl ${activeAppendOrder ? 'opacity-50 pointer-events-none' : ''}`}>
           <button
             onClick={() => setOrderType('DINE_IN')}
             className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
@@ -425,12 +476,13 @@ export const PosScreen: React.FC = () => {
             <div className="relative">
               <select
                 aria-label="Pilih Meja"
+                disabled={Boolean(activeAppendOrder)}
                 value={tableId || ''}
                 onChange={(e) => {
                   const sel = tables.find((t) => t.id === e.target.value);
                   setTable(sel ? sel.id : null, sel ? sel.name : null);
                 }}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
+                className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] ${activeAppendOrder ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 <option value="">Pilih Meja...</option>
                 {tables.map((t) => (
@@ -445,10 +497,11 @@ export const PosScreen: React.FC = () => {
           <div className={orderType === 'DINE_IN' ? '' : 'col-span-2'}>
             <input
               type="text"
+              disabled={Boolean(activeAppendOrder)}
               placeholder="Nama Pelanggan (Opsional)"
               value={customerName || ''}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+              className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] ${activeAppendOrder ? 'opacity-60 cursor-not-allowed' : ''}`}
             />
           </div>
         </div>
@@ -576,7 +629,7 @@ export const PosScreen: React.FC = () => {
               handleSaveOpenOrder();
             }}
           >
-            Kirim Pesanan
+            {activeAppendOrder ? 'Kirim Tambahan' : 'Kirim Pesanan'}
           </Button>
 
           <Button
@@ -590,7 +643,7 @@ export const PosScreen: React.FC = () => {
             }}
             className="font-bold shadow-md shadow-teal-900/10"
           >
-            Bayar Sekarang
+            {activeAppendOrder ? 'Tambah & Bayar' : 'Bayar Sekarang'}
           </Button>
         </div>
       </div>
@@ -608,9 +661,13 @@ export const PosScreen: React.FC = () => {
           onSelectTableForOrder={handleSelectTableForOrder}
           onSelectOpenOrderForPayment={(order) => setActivePaymentOrder(order)}
           onSelectOpenOrderForAppend={(order) => {
+            setActiveAppendOrder(order);
             setOrderType(order.orderType);
-            setTable(order.tableId || null, order.tableName || null);
+            const resolvedTableName = order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber || null;
+            const resolvedTableId = order.tableId || order.table?.id || null;
+            setTable(resolvedTableId, resolvedTableName);
             setCustomerName(order.customerName || '');
+            clearCart();
             setViewMode('CATALOG');
           }}
           onNewOrderClick={handleInitiateNewOrder}
@@ -627,7 +684,11 @@ export const PosScreen: React.FC = () => {
                   variant="outline"
                   size="sm"
                   leftIcon={<ArrowLeft className="w-4 h-4" />}
-                  onClick={() => setViewMode('FLOOR')}
+                  onClick={() => {
+                    setActiveAppendOrder(null);
+                    clearCart();
+                    setViewMode('FLOOR');
+                  }}
                 >
                   <span className="hidden sm:inline">Denah Meja</span>
                   <span className="sm:hidden">Meja</span>
@@ -677,6 +738,30 @@ export const PosScreen: React.FC = () => {
                   <span className="sm:hidden">({openOrders.length})</span>
                 </Button>
               </div>
+
+              {/* Append Mode Banner in Catalog */}
+              {activeAppendOrder && (
+                <div className="bg-amber-500/10 border border-amber-300 text-amber-900 px-3 py-2 rounded-xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="bg-amber-600 text-white font-bold px-2 py-0.5 rounded text-[10px] shrink-0">
+                      MODE TAMBAH MENU
+                    </span>
+                    <span className="truncate">
+                      Menambah menu ke pesanan <strong>#{activeAppendOrder.orderNumber}</strong> ({activeAppendOrder.tableName || activeAppendOrder.tableNumber ? `Meja ${activeAppendOrder.tableName || activeAppendOrder.tableNumber}` : activeAppendOrder.orderType})
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setActiveAppendOrder(null);
+                      clearCart();
+                      setViewMode('FLOOR');
+                    }}
+                    className="text-rose-600 hover:text-rose-800 font-bold underline cursor-pointer text-xs shrink-0 ml-2"
+                  >
+                    Batal Tambah
+                  </button>
+                </div>
+              )}
 
               {/* Category Filter Pills */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
@@ -940,6 +1025,16 @@ export const PosScreen: React.FC = () => {
         onClose={() => setIsOpenOrdersOpen(false)}
         onSelectForPayment={(order) => {
           setActivePaymentOrder(order);
+        }}
+        onSelectForAppend={(order) => {
+          setActiveAppendOrder(order);
+          setOrderType(order.orderType);
+          const resolvedTableName = order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber || null;
+          const resolvedTableId = order.tableId || order.table?.id || null;
+          setTable(resolvedTableId, resolvedTableName);
+          setCustomerName(order.customerName || '');
+          clearCart();
+          setViewMode('CATALOG');
         }}
         onOrderUpdated={refreshAllData}
       />

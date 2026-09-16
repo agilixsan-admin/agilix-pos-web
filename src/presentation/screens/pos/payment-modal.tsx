@@ -141,7 +141,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       onClose={onClose}
       title="Checkout & Pembayaran"
       subtitle={`No. Order: ${order.orderNumber || order.id.slice(0, 8)} • ${
-        order.orderType === 'DINE_IN' ? `Meja ${order.tableName || '-'}` : 'Take Away'
+        order.orderType === 'DINE_IN'
+          ? `Meja ${order.tableName || order.tableNumber || order.table?.name || '-'}`
+          : 'Take Away'
       }`}
       maxWidth="2xl"
       footer={
@@ -359,7 +361,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   Ringkasan Tagihan
                 </span>
                 <Badge variant={order.orderType === 'DINE_IN' ? 'success' : 'info'} size="sm">
-                  {order.orderType === 'DINE_IN' ? `Dine In • Meja ${order.tableName || '-'}` : 'Take Away'}
+                  {order.orderType === 'DINE_IN'
+                    ? `Dine In • Meja ${order.tableName || order.tableNumber || order.table?.name || '-'}`
+                    : 'Take Away'}
                 </Badge>
               </div>
 

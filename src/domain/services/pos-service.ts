@@ -9,6 +9,15 @@ import type {
 } from '@model/Order';
 import type { Table } from '@model/Settings';
 
+const normalizeOrder = (order: Order): Order => {
+  if (!order) return order;
+  return {
+    ...order,
+    tableName: order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber || null,
+    tableNumber: order.tableNumber || order.tableName || order.table?.tableNumber || order.table?.name || null,
+  };
+};
+
 export const posService = {
   getTables: async (outletId?: string): Promise<Table[]> => {
     const res = await httpClient.get('/tables', { params: { outletId } });
@@ -33,24 +42,26 @@ export const posService = {
 
   createOrder: async (payload: CreateOrderPayload): Promise<Order> => {
     const res = await httpClient.post('/orders', payload);
-    return res.data?.data || res.data;
+    return normalizeOrder(res.data?.data || res.data);
   },
 
   getOpenOrders: async (outletId?: string): Promise<Order[]> => {
     const res = await httpClient.get('/orders', {
-      params: { status: 'PENDING', outletId },
+      params: { status: 'PENDING', outletId, limit: 100 },
     });
-    return res.data?.data || res.data || [];
+    const rawList = (res.data?.data || res.data || []) as Order[];
+    return rawList.map(normalizeOrder);
   },
 
   getOrderHistory: async (params?: QueryOrderParams): Promise<PaginatedOrderResult> => {
     const res = await httpClient.get('/orders', { params });
     const rawData = res.data;
-    const items: Order[] = Array.isArray(rawData?.data)
+    const rawItems: Order[] = Array.isArray(rawData?.data)
       ? rawData.data
       : Array.isArray(rawData)
       ? rawData
       : [];
+    const items = rawItems.map(normalizeOrder);
 
     const meta = rawData?.meta || {
       page: params?.page || 1,
@@ -67,7 +78,7 @@ export const posService = {
 
   getOrderById: async (orderId: string): Promise<Order> => {
     const res = await httpClient.get(`/orders/${orderId}`);
-    return res.data?.data || res.data;
+    return normalizeOrder(res.data?.data || res.data);
   },
 
   addItemsToOrder: async (
@@ -75,7 +86,7 @@ export const posService = {
     items: { productId: string; variantId?: string; quantity: number; notes?: string }[]
   ): Promise<Order> => {
     const res = await httpClient.post(`/orders/${orderId}/items`, { items });
-    return res.data?.data || res.data;
+    return normalizeOrder(res.data?.data || res.data);
   },
 
   voidOrderItem: async (orderId: string, itemId: string, reason: string): Promise<OrderItem> => {

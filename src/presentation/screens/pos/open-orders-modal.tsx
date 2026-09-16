@@ -16,6 +16,7 @@ interface OpenOrdersModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectForPayment: (order: Order) => void;
+  onSelectForAppend?: (order: Order) => void;
   onOrderUpdated: () => void;
 }
 
@@ -23,6 +24,7 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
   isOpen,
   onClose,
   onSelectForPayment,
+  onSelectForAppend,
   onOrderUpdated,
 }) => {
   const authOutlet = useAuthStore((state) => state.currentOutlet);
@@ -58,6 +60,11 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
 
   const handleAppendItems = async (order: Order) => {
     if (cartItems.length === 0) {
+      if (onSelectForAppend) {
+        onClose();
+        onSelectForAppend(order);
+        return;
+      }
       alert('Keranjang masih kosong. Pilih menu terlebih dahulu di layar kasir untuk ditambahkan.');
       return;
     }
@@ -120,7 +127,11 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
                       {order.orderNumber || order.id.slice(0, 8)}
                     </span>
                     <Badge variant="warning" dot>
-                      {order.tableName ? `Meja ${order.tableName}` : order.orderType}
+                      {order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber
+                        ? `Meja ${order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber}`
+                        : order.orderType === 'TAKE_AWAY'
+                        ? 'Take Away'
+                        : 'Dine In'}
                     </Badge>
                   </div>
 

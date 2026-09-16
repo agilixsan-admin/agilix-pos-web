@@ -83,7 +83,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               <span>Tipe:</span>
               <span className="font-semibold">
                 {order.orderType === 'DINE_IN'
-                  ? `Dine-In (${order.tableName || 'Meja'})`
+                  ? `Dine-In (${order.tableName || order.tableNumber || order.table?.name || 'Meja'})`
                   : 'Take Away'}
               </span>
             </div>

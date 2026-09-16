@@ -186,7 +186,9 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                   <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                     <span className="text-xs font-semibold text-slate-500">Tipe Pesanan</span>
                     <Badge variant={order.orderType === 'DINE_IN' ? 'success' : 'info'}>
-                      {order.orderType === 'DINE_IN' ? `Dine In (${order.tableName || 'Meja'})` : 'Take Away'}
+                      {order.orderType === 'DINE_IN'
+                        ? `Dine In (${order.tableName || order.tableNumber || order.table?.name || 'Meja'})`
+                        : 'Take Away'}
                     </Badge>
                   </div>
 
