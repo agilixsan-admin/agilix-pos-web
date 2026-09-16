@@ -6,12 +6,33 @@ export const productService = {
     // Strip outletId because backend /api/v1/products is tenant-scoped with forbidNonWhitelisted ValidationPipe
     const { outletId, ...queryParams } = params || {};
     const res = await httpClient.get('/products', { params: queryParams });
-    return res.data?.data || res.data || [];
+    const raw = res.data?.data || res.data || [];
+    return (Array.isArray(raw) ? raw : []).map((p: Product) => {
+      let imageUrl = p.imageUrl || p.image;
+      if (imageUrl && imageUrl.startsWith('htts://')) {
+        imageUrl = imageUrl.replace(/^htts:\/\//, 'https://');
+      }
+      return {
+        ...p,
+        image: imageUrl,
+        imageUrl,
+      };
+    });
   },
 
   getProductById: async (id: string): Promise<Product> => {
     const res = await httpClient.get(`/products/${id}`);
-    return res.data?.data || res.data;
+    const p = res.data?.data || res.data;
+    if (!p) return p;
+    let imageUrl = p.imageUrl || p.image;
+    if (imageUrl && imageUrl.startsWith('htts://')) {
+      imageUrl = imageUrl.replace(/^htts:\/\//, 'https://');
+    }
+    return {
+      ...p,
+      image: imageUrl,
+      imageUrl,
+    };
   },
 
   createProduct: async (productData: Partial<Product>): Promise<Product> => {

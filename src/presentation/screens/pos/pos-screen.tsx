@@ -477,7 +477,10 @@ export const PosScreen: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3.5">
                   {filteredProducts.map((product) => {
-                    const imageUrl = product.imageUrl || product.image;
+                    const rawImageUrl = product.imageUrl || product.image;
+                    const imageUrl = rawImageUrl?.startsWith('htts://')
+                      ? rawImageUrl.replace(/^htts:\/\//, 'https://')
+                      : rawImageUrl;
                     const hasVariants = product.variants && product.variants.length > 1;
 
                     return (
