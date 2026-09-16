@@ -24,9 +24,13 @@ import {
   ShieldCheck,
   ShieldAlert,
   Users,
+  ChevronLeft,
+  ChevronRight,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import { useAccess } from '@domain/hooks/use-access';
+import { useUiStore } from '@domain/state/ui-store';
 
 interface SubMenuItem {
   title: string;
@@ -94,6 +98,12 @@ const MENU_GROUPS: MenuGroup[] = [
 export const Sidebar: React.FC = () => {
   const { hasAccess } = useAccess();
   const location = useLocation();
+  const {
+    isSidebarCollapsed,
+    isMobileMenuOpen,
+    closeMobileMenu,
+    toggleSidebarCollapsed,
+  } = useUiStore();
 
   // Filter groups: only keep items user has permission for, and remove empty groups
   const accessibleGroups = MENU_GROUPS.map((group) => {
@@ -105,37 +115,79 @@ export const Sidebar: React.FC = () => {
   }).filter((group) => group.items.length > 0);
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 h-screen flex flex-col flex-shrink-0 select-none">
+    <aside
+      className={`
+        fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200 h-screen flex flex-col select-none transition-all duration-300 ease-in-out shrink-0
+        lg:static lg:z-auto
+        ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
+        ${isSidebarCollapsed ? 'lg:w-[72px]' : 'w-64'}
+      `}
+    >
       {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-100 gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[#0D5C53] flex items-center justify-center text-white font-bold text-lg shadow-sm">
-          A
+      <div
+        className={`h-16 flex items-center border-b border-slate-100 ${
+          isSidebarCollapsed ? 'lg:justify-center px-4' : 'justify-between px-5'
+        }`}
+      >
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="w-9 h-9 rounded-xl bg-[#0D5C53] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
+            A
+          </div>
+          {(!isSidebarCollapsed || isMobileMenuOpen) && (
+            <div className="overflow-hidden">
+              <h1 className="font-bold text-slate-800 text-base leading-tight tracking-tight truncate">
+                Agilix POS
+              </h1>
+              <p className="text-[11px] text-slate-500 font-medium truncate">
+                Point of Sale System
+              </p>
+            </div>
+          )}
         </div>
-        <div>
-          <h1 className="font-bold text-slate-800 text-base leading-tight tracking-tight">Agilix POS</h1>
-          <p className="text-[11px] text-slate-500 font-medium">Point of Sale System</p>
-        </div>
+
+        {/* Close button on mobile drawer */}
+        <button
+          onClick={closeMobileMenu}
+          aria-label="Tutup Menu"
+          className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Navigation Groups List */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      <nav className="flex-1 overflow-y-auto px-2.5 py-4 space-y-4">
         {accessibleGroups.map((group) => (
           <div key={group.groupTitle} className="space-y-1">
-            <h2 className="px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-              {group.groupTitle}
-            </h2>
-            <div className="space-y-0.5 pt-1">
+            {!isSidebarCollapsed || isMobileMenuOpen ? (
+              <h2 className="px-2.5 text-[11px] font-bold tracking-wider text-slate-400 uppercase truncate">
+                {group.groupTitle}
+              </h2>
+            ) : (
+              <div className="h-px bg-slate-100 my-2 mx-1.5" />
+            )}
+            <div className="space-y-0.5 pt-0.5">
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const isActive =
                   location.pathname === item.path ||
                   (item.path !== '/pos' && location.pathname.startsWith(`${item.path}/`));
 
+                const isIconOnly = isSidebarCollapsed && !isMobileMenuOpen;
+
                 return (
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    onClick={() => {
+                      closeMobileMenu();
+                    }}
+                    title={isIconOnly ? item.title : undefined}
+                    className={`flex items-center rounded-lg text-sm font-medium transition-all group relative ${
+                      isIconOnly
+                        ? 'justify-center w-11 h-11 mx-auto'
+                        : 'gap-3 px-3 py-2.5'
+                    } ${
                       isActive
                         ? 'bg-[#E6F4F1] text-[#0D5C53] font-semibold shadow-xs'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -143,10 +195,19 @@ export const Sidebar: React.FC = () => {
                   >
                     <Icon
                       className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                        isActive ? 'text-[#0D5C53]' : 'text-slate-500'
+                        isActive ? 'text-[#0D5C53]' : 'text-slate-500 group-hover:text-slate-800'
                       }`}
                     />
-                    <span className="truncate">{item.title}</span>
+                    {!isIconOnly && (
+                      <span className="truncate">{item.title}</span>
+                    )}
+
+                    {/* Tooltip on hover when desktop is in collapsed icon mode */}
+                    {isIconOnly && (
+                      <span className="hidden lg:group-hover:flex absolute left-full ml-3 px-2.5 py-1 bg-slate-900 text-white text-xs font-semibold rounded-md whitespace-nowrap shadow-lg z-50 pointer-events-none items-center">
+                        {item.title}
+                      </span>
+                    )}
                   </NavLink>
                 );
               })}
@@ -154,7 +215,26 @@ export const Sidebar: React.FC = () => {
           </div>
         ))}
       </nav>
+
+      {/* Footer with Desktop Collapse / Expand Toggle */}
+      <div className="hidden lg:flex border-t border-slate-100 p-2.5">
+        <button
+          onClick={toggleSidebarCollapsed}
+          title={isSidebarCollapsed ? 'Buka Penuh (Expand)' : 'Perkecil Menu (Collapse)'}
+          className={`w-full flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-[#0D5C53] hover:bg-teal-50 transition-colors cursor-pointer text-xs font-medium ${
+            isSidebarCollapsed ? 'gap-0' : 'gap-2'
+          }`}
+        >
+          {isSidebarCollapsed ? (
+            <ChevronRight className="w-4 h-4 text-[#0D5C53]" />
+          ) : (
+            <>
+              <ChevronLeft className="w-4 h-4" />
+              <span>Ciutkan Menu</span>
+            </>
+          )}
+        </button>
+      </div>
     </aside>
   );
 };
-

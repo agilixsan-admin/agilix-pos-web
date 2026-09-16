@@ -43,6 +43,8 @@ import {
   LayoutGrid,
   Building2,
   Send,
+  X,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Button,
@@ -170,6 +172,7 @@ export const PosScreen: React.FC = () => {
   const [receiptModalOrder, setReceiptModalOrder] = useState<Order | null>(null);
   const [isOpenOrdersOpen, setIsOpenOrdersOpen] = useState<boolean>(false);
   const [orderProcessing, setOrderProcessing] = useState<boolean>(false);
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState<boolean>(false);
 
   // Filtered Products
   const filteredProducts = products.filter((product) => {
@@ -356,6 +359,244 @@ export const PosScreen: React.FC = () => {
     }
   };
 
+  const renderCartContent = (isMobileSheet = false) => (
+    <div className={`flex flex-col h-full overflow-hidden ${isMobileSheet ? 'bg-white' : ''}`}>
+      {/* Cart Header & Order Type Switcher */}
+      <div className="p-3 sm:p-4 border-b border-slate-100 space-y-3 shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4 text-[#0D5C53]" />
+            <span className="font-bold text-slate-800 text-sm">
+              Keranjang Pesanan ({getItemCount()})
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {cartItems.length > 0 && (
+              <button
+                onClick={clearCart}
+                className="text-xs font-semibold text-rose-500 hover:text-rose-700 cursor-pointer"
+              >
+                Reset
+              </button>
+            )}
+            {isMobileSheet && (
+              <button
+                onClick={() => setIsMobileCartOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Dine In / Take Away Switcher */}
+        <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+          <button
+            onClick={() => setOrderType('DINE_IN')}
+            className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              orderType === 'DINE_IN'
+                ? 'bg-white text-[#0D5C53] shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Utensils className="w-3.5 h-3.5" />
+            <span>Dine In</span>
+          </button>
+          <button
+            onClick={() => {
+              setOrderType('TAKE_AWAY');
+              setTable(null, null);
+            }}
+            className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              orderType === 'TAKE_AWAY'
+                ? 'bg-white text-[#0D5C53] shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Take Away</span>
+          </button>
+        </div>
+
+        {/* Table & Customer Name Inputs */}
+        <div className="grid grid-cols-2 gap-2">
+          {orderType === 'DINE_IN' && (
+            <div className="relative">
+              <select
+                aria-label="Pilih Meja"
+                value={tableId || ''}
+                onChange={(e) => {
+                  const sel = tables.find((t) => t.id === e.target.value);
+                  setTable(sel ? sel.id : null, sel ? sel.name : null);
+                }}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
+              >
+                <option value="">Pilih Meja...</option>
+                {tables.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    Meja {t.name} ({t.capacity} Kursi)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className={orderType === 'DINE_IN' ? '' : 'col-span-2'}>
+            <input
+              type="text"
+              placeholder="Nama Pelanggan (Opsional)"
+              value={customerName || ''}
+              onChange={(e) => setCustomerName(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Cart Items List */}
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 divide-y divide-slate-100 min-h-[160px]">
+        {cartItems.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-slate-300 py-8">
+            <ShoppingBag className="w-10 h-10 stroke-[1.5] mb-2 opacity-30" />
+            <p className="text-xs font-semibold text-slate-400">Keranjang Masih Kosong</p>
+            <p className="text-[11px] text-slate-300 text-center mt-0.5">
+              Pilih menu di sebelah kiri untuk membuat pesanan.
+            </p>
+          </div>
+        ) : (
+          cartItems.map((item) => (
+            <div key={item.id} className="py-2.5 first:pt-0 last:pb-0 flex flex-col gap-1.5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 pr-2">
+                  <h5 className="font-semibold text-slate-800 text-xs leading-tight">{item.name}</h5>
+                  {item.variantName && (
+                    <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+                      Varian: {item.variantName}
+                    </span>
+                  )}
+                  {item.notes && (
+                    <p className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-1 inline-block border border-amber-200">
+                      Catatan: {item.notes}
+                    </p>
+                  )}
+                </div>
+
+                <span className="font-bold text-slate-800 text-xs">
+                  Rp {(item.price * item.quantity).toLocaleString('id-ID')}
+                </span>
+              </div>
+
+              {/* Counter & Edit Note Actions */}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  onClick={() =>
+                    setNotesModalItem({
+                      id: item.id,
+                      name: item.name,
+                      notes: item.notes || '',
+                    })
+                  }
+                  className="text-[11px] text-slate-400 hover:text-[#0D5C53] flex items-center gap-1 cursor-pointer"
+                >
+                  <Edit2 className="w-3 h-3" />
+                  <span>{item.notes ? 'Ubah Catatan' : '+ Catatan'}</span>
+                </button>
+
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
+                  <button
+                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="w-6 text-center text-xs font-bold text-slate-800">{item.quantity}</span>
+                  <button
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    className="w-6 h-6 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded ml-1 cursor-pointer"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Cart Calculations & Checkout Footer */}
+      <div className="p-3 sm:p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 shrink-0">
+        <div className="space-y-1.5 text-xs text-slate-500">
+          <div className="flex justify-between">
+            <span>Subtotal</span>
+            <span className="font-semibold text-slate-800">Rp {getSubtotal().toLocaleString('id-ID')}</span>
+          </div>
+
+          <div className="flex justify-between items-center text-xs">
+            <button
+              onClick={() => setIsDiscountModalOpen(true)}
+              className="text-teal-700 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+            >
+              <Tag className="w-3.5 h-3.5" />
+              <span>{discountName || '+ Tambah Diskon / Promo'}</span>
+            </button>
+            {getDiscount() > 0 && (
+              <span className="font-bold text-emerald-600">
+                -Rp {getDiscount().toLocaleString('id-ID')}
+              </span>
+            )}
+          </div>
+
+          {getTax() > 0 && (
+            <div className="flex justify-between">
+              <span>{taxName || 'Pajak'} ({taxPercent}%)</span>
+              <span className="font-semibold text-slate-800">Rp {getTax().toLocaleString('id-ID')}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
+            <span>Total Tagihan</span>
+            <span className="text-[#0D5C53] text-base">Rp {getTotal().toLocaleString('id-ID')}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <Button
+            variant="outline"
+            disabled={cartItems.length === 0 || orderProcessing}
+            leftIcon={<Send className="w-3.5 h-3.5 text-teal-700" />}
+            onClick={() => {
+              if (isMobileSheet) setIsMobileCartOpen(false);
+              handleSaveOpenOrder();
+            }}
+          >
+            Kirim Pesanan
+          </Button>
+
+          <Button
+            variant="primary"
+            disabled={cartItems.length === 0 || orderProcessing}
+            isLoading={orderProcessing}
+            leftIcon={<CreditCard className="w-4 h-4" />}
+            onClick={() => {
+              if (isMobileSheet) setIsMobileCartOpen(false);
+              handleCheckoutDirect();
+            }}
+            className="font-bold shadow-md shadow-teal-900/10"
+          >
+            Bayar Sekarang
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="h-[calc(100vh-6rem)] overflow-hidden flex flex-col">
       {/* VIEW 1: TABLE FLOOR PLAN & ACTIVE ORDERS (HOME POS) */}
@@ -376,23 +617,24 @@ export const PosScreen: React.FC = () => {
         />
       ) : (
         /* VIEW 2: MENU CATALOG & CART MANAGEMENT */
-        <div className="flex-1 flex gap-4 overflow-hidden p-4 bg-slate-50">
+        <div className="flex-1 flex gap-3 sm:gap-4 overflow-hidden p-2 sm:p-4 bg-slate-50 relative">
           {/* Left: Product Catalog & Category Tabs */}
           <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
             {/* Top Filter Bar */}
-            <div className="p-4 border-b border-slate-100 space-y-3">
-              <div className="flex items-center justify-between gap-3">
+            <div className="p-2.5 sm:p-4 border-b border-slate-100 space-y-2.5 sm:space-y-3">
+              <div className="flex items-center justify-between gap-2 sm:gap-3">
                 <Button
                   variant="outline"
                   size="sm"
                   leftIcon={<ArrowLeft className="w-4 h-4" />}
                   onClick={() => setViewMode('FLOOR')}
                 >
-                  Denah Meja
+                  <span className="hidden sm:inline">Denah Meja</span>
+                  <span className="sm:hidden">Meja</span>
                 </Button>
 
                 {outlets && outlets.length > 1 ? (
-                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 shrink-0">
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 shrink-0">
                     <Building2 className="w-3.5 h-3.5 text-[#0D5C53]" />
                     <select
                       aria-label="Pilih Cabang POS"
@@ -401,7 +643,7 @@ export const PosScreen: React.FC = () => {
                         const found = outlets.find((o) => o.id === e.target.value);
                         if (found) setCurrentOutlet(found);
                       }}
-                      className="bg-transparent text-xs font-bold text-slate-800 focus:outline-hidden cursor-pointer"
+                      className="bg-transparent text-xs font-bold text-slate-800 focus:outline-hidden cursor-pointer max-w-[100px] sm:max-w-none truncate"
                     >
                       {outlets.map((o) => (
                         <option key={o.id} value={o.id}>
@@ -417,7 +659,7 @@ export const PosScreen: React.FC = () => {
                   </div>
                 )}
 
-                <div className="flex-1 max-w-md">
+                <div className="flex-1 max-w-md min-w-[120px]">
                   <SearchInput
                     value={searchQuery}
                     onChange={setSearchQuery}
@@ -431,7 +673,8 @@ export const PosScreen: React.FC = () => {
                   leftIcon={<Clock className="w-4 h-4 text-amber-600" />}
                   onClick={() => setIsOpenOrdersOpen(true)}
                 >
-                  Pesanan ({openOrders.length})
+                  <span className="hidden sm:inline">Pesanan ({openOrders.length})</span>
+                  <span className="sm:hidden">({openOrders.length})</span>
                 </Button>
               </div>
 
@@ -464,7 +707,7 @@ export const PosScreen: React.FC = () => {
             </div>
 
             {/* Product Grid */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 pb-24 lg:pb-4">
               {loading ? (
                 <LoadingState message="Memuat daftar menu..." className="h-full" />
               ) : filteredProducts.length === 0 ? (
@@ -475,7 +718,7 @@ export const PosScreen: React.FC = () => {
                   className="h-full"
                 />
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3.5">
                   {filteredProducts.map((product) => {
                     const rawImageUrl = product.imageUrl || product.image;
                     const imageUrl = rawImageUrl?.startsWith('htts://')
@@ -550,226 +793,48 @@ export const PosScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: Cart & Checkout Panel */}
-          <div className="w-96 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col overflow-hidden shrink-0">
-            {/* Cart Header & Order Type Switcher */}
-            <div className="p-4 border-b border-slate-100 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4 text-[#0D5C53]" />
-                  <span className="font-bold text-slate-800 text-sm">
-                    Keranjang Pesanan ({getItemCount()})
-                  </span>
-                </div>
-                {cartItems.length > 0 && (
-                  <button
-                    onClick={clearCart}
-                    className="text-[11px] font-semibold text-rose-500 hover:text-rose-700 cursor-pointer"
-                  >
-                    Reset
-                  </button>
-                )}
+          {/* Right: Desktop Cart & Checkout Panel */}
+          <div className="hidden lg:flex w-84 xl:w-96 bg-white border border-slate-200 rounded-2xl shadow-xs flex-col overflow-hidden shrink-0">
+            {renderCartContent(false)}
+          </div>
+        </div>
+      )}
+
+      {/* Floating Bottom Cart Bar on Mobile / Tablet Portrait */}
+      {cartItems.length > 0 && viewMode === 'CATALOG' && (
+        <div className="lg:hidden fixed bottom-4 left-4 right-4 z-30 animate-in slide-in-from-bottom duration-300">
+          <button
+            onClick={() => setIsMobileCartOpen(true)}
+            className="w-full bg-[#0D5C53] hover:bg-[#0A4841] text-white px-4 py-3.5 rounded-2xl shadow-xl flex items-center justify-between font-semibold active:scale-[0.99] transition-transform cursor-pointer border border-teal-600/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-bold text-xs text-white">
+                {getItemCount()}
               </div>
-
-              {/* Dine In / Take Away Switcher */}
-              <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
-                <button
-                  onClick={() => setOrderType('DINE_IN')}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    orderType === 'DINE_IN'
-                      ? 'bg-white text-[#0D5C53] shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Utensils className="w-3.5 h-3.5" />
-                  <span>Dine In</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setOrderType('TAKE_AWAY');
-                    setTable(null, null);
-                  }}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    orderType === 'TAKE_AWAY'
-                      ? 'bg-white text-[#0D5C53] shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Take Away</span>
-                </button>
-              </div>
-
-              {/* Table & Customer Name Inputs */}
-              <div className="grid grid-cols-2 gap-2">
-                {orderType === 'DINE_IN' && (
-                  <div className="relative">
-                    <select
-                      aria-label="Pilih Meja"
-                      value={tableId || ''}
-                      onChange={(e) => {
-                        const sel = tables.find((t) => t.id === e.target.value);
-                        setTable(sel ? sel.id : null, sel ? sel.name : null);
-                      }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
-                    >
-                      <option value="">Pilih Meja...</option>
-                      {tables.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          Meja {t.name} ({t.capacity} Kursi)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className={orderType === 'DINE_IN' ? '' : 'col-span-2'}>
-                  <input
-                    type="text"
-                    placeholder="Nama Pelanggan (Opsional)"
-                    value={customerName || ''}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-                  />
-                </div>
+              <div className="text-left">
+                <p className="text-[11px] text-teal-100 font-medium leading-none">Total Tagihan</p>
+                <p className="text-sm font-bold text-white leading-tight mt-0.5">
+                  Rp {getTotal().toLocaleString('id-ID')}
+                </p>
               </div>
             </div>
-
-            {/* Cart Items List */}
-            <div className="flex-1 overflow-y-auto p-4 divide-y divide-slate-100">
-              {cartItems.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-300 py-8">
-                  <ShoppingBag className="w-10 h-10 stroke-[1.5] mb-2 opacity-30" />
-                  <p className="text-xs font-semibold text-slate-400">Keranjang Masih Kosong</p>
-                  <p className="text-[11px] text-slate-300 text-center mt-0.5">
-                    Pilih menu di sebelah kiri untuk membuat pesanan.
-                  </p>
-                </div>
-              ) : (
-                cartItems.map((item) => (
-                  <div key={item.id} className="py-3 first:pt-0 last:pb-0 flex flex-col gap-1.5">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 pr-2">
-                        <h5 className="font-semibold text-slate-800 text-xs leading-tight">{item.name}</h5>
-                        {item.variantName && (
-                          <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
-                            Varian: {item.variantName}
-                          </span>
-                        )}
-                        {item.notes && (
-                          <p className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-1 inline-block border border-amber-200">
-                            Catatan: {item.notes}
-                          </p>
-                        )}
-                      </div>
-
-                      <span className="font-bold text-slate-800 text-xs">
-                        Rp {(item.price * item.quantity).toLocaleString('id-ID')}
-                      </span>
-                    </div>
-
-                    {/* Counter & Edit Note Actions */}
-                    <div className="flex items-center justify-between pt-1">
-                      <button
-                        onClick={() =>
-                          setNotesModalItem({
-                            id: item.id,
-                            name: item.name,
-                            notes: item.notes || '',
-                          })
-                        }
-                        className="text-[11px] text-slate-400 hover:text-[#0D5C53] flex items-center gap-1 cursor-pointer"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                        <span>{item.notes ? 'Ubah Catatan' : '+ Catatan'}</span>
-                      </button>
-
-                      <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="w-6 text-center text-xs font-bold text-slate-800">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="w-6 h-6 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded ml-1 cursor-pointer"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="flex items-center gap-1.5 text-xs font-bold bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-xl transition-colors">
+              <span>Lihat Keranjang</span>
+              <ChevronRight className="w-4 h-4" />
             </div>
+          </button>
+        </div>
+      )}
 
-            {/* Cart Calculations & Checkout Footer */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3">
-              <div className="space-y-1.5 text-xs text-slate-500">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span className="font-semibold text-slate-800">Rp {getSubtotal().toLocaleString('id-ID')}</span>
-                </div>
-
-                {/* Discount Trigger / Display */}
-                <div className="flex justify-between items-center text-xs">
-                  <button
-                    onClick={() => setIsDiscountModalOpen(true)}
-                    className="text-teal-700 hover:underline flex items-center gap-1 cursor-pointer font-medium"
-                  >
-                    <Tag className="w-3.5 h-3.5" />
-                    <span>{discountName || '+ Tambah Diskon / Promo'}</span>
-                  </button>
-                  {getDiscount() > 0 && (
-                    <span className="font-bold text-emerald-600">
-                      -Rp {getDiscount().toLocaleString('id-ID')}
-                    </span>
-                  )}
-                </div>
-
-                {getTax() > 0 && (
-                  <div className="flex justify-between">
-                    <span>{taxName || 'Pajak'} ({taxPercent}%)</span>
-                    <span className="font-semibold text-slate-800">Rp {getTax().toLocaleString('id-ID')}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
-                  <span>Total Tagihan</span>
-                  <span className="text-[#0D5C53] text-base">Rp {getTotal().toLocaleString('id-ID')}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <Button
-                  variant="outline"
-                  disabled={cartItems.length === 0 || orderProcessing}
-                  leftIcon={<Send className="w-3.5 h-3.5 text-teal-700" />}
-                  onClick={handleSaveOpenOrder}
-                >
-                  Kirim Pesanan
-                </Button>
-
-                <Button
-                  variant="primary"
-                  disabled={cartItems.length === 0 || orderProcessing}
-                  isLoading={orderProcessing}
-                  leftIcon={<CreditCard className="w-4 h-4" />}
-                  onClick={handleCheckoutDirect}
-                  className="font-bold shadow-md shadow-teal-900/10"
-                >
-                  Bayar Sekarang
-                </Button>
-              </div>
-            </div>
+      {/* Mobile Cart Bottom Sheet Modal */}
+      {isMobileCartOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div
+            onClick={() => setIsMobileCartOpen(false)}
+            className="flex-1 w-full"
+          />
+          <div className="bg-white rounded-t-3xl max-h-[85vh] h-[80vh] flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300">
+            {renderCartContent(true)}
           </div>
         </div>
       )}

@@ -65,9 +65,9 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
   const reservedCount = tables.filter((t) => t.status === 'RESERVED').length;
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-6rem)] overflow-hidden bg-slate-50 p-4 space-y-4">
+    <div className="flex-1 flex flex-col h-[calc(100vh-6rem)] overflow-hidden bg-slate-50 p-2 sm:p-4 space-y-3 sm:space-y-4">
       {/* Top POS Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#0D5C53] text-white flex items-center justify-center font-bold text-base shadow-xs">
             {effectiveOutlet?.name?.charAt(0) || 'A'}
