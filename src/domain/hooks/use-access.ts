@@ -39,6 +39,15 @@ export const useAccess = () => {
       'tax.read': ['tax.read', 'settings.read'],
       'discount.read': ['discount.read', 'settings.read'],
       'printer.read': ['printer.read', 'settings.read'],
+      'report.sales': ['report.read'],
+      'report.profit': ['report.read'],
+      'report.inventory': ['report.read'],
+      'report.read': ['report.read'],
+      'opname.read': ['stock_opname.read'],
+      'opname.create': ['stock_opname.create'],
+      'opname.update': ['stock_opname.update'],
+      'adjustment.read': ['inventory.adjust', 'inventory.read'],
+      'adjustment.create': ['inventory.adjust'],
     };
 
     const targetList = [reqNormalized, ...(aliases[reqNormalized] || [])];

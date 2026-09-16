@@ -67,16 +67,16 @@ const MENU_GROUPS: MenuGroup[] = [
       { title: 'Packaging', path: '/inventory/packaging', icon: Box, permission: 'packaging:read' },
       { title: 'Supplier', path: '/inventory/suppliers', icon: Truck, permission: 'supplier:read' },
       { title: 'Pembelian', path: '/inventory/purchases', icon: ShoppingBag, permission: 'purchase:read' },
-      { title: 'Stock Opname', path: '/inventory/opname', icon: ClipboardCheck, permission: 'opname:read' },
-      { title: 'Stock Adjustment', path: '/inventory/adjustments', icon: SlidersHorizontal, permission: 'adjustment:read' },
+      { title: 'Stock Opname', path: '/inventory/opname', icon: ClipboardCheck, permission: 'stock_opname:read' },
+      { title: 'Stock Adjustment', path: '/inventory/adjustments', icon: SlidersHorizontal, permission: 'inventory:adjust' },
     ],
   },
   {
     groupTitle: 'LAPORAN',
     items: [
-      { title: 'Penjualan', path: '/reports/sales', icon: TrendingUp, permission: 'report:sales' },
-      { title: 'Profit', path: '/reports/profit', icon: CircleDollarSign, permission: 'report:profit' },
-      { title: 'Inventory', path: '/reports/inventory', icon: ScrollText, permission: 'report:inventory' },
+      { title: 'Penjualan', path: '/reports/sales', icon: TrendingUp, permission: 'report:read' },
+      { title: 'Profit', path: '/reports/profit', icon: CircleDollarSign, permission: 'report:read' },
+      { title: 'Inventory', path: '/reports/inventory', icon: ScrollText, permission: 'report:read' },
     ],
   },
   {

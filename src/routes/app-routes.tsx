@@ -529,7 +529,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="inventory/opname"
             element={
-              <ProtectedRoute requiredPermission="opname:read">
+              <ProtectedRoute requiredPermission="stock_opname:read">
                 <SuspenseLoader>
                   <OpnameScreen />
                 </SuspenseLoader>
@@ -539,7 +539,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="inventory/opname/create"
             element={
-              <ProtectedRoute requiredPermission="opname:create">
+              <ProtectedRoute requiredPermission="stock_opname:create">
                 <SuspenseLoader>
                   <OpnameCreateScreen />
                 </SuspenseLoader>
@@ -549,7 +549,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="inventory/opname/:id"
             element={
-              <ProtectedRoute requiredPermission="opname:read">
+              <ProtectedRoute requiredPermission="stock_opname:read">
                 <SuspenseLoader>
                   <OpnameDetailScreen />
                 </SuspenseLoader>
@@ -559,7 +559,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="inventory/opname/:id/count"
             element={
-              <ProtectedRoute requiredPermission="opname:update">
+              <ProtectedRoute requiredPermission="stock_opname:update">
                 <SuspenseLoader>
                   <OpnameCountScreen />
                 </SuspenseLoader>
@@ -569,7 +569,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="inventory/opname/:id/review"
             element={
-              <ProtectedRoute requiredPermission="opname:update">
+              <ProtectedRoute requiredPermission="stock_opname:update">
                 <SuspenseLoader>
                   <OpnameReviewScreen />
                 </SuspenseLoader>
@@ -579,7 +579,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="inventory/adjustments"
             element={
-              <ProtectedRoute requiredPermission="adjustment:read">
+              <ProtectedRoute requiredPermission="inventory:adjust">
                 <SuspenseLoader>
                   <AdjustmentsScreen />
                 </SuspenseLoader>
@@ -589,7 +589,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="inventory/adjustments/create"
             element={
-              <ProtectedRoute requiredPermission="adjustment:create">
+              <ProtectedRoute requiredPermission="inventory:adjust">
                 <SuspenseLoader>
                   <AdjustmentCreateScreen />
                 </SuspenseLoader>
@@ -599,7 +599,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="inventory/adjustments/:id"
             element={
-              <ProtectedRoute requiredPermission="adjustment:read">
+              <ProtectedRoute requiredPermission="inventory:adjust">
                 <SuspenseLoader>
                   <AdjustmentDetailScreen />
                 </SuspenseLoader>
@@ -611,7 +611,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="reports/sales"
             element={
-              <ProtectedRoute requiredPermission="report:sales">
+              <ProtectedRoute requiredPermission="report:read">
                 <SuspenseLoader>
                   <SalesReportScreen />
                 </SuspenseLoader>
@@ -621,7 +621,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="reports/profit"
             element={
-              <ProtectedRoute requiredPermission="report:profit">
+              <ProtectedRoute requiredPermission="report:read">
                 <SuspenseLoader>
                   <ProfitReportScreen />
                 </SuspenseLoader>
@@ -631,7 +631,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="reports/inventory"
             element={
-              <ProtectedRoute requiredPermission="report:inventory">
+              <ProtectedRoute requiredPermission="report:read">
                 <SuspenseLoader>
                   <InventoryReportScreen />
                 </SuspenseLoader>
