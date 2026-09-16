@@ -125,14 +125,18 @@ export const PurchaseEditScreen: React.FC = () => {
     }
 
     const defaultCost = Number(defaultItem?.unitCost || defaultItem?.costPrice || 0);
+    const defaultItemId = defaultItem
+      ? (defaultItem as any).inventoryItemId || defaultItem.id
+      : '';
+    const defaultUnit = defaultItem?.unit || (defaultItem as any)?.inventoryItem?.unit || 'pcs';
 
     const newItem: PurchaseFormItem = {
       tempId: Math.random().toString(36).substring(2, 9),
       itemType: type,
-      inventoryItemId: defaultItem?.id || '',
+      inventoryItemId: defaultItemId,
       itemName: defaultItem?.name || '',
       sku: defaultItem?.sku || defaultItem?.code || '',
-      unit: defaultItem?.unit || 'pcs',
+      unit: defaultUnit,
       systemStock: Number(defaultItem?.currentStock || 0),
       quantityOrdered: 1,
       totalPrice: defaultCost,
@@ -159,13 +163,14 @@ export const PurchaseEditScreen: React.FC = () => {
         if (item.tempId !== tempId) return item;
         const itemId = firstOption ? ((firstOption as any).inventoryItemId || firstOption.id) : '';
         const defaultCost = Number(firstOption?.unitCost || (firstOption as any)?.costPrice || 0);
+        const resolvedUnit = firstOption?.unit || (firstOption as any)?.inventoryItem?.unit || 'pcs';
         return {
           ...item,
           itemType: newType,
           inventoryItemId: itemId,
           itemName: firstOption?.name || '',
           sku: firstOption?.sku || (firstOption as any)?.code || '',
-          unit: firstOption?.unit || 'pcs',
+          unit: resolvedUnit,
           systemStock: Number(firstOption?.currentStock || 0),
           quantityOrdered: item.quantityOrdered || 1,
           totalPrice: (item.quantityOrdered || 1) * defaultCost,
@@ -193,14 +198,15 @@ export const PurchaseEditScreen: React.FC = () => {
 
         const resolvedInventoryItemId = (selected as any).inventoryItemId || selected.id;
         const defaultCost = Number(selected.unitCost || selected.costPrice || 0);
+        const resolvedUnit = selected.unit || (selected as any).inventoryItem?.unit || 'pcs';
 
         return {
           ...item,
           inventoryItemId: resolvedInventoryItemId,
           itemName: selected.name,
           sku: selected.sku || selected.code || '',
-          unit: selected.unit || 'pcs',
-          systemStock: Number(selected.currentStock || 0),
+          unit: resolvedUnit,
+          systemStock: Number(selected.currentStock || (selected as any).inventoryItem?.stocks?.[0]?.quantity || 0),
           totalPrice: (item.quantityOrdered || 1) * defaultCost,
         };
       })
@@ -515,7 +521,7 @@ export const PurchaseEditScreen: React.FC = () => {
                               <option value="">-- Pilih Item --</option>
                               {availableOptions.map((opt: any) => (
                                 <option key={opt.id} value={opt.inventoryItemId || opt.id}>
-                                  {opt.name} ({opt.unit || 'pcs'})
+                                  {opt.name} ({opt.unit || opt.inventoryItem?.unit || 'pcs'})
                                 </option>
                               ))}
                             </select>

@@ -37,7 +37,10 @@ export const PackagingDetailScreen: React.FC = () => {
 
   // Queries
   const { data: packaging, isLoading: loadingItem } = usePackagingDetail(id);
-  const { data: movements = [], isLoading: loadingMovements } = useStockMovements({ itemId: id });
+  const effectiveItemId = packaging?.inventoryItemId || id;
+  const { data: movements = [], isLoading: loadingMovements } = useStockMovements({
+    itemId: effectiveItemId,
+  });
   const { data: products = [] } = useProducts();
 
   // Tab State ('overview' | 'movements' | 'linked-products')

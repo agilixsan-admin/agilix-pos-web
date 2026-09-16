@@ -98,6 +98,8 @@ export const PackagingCreateScreen: React.FC = () => {
         description: description.trim() || undefined,
         status,
         outletId: currentOutlet?.id || undefined,
+        unit,
+        minimumStock: parseFloat(minimumStock) || 0,
       });
 
       navigate('/inventory/packaging');

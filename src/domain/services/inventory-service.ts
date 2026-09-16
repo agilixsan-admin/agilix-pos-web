@@ -114,6 +114,8 @@ export const inventoryService = {
     status?: string;
     outletId?: string;
     inventoryItemId?: string;
+    unit?: string;
+    minimumStock?: number;
   }): Promise<PackagingItem> => {
     const payload = {
       name: data.name,
@@ -126,6 +128,8 @@ export const inventoryService = {
       status: data.status,
       outletId: data.outletId || undefined,
       inventoryItemId: data.inventoryItemId || undefined,
+      unit: data.unit || undefined,
+      minimumStock: data.minimumStock !== undefined ? data.minimumStock : undefined,
     };
     const res = await httpClient.post('/packagings', payload);
     return res.data?.data || res.data;
@@ -143,6 +147,8 @@ export const inventoryService = {
       status: data.status,
       outletId: data.outletId || undefined,
       inventoryItemId: data.inventoryItemId || undefined,
+      unit: data.unit || undefined,
+      minimumStock: data.minimumStock !== undefined ? data.minimumStock : undefined,
     };
     const res = await httpClient.put(`/packagings/${id}`, payload);
     return res.data?.data || res.data;

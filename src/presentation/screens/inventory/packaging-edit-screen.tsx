@@ -118,6 +118,8 @@ export const PackagingEditScreen: React.FC = () => {
           categoryId: categoryId || undefined,
           description: description.trim() || undefined,
           status,
+          unit,
+          minimumStock: parseFloat(minimumStock) || 0,
         },
       });
 
