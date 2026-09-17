@@ -252,6 +252,12 @@ const SetPasswordScreen = lazy(() =>
   }))
 );
 
+const ProfileScreen = lazy(() =>
+  import('@presentation/screens/profile/profile-screen').then((m) => ({
+    default: m.ProfileScreen,
+  }))
+);
+
 const SuspenseLoader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Suspense fallback={<LoadingState message="Memuat halaman..." />}>{children}</Suspense>
 );
@@ -290,6 +296,16 @@ export const AppRoutes: React.FC = () => {
         >
           {/* Default Redirect to POS */}
           <Route index element={<Navigate to="/pos" replace />} />
+
+          {/* USER PROFILE */}
+          <Route
+            path="profile"
+            element={
+              <SuspenseLoader>
+                <ProfileScreen />
+              </SuspenseLoader>
+            }
+          />
 
           {/* 1. TRANSAKSI */}
           <Route

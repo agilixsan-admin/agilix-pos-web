@@ -26,6 +26,11 @@ export const authService = {
     const res = await httpClient.post('/auth/set-password', payload);
     return res.data?.data || res.data;
   },
+
+  changePassword: async (newPassword: string): Promise<{ success: boolean; message: string }> => {
+    const res = await httpClient.post('/auth/change-password', { newPassword });
+    return res.data;
+  },
 };
 
 
