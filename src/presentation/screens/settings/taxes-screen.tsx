@@ -30,6 +30,7 @@ import {
   FormInput,
   LoadingState,
   EmptyState,
+  CustomSelect,
 } from '@presentation/components/ui';
 
 export const TaxesScreen: React.FC = () => {
@@ -293,21 +294,21 @@ export const TaxesScreen: React.FC = () => {
 
         <div className="flex items-center flex-wrap gap-3">
           {/* Outlet Switcher Dropdown */}
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
-            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
-            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
-            <select
+          <div className="flex items-center gap-2">
+            <CustomSelect
+              ariaLabel="Pilih Cabang Pajak"
+              icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
               value={selectedOutletId}
-              onChange={(e) => setSelectedOutletId(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
-            >
-              <option value="">🌐 Semua Cabang (Kebijakan Global PT)</option>
-              {outlets.map((outlet) => (
-                <option key={outlet.id} value={outlet.id}>
-                  🏪 {outlet.name}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedOutletId(val)}
+              options={[
+                { value: '', label: 'Semua Cabang (Global PT)' },
+                ...outlets.map((outlet) => ({
+                  value: outlet.id,
+                  label: outlet.name,
+                })),
+              ]}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-semibold"
+            />
           </div>
 
           <Button
@@ -392,21 +393,22 @@ export const TaxesScreen: React.FC = () => {
               </div>
 
               <div>
-                <select
+                <CustomSelect
+                  ariaLabel="Pilih Pajak Standar"
                   value={globalConfig?.defaultGlobalTaxId || ''}
                   disabled={!(globalConfig?.enableTaxCalculation) || isUpdatingConfig}
-                  onChange={(e) => handleDefaultTaxChange(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed transition-all"
-                >
-                  <option value="">-- None (Tidak Ada Pajak Default) --</option>
-                  {taxes
-                    .filter((t) => t.status === 'ACTIVE' || t.isActive)
-                    .map((tax) => (
-                      <option key={tax.id} value={tax.id}>
-                        {tax.name} ({tax.rate}%) - {tax.type === 'INCLUSIVE' ? 'Inclusive' : 'Exclusive'} {tax.isGlobal ? '[Global]' : ''}
-                      </option>
-                    ))}
-                </select>
+                  onChange={(val) => handleDefaultTaxChange(val)}
+                  options={[
+                    { value: '', label: '-- None (Tidak Ada Pajak Default) --' },
+                    ...taxes
+                      .filter((t) => t.status === 'ACTIVE' || t.isActive)
+                      .map((tax) => ({
+                        value: tax.id,
+                        label: `${tax.name} (${tax.rate}%) - ${tax.type === 'INCLUSIVE' ? 'Inclusive' : 'Exclusive'} ${tax.isGlobal ? '[Global]' : ''}`,
+                      })),
+                  ]}
+                  buttonClassName="w-full bg-white border-slate-200 text-xs py-2 px-3 rounded-lg font-medium disabled:bg-slate-100 disabled:text-slate-400"
+                />
               </div>
             </div>
           </div>
@@ -702,17 +704,16 @@ export const TaxesScreen: React.FC = () => {
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Pilih Cabang Outlet <span className="text-red-500">*</span>
               </label>
-              <select
+              <CustomSelect
+                ariaLabel="Pilih Cabang Outlet"
                 value={formData.outletId}
-                onChange={(e) => setFormData({ ...formData, outletId: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] outline-none"
-              >
-                {outlets.map((outlet) => (
-                  <option key={outlet.id} value={outlet.id}>
-                    🏪 {outlet.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFormData({ ...formData, outletId: val })}
+                options={outlets.map((outlet) => ({
+                  value: outlet.id,
+                  label: outlet.name,
+                }))}
+                buttonClassName="w-full bg-white border-slate-200 text-xs py-2 px-3 rounded-lg font-medium"
+              />
               {formErrors.outletId && (
                 <p className="text-[11px] text-red-500 mt-1">{formErrors.outletId}</p>
               )}

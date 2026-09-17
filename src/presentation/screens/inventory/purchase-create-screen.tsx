@@ -27,6 +27,8 @@ import {
   FormSelect,
   FormTextarea,
   Badge,
+  CustomSelect,
+  FormDatePicker,
 } from '@presentation/components/ui';
 
 interface PurchaseFormItem {
@@ -311,23 +313,21 @@ export const PurchaseCreateScreen: React.FC = () => {
         </div>
 
         {/* Branch Switcher Dropdown */}
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
-          <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
-          <span className="text-xs font-medium text-slate-600 shrink-0">Cabang Penerima:</span>
-          <select
+        <div className="flex items-center gap-2">
+          <CustomSelect
+            ariaLabel="Cabang Penerima"
+            icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
             value={effectiveOutletId}
-            onChange={(e) => {
-              setSelectedOutletId(e.target.value);
-              setSearchParams({ outletId: e.target.value });
+            onChange={(val) => {
+              setSelectedOutletId(val);
+              setSearchParams({ outletId: val });
             }}
-            className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
-          >
-            {outlets.map((outlet) => (
-              <option key={outlet.id} value={outlet.id}>
-                🏪 {outlet.name}
-              </option>
-            ))}
-          </select>
+            options={outlets.map((outlet) => ({
+              value: outlet.id,
+              label: outlet.name,
+            }))}
+            buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-semibold"
+          />
         </div>
       </div>
 
@@ -348,12 +348,11 @@ export const PurchaseCreateScreen: React.FC = () => {
               </div>
 
               <div>
-                <FormInput
-                  type="date"
+                <FormDatePicker
                   label="Tanggal Pembelian"
                   required
                   value={purchaseDate}
-                  onChange={(e) => setPurchaseDate(e.target.value)}
+                  onChange={(val) => setPurchaseDate(val)}
                 />
               </div>
 
@@ -462,36 +461,35 @@ export const PurchaseCreateScreen: React.FC = () => {
                       return (
                         <tr key={item.tempId} className="hover:bg-slate-50/50">
                           {/* Tipe Selector */}
-                          <td className="py-3 px-3 align-top">
-                            <select
+                          <td className="py-3 px-3 align-top min-w-[130px]">
+                            <CustomSelect
                               value={item.itemType}
-                              onChange={(e) =>
+                              onChange={(val) =>
                                 handleTypeChange(
                                   item.tempId,
-                                  e.target.value as 'RAW_MATERIAL' | 'PACKAGING'
+                                  val as 'RAW_MATERIAL' | 'PACKAGING'
                                 )
                               }
-                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
-                            >
-                              <option value="RAW_MATERIAL">Bahan Baku</option>
-                              <option value="PACKAGING">Packaging</option>
-                            </select>
+                              options={[
+                                { value: 'RAW_MATERIAL', label: 'Bahan Baku' },
+                                { value: 'PACKAGING', label: 'Packaging' },
+                              ]}
+                              buttonClassName="w-full text-xs py-1.5 px-2 bg-slate-50 border-slate-200"
+                            />
                           </td>
 
                           {/* Item Dropdown */}
-                          <td className="py-3 px-3 align-top">
-                            <select
+                          <td className="py-3 px-3 align-top min-w-[200px]">
+                            <CustomSelect
                               value={item.inventoryItemId}
-                              onChange={(e) => handleItemSelect(item.tempId, e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
-                            >
-                              <option value="">-- Pilih Item --</option>
-                              {availableOptions.map((opt: any) => (
-                                <option key={opt.id} value={opt.inventoryItemId || opt.id}>
-                                  {opt.name} ({opt.unit || opt.inventoryItem?.unit || 'pcs'})
-                                </option>
-                              ))}
-                            </select>
+                              placeholder="-- Pilih Item --"
+                              onChange={(val) => handleItemSelect(item.tempId, val)}
+                              options={availableOptions.map((opt: any) => ({
+                                value: opt.inventoryItemId || opt.id,
+                                label: `${opt.name} (${opt.unit || opt.inventoryItem?.unit || 'pcs'})`,
+                              }))}
+                              buttonClassName="w-full text-xs py-1.5 px-2.5 bg-white border-slate-200 font-semibold"
+                            />
                             {item.sku && (
                               <span className="text-[10px] text-slate-400 font-mono mt-0.5 block">
                                 SKU: {item.sku}

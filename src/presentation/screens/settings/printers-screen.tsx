@@ -43,6 +43,7 @@ import {
   Modal,
   FormInput,
   FormSelect,
+  CustomSelect,
   LoadingState,
   EmptyState,
 } from '@presentation/components/ui';
@@ -342,20 +343,18 @@ export const PrintersScreen: React.FC = () => {
 
         <div className="flex items-center flex-wrap gap-3">
           {/* Outlet Switcher Dropdown */}
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
-            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
-            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
-            <select
+          <div className="flex items-center gap-2">
+            <CustomSelect
+              ariaLabel="Pilih Cabang Printer"
+              icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
               value={effectiveOutletId}
-              onChange={(e) => setSelectedOutletId(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
-            >
-              {outlets.map((outlet) => (
-                <option key={outlet.id} value={outlet.id}>
-                  🏪 {outlet.name}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedOutletId(val)}
+              options={outlets.map((outlet) => ({
+                value: outlet.id,
+                label: outlet.name,
+              }))}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-semibold"
+            />
           </div>
 
           <Button
@@ -810,20 +809,21 @@ export const PrintersScreen: React.FC = () => {
                 >
                   <div className="font-semibold text-slate-900">{cat.name}</div>
                   <div className="min-w-[200px]">
-                    <select
+                    <CustomSelect
+                      ariaLabel="Pilih Printer Kategori"
                       value={routingState[cat.id] || ''}
-                      onChange={(e) =>
-                        setRoutingState({ ...routingState, [cat.id]: e.target.value })
+                      onChange={(val) =>
+                        setRoutingState({ ...routingState, [cat.id]: val })
                       }
-                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20"
-                    >
-                      <option value="">-- Printer Default --</option>
-                      {printers.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({p.type})
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: '', label: '-- Printer Default --' },
+                        ...printers.map((p) => ({
+                          value: p.id,
+                          label: `${p.name} (${p.type})`,
+                        })),
+                      ]}
+                      buttonClassName="w-full bg-white border-slate-200 text-xs py-1.5 px-3 rounded-lg font-medium"
+                    />
                   </div>
                 </div>
               ))}

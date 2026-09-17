@@ -38,6 +38,8 @@ import {
   FormInput,
   LoadingState,
   EmptyState,
+  CustomSelect,
+  FormDatePicker,
 } from '@presentation/components/ui';
 
 const DAYS_OF_WEEK = [
@@ -438,21 +440,21 @@ export const DiscountsScreen: React.FC = () => {
 
         <div className="flex items-center flex-wrap gap-3">
           {/* Outlet Switcher Dropdown */}
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
-            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
-            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
-            <select
+          <div className="flex items-center gap-2">
+            <CustomSelect
+              ariaLabel="Pilih Cabang Diskon"
+              icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
               value={selectedOutletId}
-              onChange={(e) => setSelectedOutletId(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
-            >
-              <option value="">🌐 Semua Cabang (Kebijakan Global PT)</option>
-              {outlets.map((outlet) => (
-                <option key={outlet.id} value={outlet.id}>
-                  🏪 {outlet.name}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedOutletId(val)}
+              options={[
+                { value: '', label: 'Semua Cabang (Global PT)' },
+                ...outlets.map((outlet) => ({
+                  value: outlet.id,
+                  label: outlet.name,
+                })),
+              ]}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-semibold"
+            />
           </div>
 
           <Button
@@ -500,15 +502,17 @@ export const DiscountsScreen: React.FC = () => {
               />
             </div>
 
-            <select
+            <CustomSelect
+              ariaLabel="Filter Status Diskon"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
-              className="bg-slate-50/70 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="ACTIVE">Aktif Saja</option>
-              <option value="INACTIVE">Nonaktif Saja</option>
-            </select>
+              onChange={(val) => setStatusFilter(val as 'ALL' | 'ACTIVE' | 'INACTIVE')}
+              options={[
+                { value: 'ALL', label: 'Semua Status' },
+                { value: 'ACTIVE', label: 'Aktif Saja' },
+                { value: 'INACTIVE', label: 'Nonaktif Saja' },
+              ]}
+              buttonClassName="bg-slate-50/70 border-slate-200 text-xs py-1.5 px-3 rounded-lg font-medium"
+            />
           </div>
         </div>
 
@@ -714,17 +718,16 @@ export const DiscountsScreen: React.FC = () => {
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Pilih Cabang Outlet <span className="text-red-500">*</span>
               </label>
-              <select
+              <CustomSelect
+                ariaLabel="Pilih Cabang Outlet"
                 value={formData.outletId}
-                onChange={(e) => setFormData({ ...formData, outletId: e.target.value })}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] outline-none"
-              >
-                {outlets.map((outlet) => (
-                  <option key={outlet.id} value={outlet.id}>
-                    🏪 {outlet.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFormData({ ...formData, outletId: val })}
+                options={outlets.map((outlet) => ({
+                  value: outlet.id,
+                  label: outlet.name,
+                }))}
+                buttonClassName="w-full bg-white border-slate-200 text-xs py-2 px-3 rounded-lg font-medium"
+              />
               {formErrors.outletId && (
                 <p className="text-[11px] text-red-500 mt-1">{formErrors.outletId}</p>
               )}
@@ -915,20 +918,18 @@ export const DiscountsScreen: React.FC = () => {
             {/* Sub-config for DATE_RANGE */}
             {formData.validityType === 'DATE_RANGE' && (
               <div className="mt-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <FormInput
+                <FormDatePicker
                   label="Tanggal Mulai"
-                  type="date"
                   required
                   value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  onChange={(val) => setFormData({ ...formData, startDate: val })}
                   error={formErrors.startDate}
                 />
-                <FormInput
+                <FormDatePicker
                   label="Tanggal Berakhir"
-                  type="date"
                   required
                   value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  onChange={(val) => setFormData({ ...formData, endDate: val })}
                   error={formErrors.endDate}
                 />
               </div>

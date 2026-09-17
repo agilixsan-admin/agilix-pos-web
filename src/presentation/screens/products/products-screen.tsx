@@ -22,6 +22,7 @@ import {
   FormTextarea,
   LoadingState,
   EmptyState,
+  CustomSelect,
 } from '@presentation/components/ui';
 
 export const ProductsScreen: React.FC = () => {
@@ -154,18 +155,19 @@ export const ProductsScreen: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <select
+          <CustomSelect
+            ariaLabel="Filter Kategori"
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
-          >
-            <option value="ALL">Semua Kategori</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setSelectedCategory(val)}
+            options={[
+              { value: 'ALL', label: 'Semua Kategori' },
+              ...categories.map((c) => ({
+                value: c.id,
+                label: c.name,
+              })),
+            ]}
+            buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl"
+          />
         </div>
       </div>
 

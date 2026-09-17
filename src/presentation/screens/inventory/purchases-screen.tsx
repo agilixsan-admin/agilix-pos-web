@@ -30,6 +30,8 @@ import {
   FormInput,
   EmptyState,
   LoadingState,
+  CustomSelect,
+  CustomDatePicker,
 } from '@presentation/components/ui';
 
 export const PurchasesScreen: React.FC = () => {
@@ -164,24 +166,22 @@ export const PurchasesScreen: React.FC = () => {
 
         <div className="flex items-center flex-wrap gap-3">
           {/* Outlet Switcher Dropdown */}
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
-            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
-            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
-            <select
+          <div className="flex items-center gap-2">
+            <CustomSelect
+              ariaLabel="Pilih Cabang"
+              icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
               value={effectiveOutletId}
-              onChange={(e) => {
-                setSelectedOutletId(e.target.value);
-                setSearchParams({ outletId: e.target.value });
+              onChange={(val) => {
+                setSelectedOutletId(val);
+                setSearchParams({ outletId: val });
                 setPage(1);
               }}
-              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
-            >
-              {outlets.map((outlet) => (
-                <option key={outlet.id} value={outlet.id}>
-                  🏪 {outlet.name}
-                </option>
-              ))}
-            </select>
+              options={outlets.map((outlet) => ({
+                value: outlet.id,
+                label: outlet.name,
+              }))}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-semibold"
+            />
           </div>
 
           <Button
@@ -264,26 +264,24 @@ export const PurchasesScreen: React.FC = () => {
 
               {/* Date Filter */}
               <div className="flex items-center gap-2">
-                <FormInput
-                  type="date"
+                <CustomDatePicker
                   value={startDateFilter}
-                  onChange={(e) => {
-                    setStartDateFilter(e.target.value);
+                  onChange={(val) => {
+                    setStartDateFilter(val);
                     setPage(1);
                   }}
-                  className="w-full text-xs"
                   placeholder="Dari"
+                  className="w-full text-xs"
                 />
                 <span className="text-slate-400 text-xs">-</span>
-                <FormInput
-                  type="date"
+                <CustomDatePicker
                   value={endDateFilter}
-                  onChange={(e) => {
-                    setEndDateFilter(e.target.value);
+                  onChange={(val) => {
+                    setEndDateFilter(val);
                     setPage(1);
                   }}
-                  className="w-full text-xs"
                   placeholder="Sampai"
+                  className="w-full text-xs"
                 />
               </div>
             </div>

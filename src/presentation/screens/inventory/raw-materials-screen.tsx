@@ -31,6 +31,7 @@ import {
   Card,
   FormInput,
   FormSelect,
+  CustomSelect,
 } from '@presentation/components/ui';
 
 export const RawMaterialsScreen: React.FC = () => {
@@ -225,28 +226,31 @@ export const RawMaterialsScreen: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <select
+              <CustomSelect
+                ariaLabel="Filter Kategori"
                 value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
-              >
-                <option value="ALL">Semua Kategori</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFilterCategory(val)}
+                options={[
+                  { value: 'ALL', label: 'Semua Kategori' },
+                  ...categories.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                  })),
+                ]}
+                buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl"
+              />
 
-              <select
+              <CustomSelect
+                ariaLabel="Filter Status"
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
-              >
-                <option value="ALL">Semua Status</option>
-                <option value="ACTIVE">Aktif</option>
-                <option value="INACTIVE">Nonaktif</option>
-              </select>
+                onChange={(val) => setFilterStatus(val)}
+                options={[
+                  { value: 'ALL', label: 'Semua Status' },
+                  { value: 'ACTIVE', label: 'Aktif' },
+                  { value: 'INACTIVE', label: 'Nonaktif' },
+                ]}
+                buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl"
+              />
             </div>
           </div>
 

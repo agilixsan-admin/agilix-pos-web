@@ -33,6 +33,7 @@ import {
   Modal,
   LoadingState,
   EmptyState,
+  CustomSelect,
 } from '@presentation/components/ui';
 
 export const UsersScreen: React.FC = () => {
@@ -196,56 +197,60 @@ export const UsersScreen: React.FC = () => {
 
             {/* Outlet Filter */}
             <div className="min-w-[150px]">
-              <select
+              <CustomSelect
+                ariaLabel="Filter Outlet"
                 value={selectedOutlet}
-                onChange={(e) => {
-                  setSelectedOutlet(e.target.value);
+                onChange={(val) => {
+                  setSelectedOutlet(val);
                   setCurrentPage(1);
                 }}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] transition-all cursor-pointer uppercase"
-              >
-                <option value="ALL">ALL OUTLETS</option>
-                {outlets.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: 'ALL', label: 'ALL OUTLETS' },
+                  ...outlets.map((o) => ({
+                    value: o.id,
+                    label: o.name,
+                  })),
+                ]}
+                buttonClassName="w-full bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-medium uppercase"
+              />
             </div>
 
             {/* Role Filter */}
             <div className="min-w-[140px]">
-              <select
+              <CustomSelect
+                ariaLabel="Filter Role"
                 value={selectedRole}
-                onChange={(e) => {
-                  setSelectedRole(e.target.value);
+                onChange={(val) => {
+                  setSelectedRole(val);
                   setCurrentPage(1);
                 }}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] transition-all cursor-pointer uppercase"
-              >
-                <option value="ALL">ALL ROLES</option>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: 'ALL', label: 'ALL ROLES' },
+                  ...roles.map((r) => ({
+                    value: r.id,
+                    label: r.name,
+                  })),
+                ]}
+                buttonClassName="w-full bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-medium uppercase"
+              />
             </div>
 
             {/* Status Filter */}
             <div className="min-w-[140px]">
-              <select
+              <CustomSelect
+                ariaLabel="Filter Status"
                 value={selectedStatus}
-                onChange={(e) => {
-                  setSelectedStatus(e.target.value);
+                onChange={(val) => {
+                  setSelectedStatus(val);
                   setCurrentPage(1);
                 }}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] transition-all cursor-pointer uppercase"
-              >
-                <option value="ALL">STATUS: ALL</option>
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="INACTIVE">INACTIVE</option>
-              </select>
+                options={[
+                  { value: 'ALL', label: 'STATUS: ALL' },
+                  { value: 'ACTIVE', label: 'ACTIVE' },
+                  { value: 'INACTIVE', label: 'INACTIVE' },
+                ]}
+                buttonClassName="w-full bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-medium uppercase"
+              />
             </div>
           </div>
 

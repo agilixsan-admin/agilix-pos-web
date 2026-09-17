@@ -33,6 +33,7 @@ import {
   SearchInput,
   LoadingState,
   EmptyState,
+  CustomSelect,
 } from '@presentation/components/ui';
 
 export const TransactionsScreen: React.FC = () => {
@@ -235,14 +236,12 @@ export const TransactionsScreen: React.FC = () => {
 
         <div className="flex items-center flex-wrap gap-3">
           {/* Outlet Switcher Dropdown */}
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
-            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
-            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
-            <select
-              aria-label="Pilih Filter Cabang"
+          <div className="flex items-center gap-2">
+            <CustomSelect
+              ariaLabel="Pilih Filter Cabang"
+              icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
               value={selectedOutletId}
-              onChange={(e) => {
-                const val = e.target.value;
+              onChange={(val) => {
                 setSelectedOutletId(val);
                 if (val === 'ALL') {
                   searchParams.delete('outletId');
@@ -252,15 +251,15 @@ export const TransactionsScreen: React.FC = () => {
                 }
                 setCurrentPage(1);
               }}
-              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
-            >
-              <option value="ALL">🏢 Semua Cabang</option>
-              {outlets.map((outlet) => (
-                <option key={outlet.id} value={outlet.id}>
-                  🏪 {outlet.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: 'ALL', label: 'Semua Cabang' },
+                ...outlets.map((outlet) => ({
+                  value: outlet.id,
+                  label: outlet.name,
+                })),
+              ]}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-semibold"
+            />
           </div>
 
           <Button
@@ -292,66 +291,70 @@ export const TransactionsScreen: React.FC = () => {
           {/* Filter Dropdowns */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {/* Date Preset */}
-            <select
-              aria-label="Rentang Waktu"
+            <CustomSelect
+              ariaLabel="Rentang Waktu"
               value={datePreset}
-              onChange={(e) => {
-                setDatePreset(e.target.value);
+              onChange={(val) => {
+                setDatePreset(val);
                 setCurrentPage(1);
               }}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
-            >
-              <option value="ALL">Semua Waktu</option>
-              <option value="TODAY">Hari Ini</option>
-              <option value="LAST_7_DAYS">7 Hari Terakhir</option>
-              <option value="LAST_30_DAYS">30 Hari Terakhir</option>
-            </select>
+              options={[
+                { value: 'ALL', label: 'Semua Waktu' },
+                { value: 'TODAY', label: 'Hari Ini' },
+                { value: 'LAST_7_DAYS', label: '7 Hari Terakhir' },
+                { value: 'LAST_30_DAYS', label: '30 Hari Terakhir' },
+              ]}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl"
+            />
 
             {/* Order Type */}
-            <select
-              aria-label="Tipe Layanan"
+            <CustomSelect
+              ariaLabel="Tipe Layanan"
               value={orderTypeFilter}
-              onChange={(e) => {
-                setOrderTypeFilter(e.target.value);
+              onChange={(val) => {
+                setOrderTypeFilter(val);
                 setCurrentPage(1);
               }}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
-            >
-              <option value="ALL">Semua Tipe Layanan</option>
-              <option value="DINE_IN">Dine In (Makan di Tempat)</option>
-              <option value="TAKE_AWAY">Take Away (Bungkus)</option>
-            </select>
+              options={[
+                { value: 'ALL', label: 'Semua Tipe Layanan' },
+                { value: 'DINE_IN', label: 'Dine In (Makan di Tempat)' },
+                { value: 'TAKE_AWAY', label: 'Take Away (Bungkus)' },
+              ]}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl"
+            />
 
             {/* Payment Method */}
-            <select
-              aria-label="Metode Pembayaran"
+            <CustomSelect
+              ariaLabel="Metode Pembayaran"
               value={paymentMethodFilter}
-              onChange={(e) => {
-                setPaymentMethodFilter(e.target.value);
+              onChange={(val) => {
+                setPaymentMethodFilter(val);
                 setCurrentPage(1);
               }}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
-            >
-              <option value="ALL">Semua Metode Bayar</option>
-              <option value="CASH">Uang Tunai (Cash)</option>
-              <option value="QRIS">QRIS / E-Wallet</option>
-            </select>
+              options={[
+                { value: 'ALL', label: 'Semua Metode Bayar' },
+                { value: 'CASH', label: 'Uang Tunai (Cash)' },
+                { value: 'QRIS', label: 'QRIS / E-Wallet' },
+              ]}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl"
+            />
 
             {/* Status Filter */}
-            <select
-              aria-label="Status Transaksi"
+            <CustomSelect
+              ariaLabel="Status Transaksi"
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
+              onChange={(val) => {
+                setStatusFilter(val);
                 setCurrentPage(1);
               }}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="COMPLETED">Selesai (Completed)</option>
-              <option value="PENDING">Berjalan (Pending)</option>
-              <option value="VOID">Dibatalkan (Void)</option>
-            </select>
+              options={[
+                { value: 'ALL', label: 'Semua Status' },
+                { value: 'COMPLETED', label: 'Selesai (Completed)' },
+                { value: 'PENDING', label: 'Berjalan (Pending)' },
+                { value: 'VOID', label: 'Dibatalkan (Void)' },
+              ]}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl"
+            />
 
             {(searchQuery || orderTypeFilter !== 'ALL' || paymentMethodFilter !== 'ALL' || statusFilter !== 'ALL' || datePreset !== 'ALL') && (
               <Button

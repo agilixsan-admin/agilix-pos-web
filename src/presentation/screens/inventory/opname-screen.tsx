@@ -28,6 +28,8 @@ import {
   KpiCard,
   EmptyState,
   LoadingState,
+  CustomSelect,
+  CustomDatePicker,
 } from '@presentation/components/ui';
 
 export const OpnameScreen: React.FC = () => {
@@ -161,25 +163,24 @@ export const OpnameScreen: React.FC = () => {
 
         <div className="flex items-center flex-wrap gap-2.5">
           {/* Outlet Switcher Dropdown */}
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
-            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
-            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
-            <select
-              aria-label="Pilih Outlet Opname"
+          <div className="flex items-center gap-2">
+            <CustomSelect
+              ariaLabel="Pilih Outlet Opname"
+              icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
               value={selectedOutletId}
-              onChange={(e) => {
-                setSelectedOutletId(e.target.value);
+              onChange={(val) => {
+                setSelectedOutletId(val);
                 setPage(1);
               }}
-              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
-            >
-              <option value="ALL">🏢 Semua Cabang</option>
-              {outlets.map((outlet) => (
-                <option key={outlet.id} value={outlet.id}>
-                  🏪 {outlet.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: 'ALL', label: 'Semua Cabang' },
+                ...outlets.map((outlet) => ({
+                  value: outlet.id,
+                  label: outlet.name,
+                })),
+              ]}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-semibold"
+            />
           </div>
 
           <Button
@@ -271,11 +272,10 @@ export const OpnameScreen: React.FC = () => {
 
           {/* Date Filter */}
           <div>
-            <FormInput
-              type="date"
+            <CustomDatePicker
               value={startDateFilter}
-              onChange={(e) => {
-                setStartDateFilter(e.target.value);
+              onChange={(val) => {
+                setStartDateFilter(val);
                 setPage(1);
               }}
               placeholder="Pilih Tanggal"

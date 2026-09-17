@@ -39,6 +39,7 @@ import {
   FormSelect,
   FormTextarea,
   Modal,
+  CustomSelect,
 } from '@presentation/components/ui';
 
 export const AdjustmentCreateScreen: React.FC = () => {
@@ -331,24 +332,22 @@ export const AdjustmentCreateScreen: React.FC = () => {
 
         {/* Branch Switcher Dropdown (Available in Step 1) */}
         {currentStep === 1 && (
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
-            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
-            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang Target:</span>
-            <select
+          <div className="flex items-center gap-2">
+            <CustomSelect
+              ariaLabel="Cabang Target"
+              icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
               value={effectiveOutletId}
-              onChange={(e) => {
-                setSelectedOutletId(e.target.value);
-                setSearchParams({ outletId: e.target.value });
+              onChange={(val) => {
+                setSelectedOutletId(val);
+                setSearchParams({ outletId: val });
                 setSelectedItemId('');
               }}
-              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
-            >
-              {outlets.map((outlet) => (
-                <option key={outlet.id} value={outlet.id}>
-                  🏪 {outlet.name}
-                </option>
-              ))}
-            </select>
+              options={outlets.map((outlet) => ({
+                value: outlet.id,
+                label: outlet.name,
+              }))}
+              buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-semibold"
+            />
           </div>
         )}
       </div>

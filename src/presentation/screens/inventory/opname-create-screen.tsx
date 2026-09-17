@@ -25,6 +25,7 @@ import {
   FormSelect,
   FormTextarea,
   Badge,
+  FormDatePicker,
 } from '@presentation/components/ui';
 
 export const OpnameCreateScreen: React.FC = () => {
@@ -155,12 +156,11 @@ export const OpnameCreateScreen: React.FC = () => {
             </div>
 
             <div>
-              <FormInput
-                type="date"
+              <FormDatePicker
                 label="Tanggal Opname"
                 required
                 value={opnameDate}
-                onChange={(e) => setOpnameDate(e.target.value)}
+                onChange={(val) => setOpnameDate(val)}
               />
             </div>
 

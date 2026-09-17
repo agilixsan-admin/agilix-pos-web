@@ -11,6 +11,7 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { CustomOutletSelect } from '@presentation/components/ui';
 
 export const Header: React.FC = () => {
   const { user, tenant, outlets, currentOutlet, setCurrentOutlet, isTenantLocked, logout } =
@@ -64,27 +65,11 @@ export const Header: React.FC = () => {
 
         {/* Outlet Selector */}
         {outlets && outlets.length > 0 && (
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Building2 className="w-4 h-4 text-slate-500 shrink-0 hidden sm:block" />
-            <div className="relative inline-block max-w-[140px] sm:max-w-[200px]">
-              <select
-                aria-label="Pilih Outlet"
-                value={currentOutlet?.id || ''}
-                onChange={(e) => {
-                  const selected = outlets.find((o) => o.id === e.target.value);
-                  if (selected) setCurrentOutlet(selected);
-                }}
-                className="appearance-none w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-semibold rounded-lg pl-2.5 sm:pl-3 pr-7 sm:pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] cursor-pointer truncate"
-              >
-                {outlets.map((outlet) => (
-                  <option key={outlet.id} value={outlet.id}>
-                    {outlet.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          </div>
+          <CustomOutletSelect
+            outlets={outlets}
+            selectedOutletId={currentOutlet?.id}
+            onSelectOutlet={(selected) => setCurrentOutlet(selected)}
+          />
         )}
 
         {isTenantLocked && (

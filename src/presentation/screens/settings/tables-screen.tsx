@@ -17,6 +17,7 @@ import {
   FormInput,
   LoadingState,
   EmptyState,
+  CustomSelect,
 } from '@presentation/components/ui';
 
 export const TablesScreen: React.FC = () => {
@@ -153,22 +154,21 @@ export const TablesScreen: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Outlet Selector Dropdown */}
-          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs">
-            <Store className="w-4 h-4 text-[#0D5C53]" />
-            <select
+          <div className="flex items-center gap-2">
+            <CustomSelect
+              ariaLabel="Pilih Outlet Meja"
+              icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
               value={effectiveOutletId}
-              onChange={(e) => {
-                setSelectedOutletId(e.target.value);
+              onChange={(val) => {
+                setSelectedOutletId(val);
                 setSelectedSectionFilter('ALL');
               }}
-              className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-2"
-            >
-              {outlets.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.name}
-                </option>
-              ))}
-            </select>
+              options={outlets.map((o) => ({
+                value: o.id,
+                label: o.name,
+              }))}
+              buttonClassName="bg-white border-slate-200 text-xs py-1.5 px-3 rounded-xl font-bold"
+            />
           </div>
 
           <Button
@@ -315,17 +315,16 @@ export const TablesScreen: React.FC = () => {
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Pilih Outlet Target
               </label>
-              <select
+              <CustomSelect
+                ariaLabel="Pilih Outlet Target"
                 value={formData.targetOutletId}
-                onChange={(e) => setFormData({ ...formData, targetOutletId: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                {outlets.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFormData({ ...formData, targetOutletId: val })}
+                options={outlets.map((o) => ({
+                  value: o.id,
+                  label: o.name,
+                }))}
+                buttonClassName="w-full bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl font-medium"
+              />
             </div>
           )}
 

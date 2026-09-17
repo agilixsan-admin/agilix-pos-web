@@ -222,7 +222,132 @@ export const CustomOutletSelect: React.FC<CustomOutletSelectProps> = ({
                 }`}
               >
                 <span className="truncate">{outlet.name}</span>
-                {isSelected && <Check className="w-3.5 h-3.5 text-[#0D5C53] shrink-0" />}
+                {isSelected && <Check className="w-3.5 h-3.5 text-[#0D5C53]" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export interface CustomSelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+  badge?: string;
+}
+
+export interface CustomSelectProps {
+  options: CustomSelectOption[];
+  value: string | undefined;
+  onChange: (value: string) => void | Promise<void>;
+  placeholder?: string;
+  icon?: React.ReactNode;
+  disabled?: boolean;
+  className?: string;
+  compact?: boolean;
+  buttonClassName?: string;
+  ariaLabel?: string;
+}
+
+export const CustomSelect: React.FC<CustomSelectProps> = ({
+  options,
+  value,
+  onChange,
+  placeholder = 'Pilih...',
+  icon,
+  disabled = false,
+  className = '',
+  compact = false,
+  buttonClassName = '',
+  ariaLabel,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const selectedOption = options.find((o) => o.value === value);
+
+  return (
+    <div ref={containerRef} className={`relative shrink-0 ${className}`}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`w-full flex items-center justify-between gap-1.5 border rounded-xl transition-all ${
+          compact ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-xs'
+        } ${
+          disabled
+            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+            : isOpen
+              ? 'bg-white border-[#0D5C53] ring-2 ring-[#0D5C53]/15 text-slate-900 shadow-xs cursor-pointer'
+              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-800 cursor-pointer'
+        } ${buttonClassName}`}
+        aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <div className="flex items-center gap-1.5 min-w-0 truncate">
+          {icon && <span className="shrink-0 text-[#0D5C53]">{icon}</span>}
+          <span className={`truncate font-medium ${!selectedOption ? 'text-slate-400' : 'text-slate-800'}`}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+          {selectedOption?.badge && (
+            <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full shrink-0">
+              {selectedOption.badge}
+            </span>
+          )}
+        </div>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${
+            isOpen ? 'rotate-180 text-[#0D5C53]' : ''
+          }`}
+        />
+      </button>
+
+      {isOpen && !disabled && (
+        <div className="absolute z-50 left-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl p-1 min-w-[160px] max-h-60 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100">
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                disabled={opt.disabled}
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 text-xs rounded-lg transition-colors cursor-pointer text-left ${
+                  isSelected
+                    ? 'bg-teal-50 text-[#0D5C53] font-bold'
+                    : 'text-slate-800 hover:bg-slate-50'
+                } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+              >
+                <span className="truncate">{opt.label}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  {opt.badge && (
+                    <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">
+                      {opt.badge}
+                    </span>
+                  )}
+                  {isSelected && <Check className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                </div>
               </button>
             );
           })}

@@ -18,6 +18,7 @@ import {
   Card,
   LoadingState,
   EmptyState,
+  CustomSelect,
 } from '@presentation/components/ui';
 
 export const SalesReportScreen: React.FC = () => {
@@ -103,39 +104,28 @@ export const SalesReportScreen: React.FC = () => {
 
         <div className="flex items-center flex-wrap gap-2.5">
           {/* Outlet Switcher Dropdown */}
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
-            <Store className="w-4 h-4 text-[#0D5C53] shrink-0" />
-            <span className="text-xs font-medium text-slate-600 shrink-0">Cabang:</span>
-            <select
-              aria-label="Pilih Outlet Laporan"
-              value={selectedOutletId}
-              onChange={(e) => setSelectedOutletId(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
-            >
-              <option value="ALL">🏢 Semua Cabang</option>
-              {outlets.map((outlet) => (
-                <option key={outlet.id} value={outlet.id}>
-                  🏪 {outlet.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <CustomSelect
+            icon={<Store className="w-4 h-4" />}
+            value={selectedOutletId}
+            onChange={(val) => setSelectedOutletId(val)}
+            options={[
+              { value: 'ALL', label: 'Semua Cabang' },
+              ...outlets.map((o) => ({ value: o.id, label: o.name })),
+            ]}
+          />
 
           {/* Date Preset Filter */}
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shadow-xs">
-            <Calendar className="w-4 h-4 text-slate-500 shrink-0" />
-            <select
-              aria-label="Rentang Waktu Laporan"
-              value={datePreset}
-              onChange={(e) => setDatePreset(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-800 outline-none cursor-pointer pr-1"
-            >
-              <option value="TODAY">Hari Ini</option>
-              <option value="LAST_7_DAYS">7 Hari Terakhir</option>
-              <option value="LAST_30_DAYS">30 Hari Terakhir</option>
-              <option value="THIS_MONTH">Bulan Ini</option>
-            </select>
-          </div>
+          <CustomSelect
+            icon={<Calendar className="w-4 h-4 text-slate-500" />}
+            value={datePreset}
+            onChange={(val) => setDatePreset(val)}
+            options={[
+              { value: 'TODAY', label: 'Hari Ini' },
+              { value: 'LAST_7_DAYS', label: '7 Hari Terakhir' },
+              { value: 'LAST_30_DAYS', label: '30 Hari Terakhir' },
+              { value: 'THIS_MONTH', label: 'Bulan Ini' },
+            ]}
+          />
         </div>
       </div>
 
