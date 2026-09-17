@@ -556,33 +556,6 @@ export const PosScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Append Mode Banner in Cart */}
-          {activeAppendOrder && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between">
-              <div className="flex flex-col min-w-0 pr-2">
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-800">
-                  Mode Tambah Menu
-                </span>
-                <span className="text-xs font-bold text-amber-950 truncate">
-                  Pesanan #{activeAppendOrder.orderNumber} (
-                  {resolvedAppendTableName
-                    ? `Meja ${resolvedAppendTableName}`
-                    : activeAppendOrder.orderType}
-                  )
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  setActiveAppendOrder(null);
-                  clearCart();
-                }}
-                className="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer shrink-0"
-              >
-                Batal
-              </button>
-            </div>
-          )}
-
           {/* Dine In / Take Away Switcher */}
           <div
             className={`grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl ${activeAppendOrder ? 'opacity-70 pointer-events-none' : ''}`}
@@ -1012,30 +985,6 @@ export const PosScreen: React.FC = () => {
                   <span className="sm:hidden">({openOrders.length})</span>
                 </Button>
               </div>
-
-              {/* Append Mode Banner in Catalog */}
-              {activeAppendOrder && (
-                <div className="bg-amber-500/10 border border-amber-300 text-amber-900 px-3 py-2 rounded-xl flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="bg-amber-600 text-white font-bold px-2 py-0.5 rounded text-[10px] shrink-0">
-                      MODE TAMBAH MENU
-                    </span>
-                    <span className="truncate">
-                      Menambah menu ke pesanan <strong>#{activeAppendOrder.orderNumber}</strong> ({activeAppendOrder.tableName || activeAppendOrder.tableNumber ? `Meja ${activeAppendOrder.tableName || activeAppendOrder.tableNumber}` : activeAppendOrder.orderType})
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setActiveAppendOrder(null);
-                      clearCart();
-                      setViewMode('FLOOR');
-                    }}
-                    className="text-rose-600 hover:text-rose-800 font-bold underline cursor-pointer text-xs shrink-0 ml-2"
-                  >
-                    Batal Tambah
-                  </button>
-                </div>
-              )}
 
               {/* Category Filter Pills */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">

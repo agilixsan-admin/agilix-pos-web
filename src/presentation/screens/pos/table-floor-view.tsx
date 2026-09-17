@@ -454,10 +454,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
               openOrders.map((order) => (
                 <div
                   key={order.id}
-                  className="p-3.5 bg-slate-50 hover:bg-teal-50/40 border border-slate-200 hover:border-teal-300 rounded-xl transition-all space-y-2.5"
+                  onClick={() => onSelectOpenOrderForAppend(order)}
+                  className="p-3.5 bg-slate-50 hover:bg-teal-50/50 border border-slate-200 hover:border-teal-400 hover:shadow-xs rounded-xl transition-all space-y-2.5 cursor-pointer group active:scale-[0.99]"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-900">
+                    <span className="font-bold text-xs text-slate-900 group-hover:text-[#0D5C53] transition-colors">
                       {order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber
                         ? `Meja ${order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber}`
                         : order.orderType === 'TAKE_AWAY'
@@ -502,7 +503,10 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onSelectOpenOrderForAppend(order)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectOpenOrderForAppend(order);
+                        }}
                         className="text-[11px] px-2 py-1"
                       >
                         + Menu
@@ -510,7 +514,10 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                       <Button
                         variant="primary"
                         size="sm"
-                        onClick={() => onSelectOpenOrderForPayment(order)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectOpenOrderForPayment(order);
+                        }}
                         className="text-[11px] px-2.5 py-1"
                       >
                         Bayar
