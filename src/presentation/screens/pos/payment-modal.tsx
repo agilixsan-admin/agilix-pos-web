@@ -84,16 +84,32 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         cashGiven: method === 'CASH' ? cashGiven : undefined,
       });
 
+      const paymentData = (res as unknown as { payment?: { amount?: number; changeAmount?: number; paymentMethod?: PaymentMethod } })?.payment;
+      const finalPaidAmount =
+        paymentData?.amount !== undefined
+          ? Number(paymentData.amount)
+          : method === 'CASH'
+          ? cashGiven
+          : totalAmount;
+      const finalChangeAmount =
+        paymentData?.changeAmount !== undefined
+          ? Number(paymentData.changeAmount)
+          : method === 'CASH'
+          ? changeAmount
+          : 0;
+
       const completedOrder: Order = {
-        ...order,
+        ...(res.order || order),
         status: 'COMPLETED',
         paymentMethod: method,
         paymentStatus: 'SETTLED',
-        paidAmount: method === 'CASH' ? cashGiven : totalAmount,
-        changeAmount: method === 'CASH' ? changeAmount : 0,
+        paidAmount: finalPaidAmount,
+        changeAmount: finalChangeAmount,
+        transaction: (res as unknown as { transaction?: unknown })?.transaction as unknown as Order['transaction'] || (res.order as unknown as { transaction?: unknown })?.transaction as unknown as Order['transaction'],
+        payments: paymentData ? [paymentData as unknown as Order['payments'][0]] : undefined,
       };
 
-      onPaymentSuccess(res.order || completedOrder);
+      onPaymentSuccess(completedOrder);
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -115,16 +131,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         amount: totalAmount,
       });
 
+      const paymentData = (res as unknown as { payment?: { amount?: number; changeAmount?: number; paymentMethod?: PaymentMethod } })?.payment;
       const completedOrder: Order = {
-        ...order,
+        ...(res.order || order),
         status: 'COMPLETED',
         paymentMethod: 'QRIS',
         paymentStatus: 'SETTLED',
         paidAmount: totalAmount,
         changeAmount: 0,
+        transaction: (res as unknown as { transaction?: unknown })?.transaction as unknown as Order['transaction'] || (res.order as unknown as { transaction?: unknown })?.transaction as unknown as Order['transaction'],
+        payments: paymentData ? [paymentData as unknown as Order['payments'][0]] : undefined,
       };
 
-      onPaymentSuccess(res.order || completedOrder);
+      onPaymentSuccess(completedOrder);
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||

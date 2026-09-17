@@ -37,9 +37,24 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
 
   if (!isOpen) return null;
 
+  const rawPayments = (order as unknown as { payments?: Array<{ amount?: number; changeAmount?: number }> }).payments;
+  const latestPayment = Array.isArray(rawPayments) && rawPayments.length > 0 ? rawPayments[rawPayments.length - 1] : undefined;
+
   const totalAmount = Number(order.totalAmount || 0);
-  const paidAmount = Number(order.paidAmount || totalAmount);
-  const changeAmount = Number(order.changeAmount || Math.max(0, paidAmount - totalAmount));
+  const paidAmount = Number(
+    order.paidAmount !== undefined
+      ? order.paidAmount
+      : latestPayment?.amount !== undefined
+      ? latestPayment.amount
+      : totalAmount
+  );
+  const changeAmount = Number(
+    order.changeAmount !== undefined
+      ? order.changeAmount
+      : latestPayment?.changeAmount !== undefined
+      ? latestPayment.changeAmount
+      : Math.max(0, paidAmount - totalAmount)
+  );
   const isCash = order.paymentMethod === 'CASH' || !order.paymentMethod;
 
   const handleTriggerPrint = async () => {
@@ -281,6 +296,18 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                         Rp {totalAmount.toLocaleString('id-ID')}
                       </span>
                     </div>
+                    {isCash && (
+                      <>
+                        <div className="flex justify-between text-slate-500 pt-1 text-[11px]">
+                          <span>Tunai</span>
+                          <span>Rp {paidAmount.toLocaleString('id-ID')}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700 font-semibold text-[11px]">
+                          <span>Kembalian</span>
+                          <span>Rp {changeAmount.toLocaleString('id-ID')}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 

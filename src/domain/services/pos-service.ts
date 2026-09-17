@@ -11,10 +11,32 @@ import type { Table } from '@model/Settings';
 
 const normalizeOrder = (order: Order): Order => {
   if (!order) return order;
+  const rawPayments = (order as unknown as { payments?: Array<{ amount?: number; changeAmount?: number; paymentMethod?: PaymentMethod }> }).payments;
+  const latestPayment =
+    Array.isArray(rawPayments) && rawPayments.length > 0
+      ? rawPayments[rawPayments.length - 1]
+      : undefined;
+
   return {
     ...order,
     tableName: order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber || null,
     tableNumber: order.tableNumber || order.tableName || order.table?.tableNumber || order.table?.name || null,
+    paidAmount:
+      order.paidAmount !== undefined
+        ? Number(order.paidAmount)
+        : latestPayment?.amount !== undefined
+        ? Number(latestPayment.amount)
+        : undefined,
+    changeAmount:
+      order.changeAmount !== undefined
+        ? Number(order.changeAmount)
+        : latestPayment?.changeAmount !== undefined
+        ? Number(latestPayment.changeAmount)
+        : undefined,
+    paymentMethod:
+      order.paymentMethod ||
+      latestPayment?.paymentMethod ||
+      undefined,
   };
 };
 
@@ -107,10 +129,53 @@ export const posService = {
     status: string;
     qrString?: string;
     changeAmount?: number;
+    payment?: { amount?: number; changeAmount?: number; paymentMethod?: PaymentMethod };
+    transaction?: unknown;
     order: Order;
   }> => {
     const res = await httpClient.post('/payments', payload);
-    return res.data?.data || res.data;
+    const data = (res.data?.data || res.data) as {
+      paymentId?: string;
+      status?: string;
+      qrString?: string;
+      changeAmount?: number;
+      payment?: { amount?: number; changeAmount?: number; paymentMethod?: PaymentMethod };
+      transaction?: unknown;
+      order?: Order;
+    };
+
+    if (data && data.order) {
+      const p = data.payment;
+      const orderTotal = Number(data.order.totalAmount || 0);
+      const paid =
+        p?.amount !== undefined
+          ? Number(p.amount)
+          : payload.cashGiven ?? payload.amount;
+      const change =
+        p?.changeAmount !== undefined
+          ? Number(p.changeAmount)
+          : payload.cashGiven !== undefined
+          ? Math.max(0, Number(payload.cashGiven) - orderTotal)
+          : 0;
+
+      data.order = normalizeOrder({
+        ...data.order,
+        paidAmount: paid,
+        changeAmount: change,
+        paymentMethod: p?.paymentMethod || payload.paymentMethod,
+        transaction: data.transaction as unknown as Order['transaction'],
+      });
+    }
+
+    return data as {
+      paymentId: string;
+      status: string;
+      qrString?: string;
+      changeAmount?: number;
+      payment?: { amount?: number; changeAmount?: number; paymentMethod?: PaymentMethod };
+      transaction?: unknown;
+      order: Order;
+    };
   },
 
   getQrisStatus: async (paymentId: string): Promise<{ status: string; isPaid: boolean }> => {
