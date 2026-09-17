@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Order, PaymentMethod } from '@model/Order';
+import type { Order, PaymentMethod, PaymentInfo } from '@model/Order';
 import { posService } from '@domain/services/pos-service';
 import {
   Banknote,
@@ -106,7 +106,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         paidAmount: finalPaidAmount,
         changeAmount: finalChangeAmount,
         transaction: (res as unknown as { transaction?: unknown })?.transaction as unknown as Order['transaction'] || (res.order as unknown as { transaction?: unknown })?.transaction as unknown as Order['transaction'],
-        payments: paymentData ? [paymentData as unknown as Order['payments'][0]] : undefined,
+        payments: paymentData ? [paymentData as unknown as PaymentInfo] : undefined,
       };
 
       onPaymentSuccess(completedOrder);
@@ -140,7 +140,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         paidAmount: totalAmount,
         changeAmount: 0,
         transaction: (res as unknown as { transaction?: unknown })?.transaction as unknown as Order['transaction'] || (res.order as unknown as { transaction?: unknown })?.transaction as unknown as Order['transaction'],
-        payments: paymentData ? [paymentData as unknown as Order['payments'][0]] : undefined,
+        payments: paymentData ? [paymentData as unknown as PaymentInfo] : undefined,
       };
 
       onPaymentSuccess(completedOrder);

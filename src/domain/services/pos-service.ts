@@ -6,12 +6,14 @@ import type {
   OrderItem,
   QueryOrderParams,
   PaginatedOrderResult,
+  PaymentMethod,
+  PaymentInfo,
 } from '@model/Order';
 import type { Table } from '@model/Settings';
 
 const normalizeOrder = (order: Order): Order => {
   if (!order) return order;
-  const rawPayments = (order as unknown as { payments?: Array<{ amount?: number; changeAmount?: number; paymentMethod?: PaymentMethod }> }).payments;
+  const rawPayments = order.payments;
   const latestPayment =
     Array.isArray(rawPayments) && rawPayments.length > 0
       ? rawPayments[rawPayments.length - 1]
