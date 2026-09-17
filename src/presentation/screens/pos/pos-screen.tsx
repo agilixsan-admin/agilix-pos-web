@@ -52,6 +52,9 @@ import {
   SearchInput,
   LoadingState,
   EmptyState,
+  toast,
+  CustomTableSelect,
+  CustomOutletSelect,
 } from '@presentation/components/ui';
 
 export const PosScreen: React.FC = () => {
@@ -341,7 +344,7 @@ export const PosScreen: React.FC = () => {
   const handleCheckoutDirect = async () => {
     const activeOutlet = currentOutlet || effectiveOutlet;
     if (!activeOutlet?.id) {
-      alert('Silakan pilih cabang/outlet aktif terlebih dahulu.');
+      toast.warning('Silakan pilih cabang/outlet aktif terlebih dahulu.');
       return;
     }
     if (!currentOutlet && activeOutlet) {
@@ -376,7 +379,7 @@ export const PosScreen: React.FC = () => {
       }
 
       if (orderType === 'DINE_IN' && !tableId) {
-        alert('Silakan pilih nomor meja untuk pesanan Dine In.');
+        toast.warning('Silakan pilih nomor meja untuk pesanan Dine In.');
         setViewMode('FLOOR');
         return;
       }
@@ -399,7 +402,7 @@ export const PosScreen: React.FC = () => {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         'Gagal membuat order transaksi.';
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setOrderProcessing(false);
     }
@@ -409,7 +412,7 @@ export const PosScreen: React.FC = () => {
   const handleSaveOpenOrder = async () => {
     const activeOutlet = currentOutlet || effectiveOutlet;
     if (!activeOutlet?.id) {
-      alert('Silakan pilih cabang/outlet aktif terlebih dahulu.');
+      toast.warning('Silakan pilih cabang/outlet aktif terlebih dahulu.');
       return;
     }
     if (!currentOutlet && activeOutlet) {
@@ -433,12 +436,12 @@ export const PosScreen: React.FC = () => {
         setActiveAppendOrder(null);
         refreshAllData();
         setViewMode('FLOOR');
-        alert('Tambahan menu berhasil dikirim ke pesanan.');
+        toast.success('Tambahan menu berhasil dikirim ke pesanan.');
         return;
       }
 
       if (orderType === 'DINE_IN' && !tableId) {
-        alert('Silakan pilih nomor meja untuk pesanan Dine In.');
+        toast.warning('Silakan pilih nomor meja untuk pesanan Dine In.');
         setViewMode('FLOOR');
         return;
       }
@@ -457,12 +460,12 @@ export const PosScreen: React.FC = () => {
       clearCart();
       refreshAllData();
       setViewMode('FLOOR');
-      alert('Pesanan berhasil dikirim.');
+      toast.success('Pesanan berhasil dikirim.');
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         'Gagal mengirim pesanan.';
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setOrderProcessing(false);
     }
@@ -590,31 +593,13 @@ export const PosScreen: React.FC = () => {
           {/* Table & Customer Name Inputs */}
           <div className="grid grid-cols-2 gap-2">
             {effectiveOrderType === 'DINE_IN' && (
-              <div className="relative">
-                <select
-                  aria-label="Pilih Meja"
-                  disabled={Boolean(activeAppendOrder)}
-                  value={effectiveTableId || ''}
-                  onChange={(e) => {
-                    const sel = tables.find((t) => t.id === e.target.value);
-                    setTable(sel ? sel.id : null, sel ? sel.name : null);
-                  }}
-                  className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] ${activeAppendOrder ? 'opacity-95 font-semibold bg-amber-50/70 border-amber-300 text-amber-950 cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                  <option value="">Pilih Meja...</option>
-                  {effectiveTableId &&
-                    !tables.some((t) => t.id === effectiveTableId) && (
-                      <option value={effectiveTableId}>
-                        Meja {resolvedAppendTableName || 'Terpilih'}
-                      </option>
-                    )}
-                  {tables.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      Meja {t.name} ({t.capacity} Kursi)
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <CustomTableSelect
+                tables={tables}
+                selectedTableId={effectiveTableId}
+                disabled={Boolean(activeAppendOrder)}
+                resolvedAppendTableName={resolvedAppendTableName}
+                onSelectTable={(sel) => setTable(sel ? sel.id : null, sel ? sel.name : null)}
+              />
             )}
 
             <div
@@ -942,24 +927,12 @@ export const PosScreen: React.FC = () => {
                 </Button>
 
                 {outlets && outlets.length > 1 ? (
-                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 shrink-0">
-                    <Building2 className="w-3.5 h-3.5 text-[#0D5C53]" />
-                    <select
-                      aria-label="Pilih Cabang POS"
-                      value={effectiveOutlet?.id || ''}
-                      onChange={(e) => {
-                        const found = outlets.find((o) => o.id === e.target.value);
-                        if (found) setCurrentOutlet(found);
-                      }}
-                      className="bg-transparent text-xs font-bold text-slate-800 focus:outline-hidden cursor-pointer max-w-[100px] sm:max-w-none truncate"
-                    >
-                      {outlets.map((o) => (
-                        <option key={o.id} value={o.id}>
-                          {o.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <CustomOutletSelect
+                    outlets={outlets}
+                    selectedOutletId={effectiveOutlet?.id}
+                    onSelectOutlet={(found) => setCurrentOutlet(found)}
+                    compact
+                  />
                 ) : (
                   <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 shrink-0 text-xs font-semibold text-slate-700">
                     <Building2 className="w-3.5 h-3.5 text-[#0D5C53]" />
@@ -1197,7 +1170,7 @@ export const PosScreen: React.FC = () => {
           onConfirmVoid={async (reason) => {
             await posService.voidOrderItem(voidModalItem.orderId, voidModalItem.itemId, reason);
             refreshAllData();
-            alert('Item berhasil dibatalkan (void).');
+            toast.success('Item berhasil dibatalkan (void).');
           }}
         />
       )}

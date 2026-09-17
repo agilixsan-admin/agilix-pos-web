@@ -13,7 +13,7 @@ import {
   Layers,
   Building2,
 } from 'lucide-react';
-import { Button, Badge, LoadingState, EmptyState } from '@presentation/components/ui';
+import { Button, Badge, LoadingState, EmptyState, CustomOutletSelect } from '@presentation/components/ui';
 
 interface TableFloorViewProps {
   tables: Table[];
@@ -88,25 +88,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
           {outlets && outlets.length > 1 && (
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
-              <Building2 className="w-4 h-4 text-[#0D5C53]" />
-              <span className="text-xs text-slate-500 font-medium">Cabang:</span>
-              <select
-                aria-label="Pilih Cabang POS"
-                value={effectiveOutlet?.id || ''}
-                onChange={(e) => {
-                  const found = outlets.find((o) => o.id === e.target.value);
-                  if (found) setCurrentOutlet(found);
-                }}
-                className="bg-transparent text-xs font-bold text-slate-800 focus:outline-hidden cursor-pointer"
-              >
-                {outlets.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CustomOutletSelect
+              outlets={outlets}
+              selectedOutletId={effectiveOutlet?.id}
+              onSelectOutlet={(found) => setCurrentOutlet(found)}
+            />
           )}
 
           <Button

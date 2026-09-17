@@ -10,6 +10,7 @@ import {
   Modal,
   LoadingState,
   EmptyState,
+  toast,
 } from '@presentation/components/ui';
 
 interface OpenOrdersModalProps {
@@ -65,7 +66,7 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
         onSelectForAppend(order);
         return;
       }
-      alert('Keranjang masih kosong. Pilih menu terlebih dahulu di layar kasir untuk ditambahkan.');
+      toast.warning('Keranjang masih kosong. Pilih menu terlebih dahulu di layar kasir untuk ditambahkan.');
       return;
     }
 
@@ -82,8 +83,9 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
       clearCart();
       onOrderUpdated();
       onClose();
+      toast.success('Tambahan menu berhasil ditambahkan ke pesanan.');
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menambahkan menu ke pesanan.'
       );
