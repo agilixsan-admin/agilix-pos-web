@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Lock, ChevronDown, Check } from 'lucide-react';
+import { useFloatingPortal } from './use-floating-portal';
 
 export interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -75,21 +77,11 @@ export const FormSelect: React.FC<FormSelectProps> = ({
   ...props
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
+  const { triggerRef, menuRef, coords } = useFloatingPortal({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    matchWidth: true,
+  });
 
   // Extract options from children (<option> elements)
   const options: Array<{ value: string; label: string; disabled?: boolean }> = [];
@@ -117,7 +109,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
   };
 
   return (
-    <div ref={containerRef} className={`space-y-1.5 w-full relative ${isOpen ? 'z-50' : 'z-10'} ${className}`}>
+    <div className={`space-y-1.5 w-full relative ${className}`}>
       {label && (
         <label className="block text-xs font-semibold text-slate-700">
           {label} {required && <span className="text-rose-500">*</span>}
@@ -126,6 +118,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
 
       {/* Custom Dropdown Trigger */}
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         id={id}
@@ -150,9 +143,23 @@ export const FormSelect: React.FC<FormSelectProps> = ({
         />
       </button>
 
-      {/* Floating Options Menu */}
-      {isOpen && !disabled && (
-        <div className="absolute z-50 left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl p-1 max-h-60 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100">
+      {/* Floating Options Menu (Portaled to document.body) */}
+      {isOpen && !disabled && coords && createPortal(
+        <div
+          ref={menuRef}
+          style={{
+            position: 'fixed',
+            top: coords.top !== undefined ? `${coords.top}px` : 'auto',
+            bottom: coords.bottom !== undefined ? `${coords.bottom}px` : 'auto',
+            left: coords.left !== undefined ? `${coords.left}px` : 'auto',
+            right: coords.right !== undefined ? `${coords.right}px` : 'auto',
+            width: coords.width ? `${coords.width}px` : 'auto',
+            minWidth: `${coords.minWidth}px`,
+            maxHeight: `${coords.maxHeight}px`,
+            zIndex: 99999,
+          }}
+          className="bg-white border border-slate-200 rounded-xl shadow-2xl p-1 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100"
+        >
           {options.map((opt, idx) => {
             const isSelected = opt.value === stringVal;
             return (
@@ -168,11 +175,12 @@ export const FormSelect: React.FC<FormSelectProps> = ({
                 } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
                 <span className="truncate">{opt.label}</span>
-                {isSelected && <Check className="w-3.5 h-3.5 text-[#0D5C53] shrink-0" />}
+                {isSelected && <Check className="w-3.5 h-3.5 text-[#0D5C53]" />}
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
 
       {error && <p className="text-[11px] text-rose-600 font-medium">{error}</p>}

@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useFloatingPortal } from './use-floating-portal';
 
 const MONTH_NAMES = [
   'Januari',
@@ -65,24 +67,13 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   align = 'auto',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [popoverAlign, setPopoverAlign] = useState<'left' | 'right'>('left');
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Dynamic popover positioning to avoid overflow on right screen edge
-  useEffect(() => {
-    if (align && align !== 'auto') {
-      setPopoverAlign(align);
-      return;
-    }
-    if (isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      if (rect.left + 290 > window.innerWidth) {
-        setPopoverAlign('right');
-      } else {
-        setPopoverAlign('left');
-      }
-    }
-  }, [isOpen, align]);
+  const { triggerRef, menuRef, coords } = useFloatingPortal({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    align,
+    minWidth: 270,
+    expectedHeight: 330,
+  });
 
   // Current viewing month and year
   const initialDate = parseYMDToDate(value) || new Date();
@@ -97,21 +88,6 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
       if (d) setViewDate(new Date(d.getFullYear(), d.getMonth(), 1));
     }
   }, [value]);
-
-  // Click outside to close
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
 
   const prevMonth = () => {
     setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -172,9 +148,10 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   const displayText = value ? formatDateDisplay(value) : '';
 
   return (
-    <div ref={containerRef} className={`relative ${isOpen ? 'z-50' : 'z-10'} ${className}`}>
+    <div className={`relative ${className}`}>
       {/* Trigger Button */}
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
@@ -212,9 +189,23 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
         </div>
       </button>
 
-      {/* Floating Calendar Popover */}
-      {isOpen && !disabled && (
-        <div className={`absolute z-50 ${popoverAlign === 'right' ? 'right-0' : 'left-0'} top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl p-3.5 w-64 sm:w-72 animate-in fade-in-0 zoom-in-95 duration-100`}>
+      {/* Floating Calendar Popover (Portaled to document.body) */}
+      {isOpen && !disabled && coords && createPortal(
+        <div
+          ref={menuRef}
+          style={{
+            position: 'fixed',
+            top: coords.top !== undefined ? `${coords.top}px` : 'auto',
+            bottom: coords.bottom !== undefined ? `${coords.bottom}px` : 'auto',
+            left: coords.left !== undefined ? `${coords.left}px` : 'auto',
+            right: coords.right !== undefined ? `${coords.right}px` : 'auto',
+            width: coords.width ? `${coords.width}px` : 'auto',
+            minWidth: `${coords.minWidth}px`,
+            maxHeight: `${coords.maxHeight}px`,
+            zIndex: 99999,
+          }}
+          className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-3.5 w-64 sm:w-72 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100"
+        >
           {/* Calendar Header: Month/Year and Nav Arrows */}
           <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
             <button
@@ -298,7 +289,8 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
               </button>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

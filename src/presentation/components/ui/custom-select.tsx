@@ -1,7 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Utensils, Building2, ChevronDown, Check, Lock } from 'lucide-react';
 import type { Table } from '@model/Settings';
 import type { Outlet } from '@model/Auth';
+import { useFloatingPortal } from './use-floating-portal';
 
 interface CustomTableSelectProps {
   tables: Table[];
@@ -23,24 +25,13 @@ export const CustomTableSelect: React.FC<CustomTableSelectProps> = ({
   className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { triggerRef, menuRef, coords } = useFloatingPortal({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    minWidth: 200,
+    matchWidth: true,
+  });
 
-  // Close dropdown on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-
-  // Determine current selected label
   const selectedTable = tables.find((t) => t.id === selectedTableId);
   const displayText = selectedTable
     ? `Meja ${selectedTable.name}`
@@ -49,9 +40,10 @@ export const CustomTableSelect: React.FC<CustomTableSelectProps> = ({
       : placeholder;
 
   return (
-    <div ref={containerRef} className={`relative w-full ${className}`}>
+    <div className={`relative w-full ${className}`}>
       {/* Trigger Button */}
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
@@ -85,9 +77,23 @@ export const CustomTableSelect: React.FC<CustomTableSelectProps> = ({
         />
       </button>
 
-      {/* Floating Menu Popover */}
-      {isOpen && !disabled && (
-        <div className="absolute z-50 left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl p-1 max-h-60 overflow-y-auto min-w-[200px] animate-in fade-in-0 zoom-in-95 duration-100">
+      {/* Floating Menu Popover (Portaled to document.body) */}
+      {isOpen && !disabled && coords && createPortal(
+        <div
+          ref={menuRef}
+          style={{
+            position: 'fixed',
+            top: coords.top !== undefined ? `${coords.top}px` : 'auto',
+            bottom: coords.bottom !== undefined ? `${coords.bottom}px` : 'auto',
+            left: coords.left !== undefined ? `${coords.left}px` : 'auto',
+            right: coords.right !== undefined ? `${coords.right}px` : 'auto',
+            width: coords.width ? `${coords.width}px` : 'auto',
+            minWidth: `${coords.minWidth}px`,
+            maxHeight: `${coords.maxHeight}px`,
+            zIndex: 99999,
+          }}
+          className="bg-white border border-slate-200 rounded-xl shadow-2xl p-1 overflow-y-auto min-w-[200px] animate-in fade-in-0 zoom-in-95 duration-100"
+        >
           {/* Option: Kosongkan Meja */}
           <button
             type="button"
@@ -134,11 +140,12 @@ export const CustomTableSelect: React.FC<CustomTableSelectProps> = ({
                   <span className="font-semibold">Meja {table.name}</span>
                   <span className="text-[10px] text-slate-400">({table.capacity} Kursi)</span>
                 </div>
-                {isSelected && <Check className="w-3.5 h-3.5 text-[#0D5C53] shrink-0" />}
+                {isSelected && <Check className="w-3.5 h-3.5 text-[#0D5C53]" />}
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -160,27 +167,18 @@ export const CustomOutletSelect: React.FC<CustomOutletSelectProps> = ({
   compact = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
+  const { triggerRef, menuRef, coords } = useFloatingPortal({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    minWidth: 180,
+  });
 
   const selectedOutlet = outlets.find((o) => o.id === selectedOutletId) || outlets[0];
 
   return (
-    <div ref={containerRef} className={`relative shrink-0 ${className}`}>
+    <div className={`relative shrink-0 ${className}`}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className={`flex items-center gap-1.5 bg-slate-50 hover:bg-white border border-slate-200 hover:border-slate-300 rounded-xl transition-all cursor-pointer ${
@@ -200,8 +198,22 @@ export const CustomOutletSelect: React.FC<CustomOutletSelectProps> = ({
         />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 left-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl p-1 min-w-[180px] max-h-60 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100">
+      {isOpen && coords && createPortal(
+        <div
+          ref={menuRef}
+          style={{
+            position: 'fixed',
+            top: coords.top !== undefined ? `${coords.top}px` : 'auto',
+            bottom: coords.bottom !== undefined ? `${coords.bottom}px` : 'auto',
+            left: coords.left !== undefined ? `${coords.left}px` : 'auto',
+            right: coords.right !== undefined ? `${coords.right}px` : 'auto',
+            width: coords.width ? `${coords.width}px` : 'auto',
+            minWidth: `${coords.minWidth}px`,
+            maxHeight: `${coords.maxHeight}px`,
+            zIndex: 99999,
+          }}
+          className="bg-white border border-slate-200 rounded-xl shadow-2xl p-1 min-w-[180px] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100"
+        >
           <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             Pilih Cabang Aktif
           </div>
@@ -226,7 +238,8 @@ export const CustomOutletSelect: React.FC<CustomOutletSelectProps> = ({
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -267,43 +280,19 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   align = 'auto',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [menuAlign, setMenuAlign] = useState<'left' | 'right'>('left');
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (align && align !== 'auto') {
-      setMenuAlign(align);
-      return;
-    }
-    if (isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      if (rect.left + 200 > window.innerWidth) {
-        setMenuAlign('right');
-      } else {
-        setMenuAlign('left');
-      }
-    }
-  }, [isOpen, align]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
+  const { triggerRef, menuRef, coords } = useFloatingPortal({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    align,
+    minWidth: 160,
+  });
 
   const selectedOption = options.find((o) => o.value === value);
 
   return (
-    <div ref={containerRef} className={`relative shrink-0 ${isOpen ? 'z-50' : 'z-10'} ${className}`}>
+    <div className={`relative shrink-0 ${className}`}>
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
@@ -338,8 +327,22 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         />
       </button>
 
-      {isOpen && !disabled && (
-        <div className={`absolute z-50 ${menuAlign === 'right' ? 'right-0' : 'left-0'} top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl p-1 min-w-[160px] max-h-60 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100`}>
+      {isOpen && !disabled && coords && createPortal(
+        <div
+          ref={menuRef}
+          style={{
+            position: 'fixed',
+            top: coords.top !== undefined ? `${coords.top}px` : 'auto',
+            bottom: coords.bottom !== undefined ? `${coords.bottom}px` : 'auto',
+            left: coords.left !== undefined ? `${coords.left}px` : 'auto',
+            right: coords.right !== undefined ? `${coords.right}px` : 'auto',
+            width: coords.width ? `${coords.width}px` : 'auto',
+            minWidth: `${coords.minWidth}px`,
+            maxHeight: `${coords.maxHeight}px`,
+            zIndex: 99999,
+          }}
+          className="bg-white border border-slate-200 rounded-xl shadow-2xl p-1 min-w-[160px] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100"
+        >
           {options.map((opt) => {
             const isSelected = opt.value === value;
             return (
@@ -369,7 +372,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
