@@ -263,6 +263,80 @@ export const PosScreen: React.FC = () => {
     setViewMode('CATALOG');
   };
 
+  // Select Open Order for Append Mode (Mode Tambah Menu ke Pesanan Berjalan)
+  const handleSelectOpenOrderForAppend = async (order: Order) => {
+    // 1. Clear cart first so we start with empty additional items without wiping table/customer
+    clearCart();
+
+    // 2. Set append order state immediately so UI transitions to catalog immediately
+    setActiveAppendOrder(order);
+    setOrderType(order.orderType || 'DINE_IN');
+
+    // 3. Resolve table & customer
+    const clean = (s?: string | null) =>
+      (s || '').toLowerCase().replace(/^(meja\s*)/i, '').trim();
+
+    const resolvedTableName =
+      order.tableName ||
+      order.tableNumber ||
+      order.table?.name ||
+      order.table?.tableNumber ||
+      null;
+
+    const matchedTable = tables.find(
+      (t) =>
+        (order.tableId && t.id === order.tableId) ||
+        (order.table?.id && t.id === order.table?.id) ||
+        (resolvedTableName &&
+          (t.name.toLowerCase() === resolvedTableName.toLowerCase() ||
+            t.tableNumber?.toLowerCase() === resolvedTableName.toLowerCase() ||
+            clean(t.name) === clean(resolvedTableName) ||
+            clean(t.tableNumber) === clean(resolvedTableName))),
+    );
+
+    const finalTableId = matchedTable
+      ? matchedTable.id
+      : order.tableId || order.table?.id || (resolvedTableName ? `custom_${resolvedTableName}` : null);
+    const finalTableName = resolvedTableName || matchedTable?.name || null;
+
+    setTable(finalTableId, finalTableName);
+    setCustomerName(order.customerName || '');
+    setViewMode('CATALOG');
+
+    // 4. Fetch fresh order details with full items list to guarantee all ordered items are visible
+    try {
+      const freshOrder = await posService.getOrderById(order.id);
+      if (freshOrder) {
+        setActiveAppendOrder(freshOrder);
+        if (freshOrder.customerName) {
+          setCustomerName(freshOrder.customerName);
+        }
+        const freshTableName =
+          freshOrder.tableName ||
+          freshOrder.tableNumber ||
+          freshOrder.table?.name ||
+          freshOrder.table?.tableNumber ||
+          finalTableName;
+        const freshMatchedTable = tables.find(
+          (t) =>
+            (freshOrder.tableId && t.id === freshOrder.tableId) ||
+            (freshOrder.table?.id && t.id === freshOrder.table?.id) ||
+            (freshTableName &&
+              (t.name.toLowerCase() === freshTableName.toLowerCase() ||
+                t.tableNumber?.toLowerCase() === freshTableName.toLowerCase() ||
+                clean(t.name) === clean(freshTableName) ||
+                clean(t.tableNumber) === clean(freshTableName))),
+        );
+        const freshTableId = freshMatchedTable
+          ? freshMatchedTable.id
+          : freshOrder.tableId || freshOrder.table?.id || (freshTableName ? `custom_${freshTableName}` : finalTableId);
+        setTable(freshTableId, freshTableName);
+      }
+    } catch {
+      // Fallback silently if offline or network hiccup
+    }
+  };
+
   // Direct Instant Checkout
   const handleCheckoutDirect = async () => {
     const activeOutlet = currentOutlet || effectiveOutlet;
@@ -273,7 +347,7 @@ export const PosScreen: React.FC = () => {
     if (!currentOutlet && activeOutlet) {
       setCurrentOutlet(activeOutlet);
     }
-    if (cartItems.length === 0) return;
+    if (!activeAppendOrder && cartItems.length === 0) return;
 
     setOrderProcessing(true);
     try {
@@ -285,6 +359,13 @@ export const PosScreen: React.FC = () => {
       }));
 
       if (activeAppendOrder) {
+        if (cartItems.length === 0) {
+          // Kasir langsung ingin bayar pesanan berjalan tanpa ada tambahan menu baru
+          setActivePaymentOrder(activeAppendOrder);
+          setActiveAppendOrder(null);
+          return;
+        }
+
         // APPEND MODE: Tambah item ke order berjalan terlebih dahulu, lalu buka pembayaran
         const updatedOrder = await posService.addItemsToOrder(activeAppendOrder.id, payloadItems);
         clearCart();
@@ -387,268 +468,470 @@ export const PosScreen: React.FC = () => {
     }
   };
 
-  const renderCartContent = (isMobileSheet = false) => (
-    <div className={`flex flex-col h-full overflow-hidden ${isMobileSheet ? 'bg-white' : ''}`}>
-      {/* Cart Header & Order Type Switcher */}
-      <div className="p-3 sm:p-4 border-b border-slate-100 space-y-3 shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4 text-[#0D5C53]" />
-            <span className="font-bold text-slate-800 text-sm">
-              Keranjang Pesanan ({getItemCount()})
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {cartItems.length > 0 && (
-              <button
-                onClick={clearCart}
-                className="text-xs font-semibold text-rose-500 hover:text-rose-700 cursor-pointer"
-              >
-                Reset
-              </button>
-            )}
-            {isMobileSheet && (
-              <button
-                onClick={() => setIsMobileCartOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        </div>
+  const renderCartContent = (isMobileSheet = false) => {
+    const clean = (s?: string | null) =>
+      (s || '').toLowerCase().replace(/^(meja\s*)/i, '').trim();
 
-        {/* Append Mode Banner in Cart */}
-        {activeAppendOrder && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between">
-            <div className="flex flex-col min-w-0 pr-2">
-              <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-800">
-                Mode Tambah Menu
-              </span>
-              <span className="text-xs font-bold text-amber-950 truncate">
-                Pesanan #{activeAppendOrder.orderNumber} ({activeAppendOrder.tableName || activeAppendOrder.tableNumber ? `Meja ${activeAppendOrder.tableName || activeAppendOrder.tableNumber}` : activeAppendOrder.orderType})
+    const resolvedAppendTableName =
+      activeAppendOrder?.tableName ||
+      activeAppendOrder?.tableNumber ||
+      activeAppendOrder?.table?.name ||
+      activeAppendOrder?.table?.tableNumber ||
+      null;
+    const matchedAppendTable = activeAppendOrder
+      ? tables.find(
+          (t) =>
+            (activeAppendOrder.tableId && t.id === activeAppendOrder.tableId) ||
+            (activeAppendOrder.table?.id && t.id === activeAppendOrder.table?.id) ||
+            (resolvedAppendTableName &&
+              (t.name.toLowerCase() === resolvedAppendTableName.toLowerCase() ||
+                t.tableNumber?.toLowerCase() === resolvedAppendTableName.toLowerCase() ||
+                clean(t.name) === clean(resolvedAppendTableName) ||
+                clean(t.tableNumber) === clean(resolvedAppendTableName))),
+        )
+      : undefined;
+    const effectiveTableId = activeAppendOrder
+      ? matchedAppendTable?.id ||
+        activeAppendOrder.tableId ||
+        activeAppendOrder.table?.id ||
+        tableId ||
+        (resolvedAppendTableName ? `custom_${resolvedAppendTableName}` : null)
+      : tableId;
+    const effectiveCustomerName = activeAppendOrder
+      ? (activeAppendOrder.customerName ?? customerName ?? '')
+      : customerName;
+    const effectiveOrderType = activeAppendOrder
+      ? (activeAppendOrder.orderType || 'DINE_IN')
+      : orderType;
+
+    const previousSubtotal = activeAppendOrder
+      ? Number(activeAppendOrder.subtotal || 0)
+      : 0;
+    const previousTotalAmount = activeAppendOrder
+      ? Number(activeAppendOrder.totalAmount || 0)
+      : 0;
+    const currentTotalAmount = getTotal();
+    const grandTotal = activeAppendOrder
+      ? cartItems.length > 0
+        ? previousTotalAmount + currentTotalAmount
+        : previousTotalAmount
+      : currentTotalAmount;
+
+    return (
+      <div
+        className={`flex flex-col h-full overflow-hidden ${isMobileSheet ? 'bg-white' : ''}`}
+      >
+        {/* Cart Header & Order Type Switcher */}
+        <div className="p-3 sm:p-4 border-b border-slate-100 space-y-3 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4 text-[#0D5C53]" />
+              <span className="font-bold text-slate-800 text-sm">
+                Keranjang Pesanan ({cartItems.length})
               </span>
             </div>
-            <button
-              onClick={() => {
-                setActiveAppendOrder(null);
-                clearCart();
-              }}
-              className="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer shrink-0"
-            >
-              Batal
-            </button>
+            <div className="flex items-center gap-2">
+              {cartItems.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (activeAppendOrder) {
+                      useCartStore.setState({ items: [] });
+                    } else {
+                      clearCart();
+                    }
+                  }}
+                  className="text-xs font-semibold text-rose-500 hover:text-rose-700 cursor-pointer"
+                >
+                  Reset
+                </button>
+              )}
+              {isMobileSheet && (
+                <button
+                  onClick={() => setIsMobileCartOpen(false)}
+                  className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
           </div>
-        )}
 
-        {/* Dine In / Take Away Switcher */}
-        <div className={`grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl ${activeAppendOrder ? 'opacity-50 pointer-events-none' : ''}`}>
-          <button
-            onClick={() => setOrderType('DINE_IN')}
-            className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              orderType === 'DINE_IN'
-                ? 'bg-white text-[#0D5C53] shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Utensils className="w-3.5 h-3.5" />
-            <span>Dine In</span>
-          </button>
-          <button
-            onClick={() => {
-              setOrderType('TAKE_AWAY');
-              setTable(null, null);
-            }}
-            className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              orderType === 'TAKE_AWAY'
-                ? 'bg-white text-[#0D5C53] shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Take Away</span>
-          </button>
-        </div>
-
-        {/* Table & Customer Name Inputs */}
-        <div className="grid grid-cols-2 gap-2">
-          {orderType === 'DINE_IN' && (
-            <div className="relative">
-              <select
-                aria-label="Pilih Meja"
-                disabled={Boolean(activeAppendOrder)}
-                value={tableId || ''}
-                onChange={(e) => {
-                  const sel = tables.find((t) => t.id === e.target.value);
-                  setTable(sel ? sel.id : null, sel ? sel.name : null);
+          {/* Append Mode Banner in Cart */}
+          {activeAppendOrder && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between">
+              <div className="flex flex-col min-w-0 pr-2">
+                <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-800">
+                  Mode Tambah Menu
+                </span>
+                <span className="text-xs font-bold text-amber-950 truncate">
+                  Pesanan #{activeAppendOrder.orderNumber} (
+                  {resolvedAppendTableName
+                    ? `Meja ${resolvedAppendTableName}`
+                    : activeAppendOrder.orderType}
+                  )
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveAppendOrder(null);
+                  clearCart();
                 }}
-                className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] ${activeAppendOrder ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                className="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer shrink-0"
               >
-                <option value="">Pilih Meja...</option>
-                {tables.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    Meja {t.name} ({t.capacity} Kursi)
-                  </option>
-                ))}
-              </select>
+                Batal
+              </button>
             </div>
           )}
 
-          <div className={orderType === 'DINE_IN' ? '' : 'col-span-2'}>
-            <input
-              type="text"
-              disabled={Boolean(activeAppendOrder)}
-              placeholder="Nama Pelanggan (Opsional)"
-              value={customerName || ''}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] ${activeAppendOrder ? 'opacity-60 cursor-not-allowed' : ''}`}
-            />
+          {/* Dine In / Take Away Switcher */}
+          <div
+            className={`grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl ${activeAppendOrder ? 'opacity-70 pointer-events-none' : ''}`}
+          >
+            <button
+              onClick={() => setOrderType('DINE_IN')}
+              className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                effectiveOrderType === 'DINE_IN'
+                  ? 'bg-white text-[#0D5C53] shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Utensils className="w-3.5 h-3.5" />
+              <span>Dine In</span>
+            </button>
+            <button
+              onClick={() => {
+                setOrderType('TAKE_AWAY');
+                setTable(null, null);
+              }}
+              className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                effectiveOrderType === 'TAKE_AWAY'
+                  ? 'bg-white text-[#0D5C53] shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>Take Away</span>
+            </button>
+          </div>
+
+          {/* Table & Customer Name Inputs */}
+          <div className="grid grid-cols-2 gap-2">
+            {effectiveOrderType === 'DINE_IN' && (
+              <div className="relative">
+                <select
+                  aria-label="Pilih Meja"
+                  disabled={Boolean(activeAppendOrder)}
+                  value={effectiveTableId || ''}
+                  onChange={(e) => {
+                    const sel = tables.find((t) => t.id === e.target.value);
+                    setTable(sel ? sel.id : null, sel ? sel.name : null);
+                  }}
+                  className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] ${activeAppendOrder ? 'opacity-95 font-semibold bg-amber-50/70 border-amber-300 text-amber-950 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <option value="">Pilih Meja...</option>
+                  {effectiveTableId &&
+                    !tables.some((t) => t.id === effectiveTableId) && (
+                      <option value={effectiveTableId}>
+                        Meja {resolvedAppendTableName || 'Terpilih'}
+                      </option>
+                    )}
+                  {tables.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      Meja {t.name} ({t.capacity} Kursi)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div
+              className={effectiveOrderType === 'DINE_IN' ? '' : 'col-span-2'}
+            >
+              <input
+                type="text"
+                disabled={Boolean(activeAppendOrder)}
+                placeholder="Nama Pelanggan (Opsional)"
+                value={effectiveCustomerName || ''}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] ${activeAppendOrder ? 'opacity-95 font-medium bg-slate-100/90 text-slate-800 cursor-not-allowed' : ''}`}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Cart Items List */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 divide-y divide-slate-100 min-h-[160px]">
-        {cartItems.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-slate-300 py-8">
-            <ShoppingBag className="w-10 h-10 stroke-[1.5] mb-2 opacity-30" />
-            <p className="text-xs font-semibold text-slate-400">Keranjang Masih Kosong</p>
-            <p className="text-[11px] text-slate-300 text-center mt-0.5">
-              Pilih menu di sebelah kiri untuk membuat pesanan.
-            </p>
-          </div>
-        ) : (
-          cartItems.map((item) => (
-            <div key={item.id} className="py-2.5 first:pt-0 last:pb-0 flex flex-col gap-1.5">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 pr-2">
-                  <h5 className="font-semibold text-slate-800 text-xs leading-tight">{item.name}</h5>
-                  {item.variantName && (
-                    <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
-                      Varian: {item.variantName}
-                    </span>
-                  )}
-                  {item.notes && (
-                    <p className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-1 inline-block border border-amber-200">
-                      Catatan: {item.notes}
-                    </p>
-                  )}
-                </div>
-
-                <span className="font-bold text-slate-800 text-xs">
-                  Rp {(item.price * item.quantity).toLocaleString('id-ID')}
+        {/* Cart Items List */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 divide-y divide-slate-100 min-h-[160px] space-y-3">
+          {/* SECTION 1: EXISTING ACTIVE ORDER ITEMS */}
+          {activeAppendOrder && (
+            <div className="pb-3 space-y-2">
+              <div className="flex items-center justify-between pb-1.5 border-b border-amber-200">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse inline-block" />
+                  Pesanan Berjalan (Sudah Dikirim)
+                </span>
+                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">
+                  {(
+                    activeAppendOrder.items?.filter(
+                      (i) => !i.status || i.status === 'ACTIVE',
+                    ) || []
+                  ).length}{' '}
+                  Menu
                 </span>
               </div>
 
-              {/* Counter & Edit Note Actions */}
-              <div className="flex items-center justify-between pt-1">
-                <button
-                  onClick={() =>
-                    setNotesModalItem({
-                      id: item.id,
-                      name: item.name,
-                      notes: item.notes || '',
-                    })
-                  }
-                  className="text-[11px] text-slate-400 hover:text-[#0D5C53] flex items-center gap-1 cursor-pointer"
-                >
-                  <Edit2 className="w-3 h-3" />
-                  <span>{item.notes ? 'Ubah Catatan' : '+ Catatan'}</span>
-                </button>
-
-                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
-                  >
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <span className="w-6 text-center text-xs font-bold text-slate-800">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
-                  >
-                    <Plus className="w-3 h-3" />
-                  </button>
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="w-6 h-6 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded ml-1 cursor-pointer"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+              {!activeAppendOrder.items || activeAppendOrder.items.length === 0 ? (
+                <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 text-center text-xs text-amber-800">
+                  Memuat rincian menu pesanan...
                 </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+              ) : (
+                <div className="bg-amber-50/70 rounded-xl p-2.5 border border-amber-200/80 space-y-2 max-h-48 overflow-y-auto">
+                  {activeAppendOrder.items
+                    .filter((item) => !item.status || item.status === 'ACTIVE')
+                    .map((item, idx) => (
+                      <div
+                        key={item.id || idx}
+                        className="flex items-start justify-between text-xs"
+                      >
+                        <div className="flex-1 pr-2">
+                          <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                            <span className="font-bold text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded text-[10px]">
+                              {item.quantity}x
+                            </span>
+                            <span>{item.productName}</span>
+                          </div>
+                          {item.variantName && (
+                            <span className="text-[10px] text-slate-500 block pl-6">
+                              Varian: {item.variantName}
+                            </span>
+                          )}
+                          {item.notes && (
+                            <span className="text-[10px] text-amber-800 italic block pl-6">
+                              Catatan: {item.notes}
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-mono text-xs font-semibold text-slate-700">
+                          Rp{' '}
+                          {Number(
+                            item.subtotal ??
+                              Number(item.unitPrice || item.price || 0) *
+                                item.quantity,
+                          ).toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    ))}
 
-      {/* Cart Calculations & Checkout Footer */}
-      <div className="p-3 sm:p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 shrink-0">
-        <div className="space-y-1.5 text-xs text-slate-500">
-          <div className="flex justify-between">
-            <span>Subtotal</span>
-            <span className="font-semibold text-slate-800">Rp {getSubtotal().toLocaleString('id-ID')}</span>
-          </div>
-
-          <div className="flex justify-between items-center text-xs">
-            <button
-              onClick={() => setIsDiscountModalOpen(true)}
-              className="text-teal-700 hover:underline flex items-center gap-1 cursor-pointer font-medium"
-            >
-              <Tag className="w-3.5 h-3.5" />
-              <span>{discountName || '+ Tambah Diskon / Promo'}</span>
-            </button>
-            {getDiscount() > 0 && (
-              <span className="font-bold text-emerald-600">
-                -Rp {getDiscount().toLocaleString('id-ID')}
-              </span>
-            )}
-          </div>
-
-          {getTax() > 0 && (
-            <div className="flex justify-between">
-              <span>{taxName || 'Pajak'} ({taxPercent}%)</span>
-              <span className="font-semibold text-slate-800">Rp {getTax().toLocaleString('id-ID')}</span>
+                  <div className="pt-2 mt-1 border-t border-amber-200 flex justify-between text-xs font-bold text-amber-950">
+                    <span>Subtotal Terpesan</span>
+                    <span className="font-mono">
+                      Rp {previousSubtotal.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
-            <span>Total Tagihan</span>
-            <span className="text-[#0D5C53] text-base">Rp {getTotal().toLocaleString('id-ID')}</span>
+          {/* SECTION 2: NEW ITEMS HEADER */}
+          {activeAppendOrder && (
+            <div className="pt-2 pb-1">
+              <div className="flex items-center justify-between pb-1 border-b border-teal-200">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#0D5C53] flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#0D5C53] inline-block" />
+                  Tambahan Menu Baru
+                </span>
+                {cartItems.length > 0 && (
+                  <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full">
+                    {cartItems.length} Menu Baru
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* SECTION 3: NEW ITEMS LIST OR EMPTY PLACEHOLDER */}
+          {cartItems.length === 0 ? (
+            <div className="py-6 flex flex-col items-center justify-center text-slate-300">
+              <ShoppingBag className="w-8 h-8 stroke-[1.5] mb-1.5 opacity-30 text-teal-700" />
+              <p className="text-xs font-semibold text-slate-500">
+                {activeAppendOrder
+                  ? 'Belum Ada Tambahan Menu'
+                  : 'Keranjang Masih Kosong'}
+              </p>
+              <p className="text-[11px] text-slate-400 text-center mt-0.5 max-w-[220px]">
+                {activeAppendOrder
+                  ? 'Pilih menu di sebelah kiri untuk menambah menu ke pesanan ini.'
+                  : 'Pilih menu di sebelah kiri untuk membuat pesanan.'}
+              </p>
+            </div>
+          ) : (
+            cartItems.map((item) => (
+              <div
+                key={item.id}
+                className="py-2.5 first:pt-0 last:pb-0 flex flex-col gap-1.5"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 pr-2">
+                    <h5 className="font-semibold text-slate-800 text-xs leading-tight">
+                      {item.name}
+                    </h5>
+                    {item.variantName && (
+                      <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+                        Varian: {item.variantName}
+                      </span>
+                    )}
+                    {item.notes && (
+                      <p className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-1 inline-block border border-amber-200">
+                        Catatan: {item.notes}
+                      </p>
+                    )}
+                  </div>
+
+                  <span className="font-bold text-slate-800 text-xs">
+                    Rp {(item.price * item.quantity).toLocaleString('id-ID')}
+                  </span>
+                </div>
+
+                {/* Counter & Edit Note Actions */}
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    onClick={() =>
+                      setNotesModalItem({
+                        id: item.id,
+                        name: item.name,
+                        notes: item.notes || '',
+                      })
+                    }
+                    className="text-[11px] text-slate-400 hover:text-[#0D5C53] flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    <span>{item.notes ? 'Ubah Catatan' : '+ Catatan'}</span>
+                  </button>
+
+                  <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </button>
+                    <span className="w-6 text-center text-xs font-bold text-slate-800">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="w-6 h-6 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded ml-1 cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Cart Calculations & Checkout Footer */}
+        <div className="p-3 sm:p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 shrink-0">
+          <div className="space-y-1.5 text-xs text-slate-500">
+            {activeAppendOrder && (
+              <div className="flex justify-between text-amber-900 font-medium">
+                <span>Pesanan Sebelumnya</span>
+                <span className="font-mono">
+                  Rp {previousTotalAmount.toLocaleString('id-ID')}
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-between">
+              <span>
+                {activeAppendOrder ? 'Tambahan Menu Baru' : 'Subtotal'}
+              </span>
+              <span className="font-semibold text-slate-800">
+                Rp {getSubtotal().toLocaleString('id-ID')}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center text-xs">
+              <button
+                onClick={() => setIsDiscountModalOpen(true)}
+                className="text-teal-700 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+              >
+                <Tag className="w-3.5 h-3.5" />
+                <span>{discountName || '+ Tambah Diskon / Promo'}</span>
+              </button>
+              {getDiscount() > 0 && (
+                <span className="font-bold text-emerald-600">
+                  -Rp {getDiscount().toLocaleString('id-ID')}
+                </span>
+              )}
+            </div>
+
+            {getTax() > 0 && (
+              <div className="flex justify-between">
+                <span>
+                  {taxName || 'Pajak'} ({taxPercent}%)
+                </span>
+                <span className="font-semibold text-slate-800">
+                  Rp {getTax().toLocaleString('id-ID')}
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
+              <span>
+                {activeAppendOrder ? 'Total Tagihan Meja' : 'Total Tagihan'}
+              </span>
+              <span className="text-[#0D5C53] text-base font-mono">
+                Rp {grandTotal.toLocaleString('id-ID')}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <Button
+              variant="outline"
+              disabled={cartItems.length === 0 || orderProcessing}
+              leftIcon={<Send className="w-3.5 h-3.5 text-teal-700" />}
+              onClick={() => {
+                if (isMobileSheet) setIsMobileCartOpen(false);
+                handleSaveOpenOrder();
+              }}
+            >
+              {activeAppendOrder ? 'Kirim Tambahan' : 'Kirim Pesanan'}
+            </Button>
+
+            <Button
+              variant="primary"
+              disabled={
+                orderProcessing ||
+                (!activeAppendOrder && cartItems.length === 0)
+              }
+              isLoading={orderProcessing}
+              leftIcon={<CreditCard className="w-4 h-4" />}
+              onClick={() => {
+                if (isMobileSheet) setIsMobileCartOpen(false);
+                handleCheckoutDirect();
+              }}
+              className="font-bold shadow-md shadow-teal-900/10"
+            >
+              {activeAppendOrder
+                ? cartItems.length > 0
+                  ? 'Tambah & Bayar'
+                  : 'Bayar Langsung'
+                : 'Bayar Sekarang'}
+            </Button>
           </div>
         </div>
-
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <Button
-            variant="outline"
-            disabled={cartItems.length === 0 || orderProcessing}
-            leftIcon={<Send className="w-3.5 h-3.5 text-teal-700" />}
-            onClick={() => {
-              if (isMobileSheet) setIsMobileCartOpen(false);
-              handleSaveOpenOrder();
-            }}
-          >
-            {activeAppendOrder ? 'Kirim Tambahan' : 'Kirim Pesanan'}
-          </Button>
-
-          <Button
-            variant="primary"
-            disabled={cartItems.length === 0 || orderProcessing}
-            isLoading={orderProcessing}
-            leftIcon={<CreditCard className="w-4 h-4" />}
-            onClick={() => {
-              if (isMobileSheet) setIsMobileCartOpen(false);
-              handleCheckoutDirect();
-            }}
-            className="font-bold shadow-md shadow-teal-900/10"
-          >
-            {activeAppendOrder ? 'Tambah & Bayar' : 'Bayar Sekarang'}
-          </Button>
-        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="h-[calc(100vh-6rem)] overflow-hidden flex flex-col">
@@ -660,16 +943,7 @@ export const PosScreen: React.FC = () => {
           loading={loading || openOrdersLoading}
           onSelectTableForOrder={handleSelectTableForOrder}
           onSelectOpenOrderForPayment={(order) => setActivePaymentOrder(order)}
-          onSelectOpenOrderForAppend={(order) => {
-            setActiveAppendOrder(order);
-            setOrderType(order.orderType);
-            const resolvedTableName = order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber || null;
-            const resolvedTableId = order.tableId || order.table?.id || null;
-            setTable(resolvedTableId, resolvedTableName);
-            setCustomerName(order.customerName || '');
-            clearCart();
-            setViewMode('CATALOG');
-          }}
+          onSelectOpenOrderForAppend={handleSelectOpenOrderForAppend}
           onNewOrderClick={handleInitiateNewOrder}
         />
       ) : (
@@ -987,6 +1261,8 @@ export const PosScreen: React.FC = () => {
           onClose={() => setActivePaymentOrder(null)}
           onPaymentSuccess={(completed) => {
             setActivePaymentOrder(null);
+            setActiveAppendOrder(null);
+            clearCart();
             setSuccessModalOrder(completed);
             refreshAllData();
           }}
@@ -1026,16 +1302,7 @@ export const PosScreen: React.FC = () => {
         onSelectForPayment={(order) => {
           setActivePaymentOrder(order);
         }}
-        onSelectForAppend={(order) => {
-          setActiveAppendOrder(order);
-          setOrderType(order.orderType);
-          const resolvedTableName = order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber || null;
-          const resolvedTableId = order.tableId || order.table?.id || null;
-          setTable(resolvedTableId, resolvedTableName);
-          setCustomerName(order.customerName || '');
-          clearCart();
-          setViewMode('CATALOG');
-        }}
+        onSelectForAppend={handleSelectOpenOrderForAppend}
         onOrderUpdated={refreshAllData}
       />
     </div>

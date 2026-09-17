@@ -241,13 +241,18 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3.5">
                 {filteredTables.map((table) => {
-                  const activeOrder = openOrders.find(
-                    (o) =>
-                      o.tableId === table.id ||
-                      o.table?.id === table.id ||
-                      (Boolean(o.tableNumber) && (o.tableNumber === table.tableNumber || o.tableNumber === table.name)) ||
-                      (Boolean(o.tableName) && (o.tableName === table.name || o.tableName === table.tableNumber))
-                  );
+                  const clean = (s?: string | null) =>
+                    (s || '').toLowerCase().replace(/^(meja\s*)/i, '').trim();
+
+                  const activeOrder = openOrders.find((o) => {
+                    if (o.tableId && o.tableId === table.id) return true;
+                    if (o.table?.id && o.table.id === table.id) return true;
+                    const oNum = clean(
+                      o.tableNumber || o.tableName || o.table?.tableNumber || o.table?.name,
+                    );
+                    const tNum = clean(table.tableNumber || table.name);
+                    return Boolean(oNum && tNum && oNum === tNum);
+                  });
                   const isOccupied = table.status === 'OCCUPIED' || Boolean(activeOrder);
 
                   if (isOccupied && activeOrder) {
@@ -255,7 +260,8 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                     return (
                       <div
                         key={table.id}
-                        className="bg-[#0D5C53] text-white rounded-2xl p-4 flex flex-col justify-between shadow-md hover:shadow-lg transition-all border border-teal-700"
+                        onClick={() => onSelectOpenOrderForAppend(activeOrder)}
+                        className="bg-[#0D5C53] text-white rounded-2xl p-4 flex flex-col justify-between shadow-md hover:shadow-lg transition-all border border-teal-700 cursor-pointer group active:scale-[0.98]"
                       >
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
@@ -298,14 +304,20 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                           <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               type="button"
-                              onClick={() => onSelectOpenOrderForAppend(activeOrder)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectOpenOrderForAppend(activeOrder);
+                              }}
                               className="text-[10px] bg-teal-800 hover:bg-teal-700 active:bg-teal-900 text-teal-100 px-2 py-1 rounded-lg font-bold transition-colors cursor-pointer border border-teal-600/60"
                             >
                               + Menu
                             </button>
                             <button
                               type="button"
-                              onClick={() => onSelectOpenOrderForPayment(activeOrder)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectOpenOrderForPayment(activeOrder);
+                              }}
                               className="text-[10px] bg-white hover:bg-teal-50 text-[#0D5C53] px-2 py-1 rounded-lg font-bold transition-colors cursor-pointer shadow-xs"
                             >
                               Bayar →
