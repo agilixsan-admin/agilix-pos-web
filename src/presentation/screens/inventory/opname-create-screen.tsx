@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -9,6 +9,8 @@ import {
   PlayCircle,
   CheckCircle2,
   Store,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -16,6 +18,7 @@ import {
   useRawMaterials,
   usePackagingItems,
   useCreateStockOpnameMutation,
+  useStockOpnames,
   useOutlets,
 } from '@domain/hooks';
 import {
@@ -46,14 +49,6 @@ export const OpnameCreateScreen: React.FC = () => {
 
   const targetOutlet = outlets.find((o) => o.id === targetOutletId) || currentOutlet;
 
-  // Queries
-  const { data: categories = [] } = useInventoryCategories();
-  const { data: rawMaterials = [] } = useRawMaterials();
-  const { data: packagingItems = [] } = usePackagingItems();
-
-  // Mutation
-  const createMutation = useCreateStockOpnameMutation();
-
   // Form State
   const [opnameDate, setOpnameDate] = useState<string>(
     new Date().toISOString().split('T')[0]
@@ -62,6 +57,57 @@ export const OpnameCreateScreen: React.FC = () => {
   const [categoryId, setCategoryId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
+
+  // Queries
+  const { data: categories = [] } = useInventoryCategories();
+  const { data: rawMaterials = [] } = useRawMaterials();
+  const { data: packagingItems = [] } = usePackagingItems();
+
+  // Query existing stock opnames for the target outlet to validate constraints
+  const { data: opnamesData } = useStockOpnames({
+    outletId: targetOutletId || undefined,
+    limit: 50,
+  });
+  const existingOpnames = opnamesData?.data || [];
+
+  // 1. Cek apakah outlet masih memiliki sesi yang belum final (IN_PROGRESS / DRAFT)
+  const unfinishedOpname = useMemo(() => {
+    if (!targetOutletId) return null;
+    return existingOpnames.find(
+      (o) => o.outletId === targetOutletId && (o.status === 'IN_PROGRESS' || o.status === 'DRAFT')
+    );
+  }, [existingOpnames, targetOutletId]);
+
+  // 2. Cek apakah outlet sudah memiliki sesi pada tanggal yang sama (status bukan CANCELLED)
+  const sameDateOpname = useMemo(() => {
+    if (!targetOutletId || !opnameDate) return null;
+    return existingOpnames.find((o) => {
+      if (o.outletId !== targetOutletId) return false;
+      if (o.status === 'CANCELLED') return false;
+      const oDateStr = o.opnameDate ? o.opnameDate.split('T')[0] : '';
+      return oDateStr === opnameDate;
+    });
+  }, [existingOpnames, targetOutletId, opnameDate]);
+
+  const isBlocked = Boolean(unfinishedOpname || sameDateOpname);
+
+  // Format Date Helper
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-';
+    try {
+      const d = new Date(dateString);
+      return d.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Mutation
+  const createMutation = useCreateStockOpnameMutation();
 
   // Estimate total items in scope
   const totalItemCount =
@@ -78,6 +124,20 @@ export const OpnameCreateScreen: React.FC = () => {
 
     if (scope === 'CATEGORY' && !categoryId) {
       setFormError('Silakan pilih kategori item yang akan dihitung.');
+      return;
+    }
+
+    if (unfinishedOpname) {
+      setFormError(
+        `Cabang ini masih memiliki sesi Stock Opname yang belum final (${unfinishedOpname.opnameNumber}). Selesaikan atau batalkan sesi tersebut terlebih dahulu.`
+      );
+      return;
+    }
+
+    if (sameDateOpname) {
+      setFormError(
+        `Cabang ini sudah memiliki sesi Stock Opname pada tanggal ${formatDate(opnameDate)} (${sameDateOpname.opnameNumber}). Setiap outlet tidak boleh membuat lebih dari satu sesi di tanggal yang sama.`
+      );
       return;
     }
 
@@ -127,6 +187,62 @@ export const OpnameCreateScreen: React.FC = () => {
           </h1>
         </div>
       </div>
+
+      {/* Unfinished Opname Alert Banner */}
+      {unfinishedOpname && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-amber-100 text-amber-800 rounded-xl shrink-0 mt-0.5">
+                <Clock className="w-5 h-5 text-amber-700" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                  Sesi Stock Opname Belum Selesai
+                </h4>
+                <p className="text-xs text-amber-900 leading-relaxed">
+                  Cabang <strong>{targetOutlet?.name || 'terpilih'}</strong> masih memiliki sesi Stock Opname yang belum final (
+                  <strong className="font-mono text-amber-950">{unfinishedOpname.opnameNumber}</strong>
+                  {unfinishedOpname.opnameDate && `, Periode: ${formatDate(unfinishedOpname.opnameDate)}`}).
+                  Selesaikan atau batalkan sesi tersebut sebelum memulai sesi baru.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 sm:self-center">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                leftIcon={<PlayCircle className="w-4 h-4" />}
+                onClick={() => navigate(`/inventory/opname/${unfinishedOpname.id}/count`)}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs whitespace-nowrap shadow-xs"
+              >
+                Lanjut Hitung ({unfinishedOpname.opnameNumber})
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Duplicate Date Alert Banner (if no unfinished opname blocking) */}
+      {!unfinishedOpname && sameDateOpname && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 shadow-xs flex items-start gap-3">
+          <div className="p-2 bg-rose-100 text-rose-700 rounded-xl shrink-0 mt-0.5">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-xs font-bold text-rose-950 uppercase tracking-wide">
+              Tanggal Sudah Memiliki Sesi Opname
+            </h4>
+            <p className="text-xs text-rose-800 leading-relaxed">
+              Cabang <strong>{targetOutlet?.name || 'terpilih'}</strong> sudah memiliki sesi Stock Opname pada tanggal{' '}
+              <strong>{formatDate(opnameDate)}</strong> (
+              <strong className="font-mono text-rose-950">{sameDateOpname.opnameNumber}</strong>, Status: {sameDateOpname.status}).
+              Setiap outlet tidak diperbolehkan membuat lebih dari satu sesi di tanggal yang sama. Silakan pilih tanggal lain.
+            </p>
+          </div>
+        </div>
+      )}
 
       {formError && (
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2.5">
@@ -273,6 +389,14 @@ export const OpnameCreateScreen: React.FC = () => {
                 variant="primary"
                 leftIcon={<PlayCircle className="w-4 h-4" />}
                 isLoading={createMutation.isPending}
+                disabled={isBlocked || createMutation.isPending}
+                title={
+                  unfinishedOpname
+                    ? 'Selesaikan sesi aktif terlebih dahulu'
+                    : sameDateOpname
+                    ? 'Tanggal ini sudah memiliki sesi Stock Opname'
+                    : 'Mulai Stock Opname'
+                }
               >
                 Mulai Stock Opname
               </Button>

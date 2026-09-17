@@ -82,6 +82,15 @@ export const OpnameScreen: React.FC = () => {
   const completedCount = opnames.filter((o) => o.status === 'COMPLETED').length;
   const cancelledCount = opnames.filter((o) => o.status === 'CANCELLED').length;
 
+  // Active unfinished opname session in current scope
+  const activeUnfinishedOpname = useMemo(() => {
+    return opnames.find(
+      (o) =>
+        (!effectiveOutletId || o.outletId === effectiveOutletId) &&
+        (o.status === 'IN_PROGRESS' || o.status === 'DRAFT')
+    );
+  }, [opnames, effectiveOutletId]);
+
   // Format Date
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
@@ -234,6 +243,45 @@ export const OpnameScreen: React.FC = () => {
           theme="slate"
         />
       </div>
+ 
+      {/* Active Opname Banner */}
+      {activeUnfinishedOpname && (
+        <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2 bg-amber-100 text-amber-800 rounded-xl shrink-0 mt-0.5 sm:mt-0">
+              <Clock className="w-5 h-5 text-amber-700" />
+            </div>
+            <div>
+              <div className="flex items-center flex-wrap gap-2">
+                <span className="text-xs font-bold text-amber-950">
+                  Sesi Stock Opname Sedang Berlangsung:
+                </span>
+                <span className="font-mono text-xs font-bold text-amber-900 bg-amber-100/70 px-2 py-0.5 rounded-md">
+                  {activeUnfinishedOpname.opnameNumber}
+                </span>
+                {activeUnfinishedOpname.outlet?.name && (
+                  <span className="text-[11px] font-medium text-amber-800 bg-amber-100/50 px-2 py-0.5 rounded-md">
+                    {activeUnfinishedOpname.outlet.name}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-amber-800 mt-1">
+                Setiap outlet wajib menyelesaikan atau membatalkan sesi yang belum final sebelum membuat sesi baru di tanggal yang sama.
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            leftIcon={<PlayCircle className="w-4 h-4" />}
+            onClick={() => navigate(`/inventory/opname/${activeUnfinishedOpname.id}/count`)}
+            className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shrink-0 shadow-xs"
+          >
+            Lanjut Hitung
+          </Button>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <Card padding="sm" className="bg-white">
