@@ -211,9 +211,9 @@ export const PurchasesScreen: React.FC = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
               {/* Search */}
-              <div className="lg:col-span-2">
+              <div className="w-full sm:w-64 lg:w-72">
                 <SearchInput
                   value={searchTerm}
                   onChange={(val) => {
@@ -229,7 +229,7 @@ export const PurchasesScreen: React.FC = () => {
               </div>
 
               {/* Status Filter */}
-              <div>
+              <div className="w-36">
                 <FormSelect
                   value={statusFilter}
                   onChange={(e) => {
@@ -245,7 +245,7 @@ export const PurchasesScreen: React.FC = () => {
               </div>
 
               {/* Supplier Filter */}
-              <div>
+              <div className="w-44">
                 <FormSelect
                   value={supplierFilter}
                   onChange={(e) => {
@@ -263,15 +263,15 @@ export const PurchasesScreen: React.FC = () => {
               </div>
 
               {/* Date Filter */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <CustomDatePicker
                   value={startDateFilter}
                   onChange={(val) => {
                     setStartDateFilter(val);
                     setPage(1);
                   }}
-                  placeholder="Dari"
-                  className="w-full text-xs"
+                  placeholder="Dari Tanggal"
+                  className="w-36 text-xs"
                 />
                 <span className="text-slate-400 text-xs">-</span>
                 <CustomDatePicker
@@ -280,8 +280,9 @@ export const PurchasesScreen: React.FC = () => {
                     setEndDateFilter(val);
                     setPage(1);
                   }}
-                  placeholder="Sampai"
-                  className="w-full text-xs"
+                  placeholder="Sampai Tanggal"
+                  className="w-36 text-xs"
+                  align="right"
                 />
               </div>
             </div>

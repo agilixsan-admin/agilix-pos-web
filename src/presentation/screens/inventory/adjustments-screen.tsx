@@ -231,9 +231,9 @@ export const AdjustmentsScreen: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
               {/* Search Bar */}
-              <div className="lg:col-span-2">
+              <div className="w-full sm:w-64 lg:w-72">
                 <SearchInput
                   value={searchTerm}
                   onChange={(val) => {
@@ -249,7 +249,7 @@ export const AdjustmentsScreen: React.FC = () => {
               </div>
 
               {/* Type Filter */}
-              <div>
+              <div className="w-40">
                 <FormSelect
                   value={typeFilter}
                   onChange={(e) => {
@@ -264,7 +264,7 @@ export const AdjustmentsScreen: React.FC = () => {
               </div>
 
               {/* Reason Category Filter */}
-              <div>
+              <div className="w-44">
                 <FormSelect
                   value={reasonFilter}
                   onChange={(e) => {
@@ -282,15 +282,15 @@ export const AdjustmentsScreen: React.FC = () => {
               </div>
 
               {/* Date Filters */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <CustomDatePicker
                   value={startDateFilter}
                   onChange={(val) => {
                     setStartDateFilter(val);
                     setPage(1);
                   }}
-                  placeholder="Dari"
-                  className="w-full text-xs"
+                  placeholder="Dari Tanggal"
+                  className="w-36 text-xs"
                 />
                 <span className="text-slate-400 text-xs">-</span>
                 <CustomDatePicker
@@ -299,8 +299,9 @@ export const AdjustmentsScreen: React.FC = () => {
                     setEndDateFilter(val);
                     setPage(1);
                   }}
-                  placeholder="Sampai"
-                  className="w-full text-xs"
+                  placeholder="Sampai Tanggal"
+                  className="w-36 text-xs"
+                  align="right"
                 />
               </div>
             </div>

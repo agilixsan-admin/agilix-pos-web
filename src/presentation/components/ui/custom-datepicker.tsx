@@ -50,6 +50,7 @@ export interface CustomDatePickerProps {
   maxDate?: string;
   className?: string;
   compact?: boolean;
+  align?: 'left' | 'right' | 'auto';
 }
 
 export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
@@ -61,9 +62,27 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   maxDate,
   className = '',
   compact = false,
+  align = 'auto',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [popoverAlign, setPopoverAlign] = useState<'left' | 'right'>('left');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic popover positioning to avoid overflow on right screen edge
+  useEffect(() => {
+    if (align && align !== 'auto') {
+      setPopoverAlign(align);
+      return;
+    }
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.left + 290 > window.innerWidth) {
+        setPopoverAlign('right');
+      } else {
+        setPopoverAlign('left');
+      }
+    }
+  }, [isOpen, align]);
 
   // Current viewing month and year
   const initialDate = parseYMDToDate(value) || new Date();
@@ -195,7 +214,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
 
       {/* Floating Calendar Popover */}
       {isOpen && !disabled && (
-        <div className="absolute z-50 left-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl p-3.5 w-64 sm:w-72 animate-in fade-in-0 zoom-in-95 duration-100">
+        <div className={`absolute z-50 ${popoverAlign === 'right' ? 'right-0' : 'left-0'} top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl p-3.5 w-64 sm:w-72 animate-in fade-in-0 zoom-in-95 duration-100`}>
           {/* Calendar Header: Month/Year and Nav Arrows */}
           <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
             <button
@@ -300,6 +319,7 @@ export interface FormDatePickerProps {
   minDate?: string;
   maxDate?: string;
   className?: string;
+  align?: 'left' | 'right' | 'auto';
 }
 
 export const FormDatePicker: React.FC<FormDatePickerProps> = ({
@@ -317,6 +337,7 @@ export const FormDatePicker: React.FC<FormDatePickerProps> = ({
   minDate,
   maxDate,
   className = '',
+  align = 'auto',
 }) => {
   const handleChange = (newVal: string) => {
     if (onValueChange) {
@@ -344,6 +365,7 @@ export const FormDatePicker: React.FC<FormDatePickerProps> = ({
         disabled={disabled}
         minDate={minDate}
         maxDate={maxDate}
+        align={align}
       />
       {error && <p className="text-[11px] text-rose-600 font-medium">{error}</p>}
       {helperText && !error && <p className="text-[11px] text-slate-400">{helperText}</p>}
