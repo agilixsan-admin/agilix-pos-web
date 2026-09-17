@@ -40,23 +40,36 @@
   }
 }
 
-/* Custom scrollbars for POS touch screens */
+/* Modern Slim Scrollbars across all browsers (Chrome, Edge, Safari, Firefox) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
-  border-radius: 4px;
+  border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
 
 /* Thermal receipt printable area styling */
+@page {
+  margin: 0;
+  size: auto;
+}
+
 @media print {
   body * {
     visibility: hidden;
@@ -70,6 +83,6 @@
     top: 0;
     width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 10px;
   }
 }

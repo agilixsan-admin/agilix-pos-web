@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Order } from '@model/Order';
-import { Printer, CheckCircle2 } from 'lucide-react';
+import { Printer, CheckCircle2, Bluetooth } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
-import { Button, Modal, Badge } from '@presentation/components/ui';
+import { usePrinterStore } from '@domain/state/printer-store';
+import { Button, Modal, Badge, toast } from '@presentation/components/ui';
 
 interface ReceiptModalProps {
   order: Order;
@@ -16,11 +17,45 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   onClose,
 }) => {
   const { tenant, currentOutlet } = useAuthStore();
+  const {
+    isConnected: isPrinterConnected,
+    deviceName: printerName,
+    isConnecting: isPrinterConnecting,
+    connect: connectPrinter,
+    printReceipt,
+  } = usePrinterStore();
+
+  const [isPrinting, setIsPrinting] = useState(false);
 
   if (!isOpen) return null;
 
   const handleBrowserPrint = () => {
     window.print();
+  };
+
+  const handleBluetoothPrint = async () => {
+    setIsPrinting(true);
+    try {
+      await printReceipt(order, {
+        name: tenant?.name || currentOutlet?.name,
+        address: currentOutlet?.address,
+        phone: currentOutlet?.phone,
+      });
+      toast.success('Struk berhasil dicetak ke printer Bluetooth!');
+    } catch (err: unknown) {
+      toast.error((err as Error)?.message || 'Gagal mencetak ke printer Bluetooth.');
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleConnectBluetooth = async () => {
+    try {
+      await connectPrinter();
+      toast.success('Printer Bluetooth berhasil terhubung!');
+    } catch (err: unknown) {
+      toast.warning((err as Error)?.message || 'Batal atau gagal menghubungkan printer Bluetooth.');
+    }
   };
 
   return (
@@ -31,18 +66,56 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       subtitle="Struk Pembayaran Siap Dicetak"
       maxWidth="sm"
       footer={
-        <>
-          <Button variant="outline" onClick={onClose}>
-            Selesai / Tutup
+        <div className="w-full flex items-center justify-between gap-2">
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Tutup
           </Button>
-          <Button
-            variant="primary"
-            leftIcon={<Printer className="w-4 h-4" />}
-            onClick={handleBrowserPrint}
-          >
-            Cetak Struk
-          </Button>
-        </>
+          <div className="flex items-center gap-2">
+            {isPrinterConnected ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBrowserPrint}
+                  className="text-xs"
+                >
+                  Browser / PDF
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<Printer className="w-4 h-4" />}
+                  onClick={handleBluetoothPrint}
+                  isLoading={isPrinting}
+                  className="font-bold shadow-md shadow-teal-900/10"
+                >
+                  Cetak (Bluetooth)
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Bluetooth className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                  onClick={handleConnectBluetooth}
+                  isLoading={isPrinterConnecting}
+                  className="text-xs font-semibold"
+                >
+                  Hubungkan Bluetooth
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<Printer className="w-4 h-4" />}
+                  onClick={handleBrowserPrint}
+                >
+                  Cetak Struk
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       }
     >
       {/* Printable Thermal Receipt Area */}

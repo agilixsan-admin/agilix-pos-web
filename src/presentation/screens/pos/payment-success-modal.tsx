@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Order } from '@model/Order';
 import { useAuthStore } from '@domain/state/auth-store';
+import { usePrinterStore } from '@domain/state/printer-store';
 import { posService } from '@domain/services/pos-service';
 import {
   CheckCircle2,
@@ -13,8 +14,9 @@ import {
   Eye,
   X,
   FileText,
+  Bluetooth,
 } from 'lucide-react';
-import { Modal, Button, Badge } from '@presentation/components/ui';
+import { Modal, Button, Badge, toast } from '@presentation/components/ui';
 
 interface PaymentSuccessModalProps {
   order: Order;
@@ -32,10 +34,20 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
   onViewReceipt,
 }) => {
   const { tenant, currentOutlet, user } = useAuthStore();
+  const {
+    isConnected: isPrinterConnected,
+    deviceName: printerName,
+    isConnecting: isPrinterConnecting,
+    autoPrintOnPayment,
+    connect: connectPrinter,
+    disconnect: disconnectPrinter,
+    setAutoPrint,
+    printReceipt,
+  } = usePrinterStore();
+
   const [printStatus, setPrintStatus] = useState<'IDLE' | 'PRINTING' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [errorMessage, setErrorMessage] = useState<string>('');
-
-  if (!isOpen) return null;
+  const [isPrintingBluetooth, setIsPrintingBluetooth] = useState(false);
 
   const rawPayments = (order as unknown as { payments?: Array<{ amount?: number; changeAmount?: number }> }).payments;
   const latestPayment = Array.isArray(rawPayments) && rawPayments.length > 0 ? rawPayments[rawPayments.length - 1] : undefined;
@@ -57,7 +69,53 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
   );
   const isCash = order.paymentMethod === 'CASH' || !order.paymentMethod;
 
+  const handleBluetoothPrint = async () => {
+    setIsPrintingBluetooth(true);
+    setErrorMessage('');
+    try {
+      await printReceipt(order, {
+        name: tenant?.name || currentOutlet?.name,
+        address: currentOutlet?.address,
+        phone: currentOutlet?.phone,
+      });
+      setPrintStatus('SUCCESS');
+      toast.success('Struk berhasil dicetak ke printer Bluetooth!');
+    } catch (err: unknown) {
+      const msg = (err as Error)?.message || 'Gagal mencetak ke printer Bluetooth.';
+      setErrorMessage(msg);
+      setPrintStatus('ERROR');
+      toast.error(msg);
+    } finally {
+      setIsPrintingBluetooth(false);
+    }
+  };
+
+  const handleConnectBluetooth = async () => {
+    try {
+      await connectPrinter();
+      toast.success('Printer Bluetooth berhasil terhubung!');
+    } catch (err: unknown) {
+      const msg = (err as Error)?.message || 'Batal atau gagal menghubungkan printer Bluetooth.';
+      toast.warning(msg);
+    }
+  };
+
+  // Auto-print receipt if Bluetooth printer is connected and autoPrint option is enabled
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (isOpen && autoPrintOnPayment && isPrinterConnected) {
+      timer = setTimeout(() => {
+        handleBluetoothPrint();
+      }, 400);
+    }
+    return () => clearTimeout(timer);
+  }, [isOpen, autoPrintOnPayment, isPrinterConnected]);
+
   const handleTriggerPrint = async () => {
+    if (isPrinterConnected) {
+      await handleBluetoothPrint();
+      return;
+    }
     setPrintStatus('PRINTING');
     setErrorMessage('');
     try {
@@ -71,14 +129,15 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
         setPrintStatus('SUCCESS');
       }
     } catch (err: unknown) {
-      // If backend network printer times out or fails, allow browser print or retry
       const errMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'The network/printer connection is unreachable. Please retry or use browser print.';
+        'Printer kasir tidak terhubung. Gunakan browser print atau hubungkan printer Bluetooth.';
       setErrorMessage(errMsg);
       setPrintStatus('ERROR');
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <Modal
@@ -317,6 +376,72 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
               </div>
             </div>
 
+            {/* Bluetooth Thermal Printer Bar */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                    isPrinterConnected
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-slate-200 text-slate-500'
+                  }`}
+                >
+                  <Bluetooth className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-800 truncate">
+                      {isPrinterConnected ? printerName || 'Printer Bluetooth' : 'Printer Bluetooth'}
+                    </span>
+                    <span
+                      className={`inline-block w-2 h-2 rounded-full ${
+                        isPrinterConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
+                      }`}
+                    />
+                    <span
+                      className={`text-[10px] font-semibold uppercase ${
+                        isPrinterConnected ? 'text-emerald-700' : 'text-slate-400'
+                      }`}
+                    >
+                      {isPrinterConnected ? 'Terhubung' : 'Tidak Terhubung'}
+                    </span>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoPrintOnPayment}
+                      onChange={(e) => setAutoPrint(e.target.checked)}
+                      className="rounded border-slate-300 text-[#0D5C53] focus:ring-[#0D5C53]/20 cursor-pointer"
+                    />
+                    <span>Cetak otomatis saat pembayaran sukses</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {isPrinterConnected ? (
+                  <button
+                    type="button"
+                    onClick={disconnectPrinter}
+                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                  >
+                    Putus
+                  </button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<Bluetooth className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                    onClick={handleConnectBluetooth}
+                    isLoading={isPrinterConnecting}
+                    className="text-xs font-bold"
+                  >
+                    Hubungkan Printer
+                  </Button>
+                )}
+              </div>
+            </div>
+
             {/* Bottom Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
               <Button
@@ -328,18 +453,41 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
               </Button>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Button
-                  variant="outline"
-                  leftIcon={<Printer className="w-4 h-4" />}
-                  onClick={handleTriggerPrint}
-                >
-                  Cetak Struk (Print)
-                </Button>
+                {isPrinterConnected ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.print()}
+                      className="text-xs"
+                    >
+                      PDF / Browser
+                    </Button>
+                    <Button
+                      variant="primary"
+                      leftIcon={<Printer className="w-4 h-4" />}
+                      onClick={handleBluetoothPrint}
+                      isLoading={isPrintingBluetooth}
+                      className="font-bold shadow-md shadow-teal-900/10"
+                    >
+                      Cetak Struk (Bluetooth)
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    leftIcon={<Printer className="w-4 h-4" />}
+                    onClick={handleTriggerPrint}
+                  >
+                    Cetak Struk (Print)
+                  </Button>
+                )}
+
                 <Button
                   variant="primary"
                   leftIcon={<Plus className="w-4 h-4" />}
                   onClick={onNewOrder}
-                  className="font-bold shadow-md shadow-teal-900/10"
+                  className={`font-bold shadow-md shadow-teal-900/10 ${isPrinterConnected ? 'bg-slate-800 hover:bg-slate-900 text-white' : ''}`}
                 >
                   + Pesanan Baru
                 </Button>
