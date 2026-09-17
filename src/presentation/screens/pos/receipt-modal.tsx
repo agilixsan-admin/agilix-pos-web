@@ -170,16 +170,22 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
           {/* Items List */}
           <div className="py-3 border-b border-dashed border-slate-300 space-y-2">
-            {order.items?.map((item, idx) => (
-              <div key={idx} className="space-y-0.5">
-                <div className="flex justify-between font-semibold">
-                  <span className="truncate pr-2">
-                    {item.productName} {item.variantName ? `(${item.variantName})` : ''}
-                  </span>
-                  <span>
-                    Rp {Number(item.subtotal ?? (Number(item.unitPrice || item.price || 0) * item.quantity)).toLocaleString('id-ID')}
-                  </span>
-                </div>
+            {order.items?.map((item, idx) => {
+              const isDefaultVariant =
+                !item.variantName ||
+                item.variantName.trim().toLowerCase() === 'default' ||
+                item.variantName.trim().toLowerCase() === item.productName?.trim().toLowerCase();
+
+              return (
+                <div key={idx} className="space-y-0.5">
+                  <div className="flex justify-between font-semibold">
+                    <span className="truncate pr-2">
+                      {item.productName} {!isDefaultVariant ? `(${item.variantName})` : ''}
+                    </span>
+                    <span>
+                      Rp {Number(item.subtotal ?? (Number(item.unitPrice || item.price || 0) * item.quantity)).toLocaleString('id-ID')}
+                    </span>
+                  </div>
                 <div className="text-[10px] text-slate-500 flex justify-between">
                   <span>
                     {item.quantity} x Rp {Number(item.unitPrice || item.price || (item.subtotal ? item.subtotal / item.quantity : 0)).toLocaleString('id-ID')}
@@ -191,7 +197,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   )}
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
 
           {/* Calculation Totals */}

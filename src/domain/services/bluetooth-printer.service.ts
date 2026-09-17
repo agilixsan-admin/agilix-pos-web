@@ -263,7 +263,11 @@ class BluetoothPrinterService {
     const activeItems = (order.items || []).filter((i) => !i.status || i.status === 'ACTIVE');
     for (const item of activeItems) {
       const name = item.productName || 'Item';
-      const variantName = item.variantName ? ` (${item.variantName})` : '';
+      const isDefaultVariant =
+        !item.variantName ||
+        item.variantName.trim().toLowerCase() === 'default' ||
+        item.variantName.trim().toLowerCase() === name.trim().toLowerCase();
+      const variantName = !isDefaultVariant ? ` (${item.variantName})` : '';
       const fullName = `${name}${variantName}`;
       addLine(fullName);
 

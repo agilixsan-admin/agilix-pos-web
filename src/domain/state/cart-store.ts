@@ -83,12 +83,18 @@ export const useCartStore = create<CartStoreState>()(
             return { items: updated };
           }
 
+          const rawVariantName = selectedVariant?.name;
+          const isDefaultVariant =
+            !rawVariantName ||
+            rawVariantName.trim().toLowerCase() === 'default' ||
+            rawVariantName.trim().toLowerCase() === product.name.trim().toLowerCase();
+
           const newItem: CartItem = {
             id: itemId,
             productId: product.id,
             variantId: variantId,
             name: product.name,
-            variantName: selectedVariant?.name,
+            variantName: isDefaultVariant ? undefined : rawVariantName,
             price,
             costPrice: selectedVariant?.costPrice || product.costPrice || 0,
             quantity,

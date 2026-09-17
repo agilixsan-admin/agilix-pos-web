@@ -392,7 +392,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <div key={idx} className="pt-1.5 first:pt-0 flex justify-between text-slate-700">
                     <div>
                       <span className="font-semibold">{item.quantity}x {item.productName}</span>
-                      {item.variantName && (
+                      {item.variantName && item.variantName.trim().toLowerCase() !== 'default' && (
                         <span className="text-[10px] text-slate-400 block font-normal">
                           ({item.variantName})
                         </span>

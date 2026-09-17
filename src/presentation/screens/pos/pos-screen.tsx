@@ -672,7 +672,7 @@ export const PosScreen: React.FC = () => {
                             </span>
                             <span>{item.productName}</span>
                           </div>
-                          {item.variantName && (
+                          {item.variantName && item.variantName.trim().toLowerCase() !== 'default' && (
                             <span className="text-[10px] text-slate-500 block pl-6">
                               Varian: {item.variantName}
                             </span>
@@ -748,7 +748,7 @@ export const PosScreen: React.FC = () => {
                     <h5 className="font-semibold text-slate-800 text-xs leading-tight">
                       {item.name}
                     </h5>
-                    {item.variantName && (
+                    {item.variantName && item.variantName.trim().toLowerCase() !== 'default' && (
                       <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
                         Varian: {item.variantName}
                       </span>

@@ -211,7 +211,7 @@ export const SalesReportScreen: React.FC = () => {
                               {item.productName}
                             </td>
                             <td className="py-3 px-4 text-slate-600">
-                              {item.variantName || '-'}
+                              {item.variantName && item.variantName.trim().toLowerCase() !== 'default' ? item.variantName : '-'}
                             </td>
                             <td className="py-3 px-4 text-center font-bold text-slate-800">
                               {Number(item.quantitySold || 0).toLocaleString('id-ID')}

@@ -201,7 +201,7 @@ export const TransactionDetailView: React.FC<TransactionDetailViewProps> = ({
                         {item.productName}
                       </h4>
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        {item.variantName && (
+                        {item.variantName && item.variantName.trim().toLowerCase() !== 'default' && (
                           <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-semibold">
                             Varian: {item.variantName}
                           </span>
