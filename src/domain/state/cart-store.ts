@@ -13,6 +13,8 @@ interface CartStoreState {
   taxName: string | null;
   taxType: 'INCLUSIVE' | 'EXCLUSIVE' | null;
   servicePercent: number;
+  serviceChargeName: string | null;
+  serviceChargeApplicableTo: 'ALL' | 'DINE_IN' | null;
   discountId: string | null;
   discountName: string | null;
   discountAmount: number;
@@ -29,7 +31,7 @@ interface CartStoreState {
   setDiscountAmount: (discount: number) => void;
   setTax: (taxPercent: number, taxName?: string | null, taxType?: 'INCLUSIVE' | 'EXCLUSIVE' | null) => void;
   setTaxPercent: (taxPercent: number) => void;
-  setServicePercent: (servicePercent: number) => void;
+  setServicePercent: (servicePercent: number, serviceChargeName?: string | null, applicableTo?: 'ALL' | 'DINE_IN' | null) => void;
   clearCart: () => void;
 
   // Getters & Calculations
@@ -53,6 +55,8 @@ export const useCartStore = create<CartStoreState>()(
       taxName: null,
       taxType: null,
       servicePercent: 0,
+      serviceChargeName: null,
+      serviceChargeApplicableTo: null,
       discountId: null,
       discountName: null,
       discountAmount: 0,
@@ -148,7 +152,12 @@ export const useCartStore = create<CartStoreState>()(
 
       setTaxPercent: (taxPercent) => set({ taxPercent }),
 
-      setServicePercent: (servicePercent) => set({ servicePercent }),
+      setServicePercent: (servicePercent, serviceChargeName = null, applicableTo = null) =>
+        set({
+          servicePercent,
+          serviceChargeName: serviceChargeName || null,
+          serviceChargeApplicableTo: applicableTo || null,
+        }),
 
       clearCart: () =>
         set({
@@ -172,10 +181,13 @@ export const useCartStore = create<CartStoreState>()(
       },
 
       getServiceCharge: () => {
+        if (get().serviceChargeApplicableTo === 'DINE_IN' && get().orderType !== 'DINE_IN') {
+          return 0;
+        }
         const subtotal = get().getSubtotal();
         const discount = get().getDiscount();
         const taxable = Math.max(0, subtotal - discount);
-        const rate = get().servicePercent / 100;
+        const rate = (get().servicePercent || 0) / 100;
         return Math.round(taxable * rate);
       },
 
@@ -218,6 +230,8 @@ export const useCartStore = create<CartStoreState>()(
         taxName: state.taxName,
         taxType: state.taxType,
         servicePercent: state.servicePercent,
+        serviceChargeName: state.serviceChargeName,
+        serviceChargeApplicableTo: state.serviceChargeApplicableTo,
         discountId: state.discountId,
         discountName: state.discountName,
         discountAmount: state.discountAmount,

@@ -343,9 +343,21 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                         <span>-Rp {Number(order.discountAmount).toLocaleString('id-ID')}</span>
                       </div>
                     )}
+                    {Number(order.packagingFee || 0) > 0 && (
+                      <div className="flex justify-between text-slate-500">
+                        <span>Biaya Kemasan</span>
+                        <span>Rp {Number(order.packagingFee).toLocaleString('id-ID')}</span>
+                      </div>
+                    )}
+                    {Number(order.serviceCharge || 0) > 0 && (
+                      <div className="flex justify-between text-slate-500">
+                        <span>Service Charge</span>
+                        <span>Rp {Number(order.serviceCharge).toLocaleString('id-ID')}</span>
+                      </div>
+                    )}
                     {Number(order.taxAmount || 0) > 0 && (
                       <div className="flex justify-between text-slate-500">
-                        <span>Pajak (PB1)</span>
+                        <span>{order.taxName || 'Pajak'}</span>
                         <span>Rp {Number(order.taxAmount).toLocaleString('id-ID')}</span>
                       </div>
                     )}

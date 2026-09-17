@@ -68,12 +68,20 @@ export interface GlobalTaxConfig {
   enableTaxCalculation: boolean;
   defaultGlobalTaxId?: string | null;
   defaultGlobalTax?: TaxItem | null;
+  serviceChargeEnabled?: boolean;
+  serviceChargeRate?: number;
+  serviceChargeName?: string;
+  serviceChargeApplicableTo?: 'ALL' | 'DINE_IN';
 }
 
 export interface UpdateGlobalTaxConfigPayload {
-  enableTaxCalculation: boolean;
+  enableTaxCalculation?: boolean;
   defaultGlobalTaxId?: string | null;
   outletId?: string;
+  serviceChargeEnabled?: boolean;
+  serviceChargeRate?: number;
+  serviceChargeName?: string;
+  serviceChargeApplicableTo?: 'ALL' | 'DINE_IN';
 }
 
 export type DiscountCalculationType = 'PERCENTAGE' | 'FIXED';

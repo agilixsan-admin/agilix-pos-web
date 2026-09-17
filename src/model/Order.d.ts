@@ -89,6 +89,9 @@ export interface Order {
   items: OrderItem[];
   subtotal: number;
   taxAmount: number;
+  taxName?: string | null;
+  taxRate?: number | null;
+  taxType?: 'INCLUSIVE' | 'EXCLUSIVE' | null;
   serviceCharge: number;
   discountAmount: number;
   discountId?: string | null;
@@ -117,6 +120,7 @@ export interface CreateOrderPayload {
   customerName?: string;
   discountId?: string;
   discountAmount?: number;
+  serviceCharge?: number;
   taxAmount?: number;
   packagingFee?: number;
   notes?: string;

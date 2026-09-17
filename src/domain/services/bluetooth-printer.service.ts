@@ -288,11 +288,15 @@ class BluetoothPrinterService {
     if (Number(order.discountAmount || 0) > 0) {
       addLine(leftRight('Diskon', `-${formatRp(order.discountAmount)}`));
     }
-    if (Number(order.taxAmount || 0) > 0) {
-      addLine(leftRight('Pajak (PB1)', formatRp(order.taxAmount)));
+    if (Number(order.packagingFee || 0) > 0) {
+      addLine(leftRight('Biaya Kemasan', formatRp(order.packagingFee)));
     }
     if (Number(order.serviceCharge || 0) > 0) {
       addLine(leftRight('Service Charge', formatRp(order.serviceCharge)));
+    }
+    if (Number(order.taxAmount || 0) > 0) {
+      const taxLabel = order.taxName || 'Pajak';
+      addLine(leftRight(taxLabel, formatRp(order.taxAmount)));
     }
 
     addLine(divider('='));

@@ -20,6 +20,7 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPaymentSuccess: (completedOrder: Order) => void;
+  taxName?: string | null;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -27,6 +28,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
   onClose,
   onPaymentSuccess,
+  taxName,
 }) => {
   const [method, setMethod] = useState<PaymentMethod>('CASH');
   const [cashGiven, setCashGiven] = useState<number>(order.totalAmount);
@@ -424,11 +426,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <span>-Rp {Number(order.discountAmount).toLocaleString('id-ID')}</span>
                   </div>
                 )}
-                {Number(order.taxAmount || 0) > 0 && (
+                {Number(order.packagingFee || 0) > 0 && (
                   <div className="flex justify-between">
-                    <span>Pajak (PB1)</span>
+                    <span>Biaya Kemasan</span>
                     <span className="font-semibold text-slate-800">
-                      Rp {Number(order.taxAmount).toLocaleString('id-ID')}
+                      Rp {Number(order.packagingFee).toLocaleString('id-ID')}
                     </span>
                   </div>
                 )}
@@ -437,6 +439,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <span>Service Charge</span>
                     <span className="font-semibold text-slate-800">
                       Rp {Number(order.serviceCharge).toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                )}
+                {Number(order.taxAmount || 0) > 0 && (
+                  <div className="flex justify-between">
+                    <span>{order.taxName || taxName || 'Pajak'}</span>
+                    <span className="font-semibold text-slate-800">
+                      Rp {Number(order.taxAmount).toLocaleString('id-ID')}
                     </span>
                   </div>
                 )}

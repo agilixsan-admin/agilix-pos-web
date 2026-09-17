@@ -84,6 +84,8 @@ export const PosScreen: React.FC = () => {
     discountAmount,
     taxPercent,
     taxName,
+    servicePercent,
+    serviceChargeName,
     addItem,
     removeItem,
     updateQuantity,
@@ -93,9 +95,11 @@ export const PosScreen: React.FC = () => {
     setCustomerName,
     setDiscount,
     setTax,
+    setServicePercent,
     clearCart,
     getSubtotal,
     getTax,
+    getServiceCharge,
     getTotal,
     getDiscount,
     getItemCount,
@@ -109,7 +113,7 @@ export const PosScreen: React.FC = () => {
     data: products = [],
     isLoading: productsLoading,
     refetch: refetchProducts,
-  } = useProducts({ outletId: effectiveOutlet?.id });
+  } = useProducts(effectiveOutlet?.id ? { outletId: effectiveOutlet.id } : undefined);
 
   const {
     data: categories = [],
@@ -131,7 +135,7 @@ export const PosScreen: React.FC = () => {
 
   const { data: taxConfig } = useGlobalTaxConfig(effectiveOutlet?.id);
 
-  // Sync Tax Configuration with Cart Store
+  // Sync Tax & Service Charge Configuration with Cart Store
   useEffect(() => {
     if (taxConfig?.enableTaxCalculation && taxConfig.defaultGlobalTax) {
       setTax(
@@ -142,7 +146,17 @@ export const PosScreen: React.FC = () => {
     } else {
       setTax(0, null, null);
     }
-  }, [taxConfig, setTax]);
+
+    if (taxConfig?.serviceChargeEnabled) {
+      setServicePercent(
+        Number(taxConfig.serviceChargeRate || 0),
+        taxConfig.serviceChargeName,
+        taxConfig.serviceChargeApplicableTo,
+      );
+    } else {
+      setServicePercent(0, null, null);
+    }
+  }, [taxConfig, setTax, setServicePercent]);
 
   // Reset cart when switching outlet so that items, tables, and settings do not contaminate another branch
   useEffect(() => {
@@ -406,6 +420,7 @@ export const PosScreen: React.FC = () => {
         customerName: customerName || undefined,
         discountId: discountId || undefined,
         discountAmount: discountAmount || undefined,
+        serviceCharge: getServiceCharge(),
         taxAmount: getTax(),
         items: payloadItems,
       });
@@ -468,6 +483,7 @@ export const PosScreen: React.FC = () => {
         customerName: customerName || undefined,
         discountId: discountId || undefined,
         discountAmount: discountAmount || undefined,
+        serviceCharge: getServiceCharge(),
         taxAmount: getTax(),
         items: payloadItems,
       });
@@ -845,6 +861,17 @@ export const PosScreen: React.FC = () => {
                 </span>
               )}
             </div>
+
+            {getServiceCharge() > 0 && (
+              <div className="flex justify-between">
+                <span>
+                  {serviceChargeName || 'Service Charge'} ({servicePercent}%)
+                </span>
+                <span className="font-semibold text-slate-800">
+                  Rp {getServiceCharge().toLocaleString('id-ID')}
+                </span>
+              </div>
+            )}
 
             {getTax() > 0 && (
               <div className="flex justify-between">
@@ -1235,6 +1262,7 @@ export const PosScreen: React.FC = () => {
         <PaymentModal
           order={activePaymentOrder}
           isOpen={!!activePaymentOrder}
+          taxName={taxName || taxConfig?.defaultGlobalTax?.name}
           onClose={() => setActivePaymentOrder(null)}
           onPaymentSuccess={(completed) => {
             setActivePaymentOrder(null);
@@ -1268,6 +1296,7 @@ export const PosScreen: React.FC = () => {
         <ReceiptModal
           order={receiptModalOrder}
           isOpen={!!receiptModalOrder}
+          taxName={taxName || taxConfig?.defaultGlobalTax?.name}
           onClose={() => setReceiptModalOrder(null)}
         />
       )}

@@ -9,12 +9,14 @@ interface ReceiptModalProps {
   order: Order;
   isOpen?: boolean;
   onClose: () => void;
+  taxName?: string | null;
 }
 
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   order,
   isOpen = true,
   onClose,
+  taxName,
 }) => {
   const { tenant, currentOutlet } = useAuthStore();
   const {
@@ -213,16 +215,22 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <span>-Rp {Number(order.discountAmount).toLocaleString('id-ID')}</span>
               </div>
             )}
-            {Number(order.taxAmount || 0) > 0 && (
+            {Number(order.packagingFee || 0) > 0 && (
               <div className="flex justify-between text-slate-600">
-                <span>Pajak (PB1/PPN)</span>
-                <span>Rp {Number(order.taxAmount).toLocaleString('id-ID')}</span>
+                <span>Biaya Kemasan</span>
+                <span>Rp {Number(order.packagingFee).toLocaleString('id-ID')}</span>
               </div>
             )}
             {Number(order.serviceCharge || 0) > 0 && (
               <div className="flex justify-between text-slate-600">
                 <span>Service Charge</span>
                 <span>Rp {Number(order.serviceCharge).toLocaleString('id-ID')}</span>
+              </div>
+            )}
+            {Number(order.taxAmount || 0) > 0 && (
+              <div className="flex justify-between text-slate-600">
+                <span>{order.taxName || taxName || 'Pajak'}</span>
+                <span>Rp {Number(order.taxAmount).toLocaleString('id-ID')}</span>
               </div>
             )}
           </div>

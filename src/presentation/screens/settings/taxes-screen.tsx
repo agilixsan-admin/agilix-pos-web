@@ -22,6 +22,7 @@ import {
   Check,
   Store,
   Layers,
+  Percent,
 } from 'lucide-react';
 import {
   Button,
@@ -73,6 +74,17 @@ export const TaxesScreen: React.FC = () => {
   const [editingTax, setEditingTax] = useState<TaxItem | null>(null);
   const [deletingTax, setDeletingTax] = useState<TaxItem | null>(null);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Service Charge State
+  const [serviceChargeRate, setServiceChargeRate] = useState<string>('5');
+  const [serviceChargeApplicableTo, setServiceChargeApplicableTo] = useState<'ALL' | 'DINE_IN'>('DINE_IN');
+
+  useEffect(() => {
+    if (globalConfig) {
+      setServiceChargeRate(String(globalConfig.serviceChargeRate ?? 5));
+      setServiceChargeApplicableTo(globalConfig.serviceChargeApplicableTo ?? 'DINE_IN');
+    }
+  }, [globalConfig]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -202,6 +214,9 @@ export const TaxesScreen: React.FC = () => {
       await updateGlobalTaxConfigMutation.mutateAsync({
         enableTaxCalculation: enabled,
         defaultGlobalTaxId: globalConfig?.defaultGlobalTaxId ?? null,
+        serviceChargeEnabled: globalConfig?.serviceChargeEnabled ?? false,
+        serviceChargeRate: Number(serviceChargeRate) || 0,
+        serviceChargeApplicableTo,
         outletId: selectedOutletId || undefined,
       });
       showToast(
@@ -223,6 +238,9 @@ export const TaxesScreen: React.FC = () => {
       await updateGlobalTaxConfigMutation.mutateAsync({
         enableTaxCalculation: globalConfig?.enableTaxCalculation ?? true,
         defaultGlobalTaxId: taxId ? taxId : null,
+        serviceChargeEnabled: globalConfig?.serviceChargeEnabled ?? false,
+        serviceChargeRate: Number(serviceChargeRate) || 0,
+        serviceChargeApplicableTo,
         outletId: selectedOutletId || undefined,
       });
       showToast(`Pajak default ${activeOutlet ? activeOutlet.name : 'global'} berhasil diperbarui`);
@@ -230,6 +248,52 @@ export const TaxesScreen: React.FC = () => {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       showToast(
         error.response?.data?.message || error.message || 'Gagal memperbarui pajak default',
+        'error'
+      );
+    }
+  };
+
+  const handleToggleServiceCharge = async (enabled: boolean) => {
+    try {
+      await updateGlobalTaxConfigMutation.mutateAsync({
+        enableTaxCalculation: globalConfig?.enableTaxCalculation ?? false,
+        defaultGlobalTaxId: globalConfig?.defaultGlobalTaxId ?? null,
+        serviceChargeEnabled: enabled,
+        serviceChargeRate: Number(serviceChargeRate) || 0,
+        serviceChargeApplicableTo,
+        outletId: selectedOutletId || undefined,
+      });
+      showToast(
+        enabled
+          ? `Biaya layanan (Service Charge) diaktifkan (${serviceChargeRate}%)`
+          : 'Biaya layanan (Service Charge) dinonaktifkan'
+      );
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      showToast(
+        error.response?.data?.message || error.message || 'Gagal memperbarui biaya layanan',
+        'error'
+      );
+    }
+  };
+
+  const handleSaveServiceChargeSettings = async (rateVal?: string, applicableVal?: 'ALL' | 'DINE_IN') => {
+    const rate = Number(rateVal ?? serviceChargeRate) || 0;
+    const applicable = applicableVal ?? serviceChargeApplicableTo;
+    try {
+      await updateGlobalTaxConfigMutation.mutateAsync({
+        enableTaxCalculation: globalConfig?.enableTaxCalculation ?? false,
+        defaultGlobalTaxId: globalConfig?.defaultGlobalTaxId ?? null,
+        serviceChargeEnabled: globalConfig?.serviceChargeEnabled ?? false,
+        serviceChargeRate: rate,
+        serviceChargeApplicableTo: applicable,
+        outletId: selectedOutletId || undefined,
+      });
+      showToast('Pengaturan biaya layanan berhasil disimpan');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      showToast(
+        error.response?.data?.message || error.message || 'Gagal menyimpan pengaturan biaya layanan',
         'error'
       );
     }
@@ -330,7 +394,7 @@ export const TaxesScreen: React.FC = () => {
       )}
 
       {/* Card 1: Configuration per Selected Outlet or Global */}
-      <Card className="border border-slate-200/90 shadow-sm overflow-hidden">
+      <Card className="border border-slate-200/90 shadow-sm overflow-hidden" padding="none">
         <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-teal-50 text-[#0D5C53] flex items-center justify-center border border-teal-100/70">
@@ -339,7 +403,7 @@ export const TaxesScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-sm font-bold text-slate-900">
-                  Konfigurasi Pajak: {activeOutlet ? activeOutlet.name : 'Kebijakan Global PT (Semua Cabang)'}
+                  Konfigurasi Pajak & Biaya Layanan: {activeOutlet ? activeOutlet.name : 'Kebijakan Global PT (Semua Cabang)'}
                 </h2>
                 <span
                   className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
@@ -352,23 +416,26 @@ export const TaxesScreen: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                {activeOutlet
-                  ? `Pengaturan pemungutan pajak khusus yang diterapkan pada kasir POS cabang ${activeOutlet.name}.`
-                  : 'Pengaturan pemungutan pajak default yang menjadi acuan standar bagi seluruh cabang.'}
+                Pemisahan resmi antara Pajak Pemerintah (PBJT / PPN) dan Biaya Layanan (Service Charge) untuk outlet Anda.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Box 1: Enable Tax Calculation */}
-            <div className="p-4.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/80 transition-colors flex items-center justify-between gap-4">
-              <div>
-                <h3 className="text-xs font-bold text-slate-900">Aktifkan Perhitungan Pajak</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Hitung dan kenakan pajak secara otomatis pada transaksi POS di {activeOutlet ? activeOutlet.name : 'seluruh outlet'}.
-                </p>
+        <div className="p-5 space-y-5">
+          {/* SEKSI 1: PAJAK PEMERINTAH (PBJT / PPN) */}
+          <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-4.5 space-y-3">
+            <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200/60 shrink-0">
+                  <Receipt className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900">1. Pajak Restoran / Pemerintah (PBJT / PPN)</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Kewajiban pajak daerah (PBJT 10%) atau PPN (11%). Resto mikro / non-PKP dapat mematikan toggle ini.
+                  </p>
+                </div>
               </div>
 
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -383,34 +450,101 @@ export const TaxesScreen: React.FC = () => {
               </label>
             </div>
 
-            {/* Box 2: Default Tax */}
-            <div className="p-4.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/80 transition-colors flex flex-col justify-between gap-3">
-              <div>
-                <h3 className="text-xs font-bold text-slate-900">Pajak Standar (Default Tax)</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Tarif pajak yang otomatis dipilih saat membuat order kasir.
-                </p>
+            {globalConfig?.enableTaxCalculation && (
+              <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80">
+                <div>
+                  <span className="text-xs font-semibold text-slate-800">Pajak Standar (Default Tax)</span>
+                  <p className="text-[11px] text-slate-500">Tarif master pajak yang otomatis dikenakan pada kasir.</p>
+                </div>
+                <div className="w-full sm:w-80">
+                  <CustomSelect
+                    ariaLabel="Pilih Pajak Standar"
+                    value={globalConfig?.defaultGlobalTaxId || ''}
+                    disabled={isUpdatingConfig}
+                    onChange={(val) => handleDefaultTaxChange(val)}
+                    options={[
+                      { value: '', label: '-- None (Tidak Ada Pajak Default) --' },
+                      ...taxes
+                        .filter((t) => t.status === 'ACTIVE' || t.isActive)
+                        .map((tax) => ({
+                          value: tax.id,
+                          label: `${tax.name} (${tax.rate}%) - ${tax.type === 'INCLUSIVE' ? 'Inclusive' : 'Exclusive'} ${tax.isGlobal ? '[Global]' : ''}`,
+                        })),
+                    ]}
+                    buttonClassName="w-full bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-lg font-medium"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* SEKSI 2: SERVICE CHARGE (BIAYA LAYANAN RESTO) */}
+          <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-4.5 space-y-3">
+            <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200/60 shrink-0">
+                  <Percent className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900">2. Biaya Layanan (Service Charge)</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Pendapatan internal resto untuk operasional / tips pelayan. Dihitung sebelum pengenaan pajak (UU HKPD).
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <CustomSelect
-                  ariaLabel="Pilih Pajak Standar"
-                  value={globalConfig?.defaultGlobalTaxId || ''}
-                  disabled={!(globalConfig?.enableTaxCalculation) || isUpdatingConfig}
-                  onChange={(val) => handleDefaultTaxChange(val)}
-                  options={[
-                    { value: '', label: '-- None (Tidak Ada Pajak Default) --' },
-                    ...taxes
-                      .filter((t) => t.status === 'ACTIVE' || t.isActive)
-                      .map((tax) => ({
-                        value: tax.id,
-                        label: `${tax.name} (${tax.rate}%) - ${tax.type === 'INCLUSIVE' ? 'Inclusive' : 'Exclusive'} ${tax.isGlobal ? '[Global]' : ''}`,
-                      })),
-                  ]}
-                  buttonClassName="w-full bg-white border-slate-200 text-xs py-2 px-3 rounded-lg font-medium disabled:bg-slate-100 disabled:text-slate-400"
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={globalConfig?.serviceChargeEnabled ?? false}
+                  disabled={isUpdatingConfig}
+                  onChange={(e) => handleToggleServiceCharge(e.target.checked)}
                 />
-              </div>
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0D5C53]"></div>
+              </label>
             </div>
+
+            {globalConfig?.serviceChargeEnabled && (
+              <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80">
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">Persentase Service Charge (%)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      value={serviceChargeRate}
+                      onChange={(e) => setServiceChargeRate(e.target.value)}
+                      onBlur={() => handleSaveServiceChargeSettings(serviceChargeRate, serviceChargeApplicableTo)}
+                      placeholder="5"
+                      className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                    />
+                    <span className="text-xs font-bold text-slate-500">%</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">Berlaku Untuk Pesanan</label>
+                  <CustomSelect
+                    ariaLabel="Pilih Tipe Pesanan Service Charge"
+                    value={serviceChargeApplicableTo}
+                    disabled={isUpdatingConfig}
+                    onChange={(val) => {
+                      const typedVal = val as 'ALL' | 'DINE_IN';
+                      setServiceChargeApplicableTo(typedVal);
+                      handleSaveServiceChargeSettings(serviceChargeRate, typedVal);
+                    }}
+                    options={[
+                      { value: 'DINE_IN', label: 'Hanya Dine-In (Makan di Tempat)' },
+                      { value: 'ALL', label: 'Semua Pesanan (Dine-In & Take-Away)' },
+                    ]}
+                    buttonClassName="w-full bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-lg font-medium"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </Card>
