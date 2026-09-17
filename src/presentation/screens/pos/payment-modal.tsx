@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Order, PaymentMethod, PaymentInfo } from '@model/Order';
 import { posService } from '@domain/services/pos-service';
 import {
@@ -12,8 +12,10 @@ import {
   Receipt,
   Utensils,
   ShoppingBag,
+  Tag,
 } from 'lucide-react';
 import { Button, Modal, Badge } from '@presentation/components/ui';
+import { DiscountModal } from './discount-modal';
 
 interface PaymentModalProps {
   order: Order;
@@ -30,15 +32,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onPaymentSuccess,
   taxName,
 }) => {
+  const [currentOrder, setCurrentOrder] = useState<Order>(order);
   const [method, setMethod] = useState<PaymentMethod>('CASH');
-  const [cashGiven, setCashGiven] = useState<number>(order.totalAmount);
+  const [cashGiven, setCashGiven] = useState<number>(Number(order.totalAmount || 0));
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [checkingQris, setCheckingQris] = useState<boolean>(false);
+  const [isDiscountModalOpen, setIsDiscountModalOpen] = useState<boolean>(false);
+  const [isApplyingDiscount, setIsApplyingDiscount] = useState<boolean>(false);
+
+  useEffect(() => {
+    setCurrentOrder(order);
+    setCashGiven(Number(order.totalAmount || 0));
+  }, [order]);
 
   if (!isOpen) return null;
 
-  const totalAmount = Number(order.totalAmount || 0);
+  const totalAmount = Number(currentOrder.totalAmount || 0);
   const changeAmount = Math.max(0, cashGiven - totalAmount);
   const isCashSufficient = cashGiven >= totalAmount;
 
@@ -68,6 +78,62 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }
   };
 
+  const handleApplyDiscount = async ({
+    id,
+    name,
+    amount,
+  }: {
+    id: string | null;
+    name: string | null;
+    amount: number;
+  }) => {
+    setIsApplyingDiscount(true);
+    setError(null);
+    try {
+      const updated = await posService.applyOrderDiscount(currentOrder.id, {
+        discountId: id,
+        discountAmount: amount,
+      });
+      const updatedWithDiscountName: Order = {
+        ...updated,
+        discountName: name || updated.discountName,
+      };
+      setCurrentOrder(updatedWithDiscountName);
+      setCashGiven(Number(updatedWithDiscountName.totalAmount || 0));
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Gagal menerapkan diskon.';
+      setError(errorMsg);
+    } finally {
+      setIsApplyingDiscount(false);
+    }
+  };
+
+  const handleRemoveDiscount = async () => {
+    setIsApplyingDiscount(true);
+    setError(null);
+    try {
+      const updated = await posService.applyOrderDiscount(currentOrder.id, {
+        discountId: null,
+        discountAmount: 0,
+      });
+      const updatedWithoutDiscount: Order = {
+        ...updated,
+        discountName: null,
+      };
+      setCurrentOrder(updatedWithoutDiscount);
+      setCashGiven(Number(updatedWithoutDiscount.totalAmount || 0));
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Gagal menghapus diskon.';
+      setError(errorMsg);
+    } finally {
+      setIsApplyingDiscount(false);
+    }
+  };
+
   const handleProcessPayment = async () => {
     if (method === 'CASH' && !isCashSufficient) {
       setError('Uang yang diterima kurang dari total tagihan.');
@@ -80,7 +146,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     try {
       const paid = method === 'CASH' ? cashGiven : totalAmount;
       const res = await posService.processPayment({
-        orderId: order.id,
+        orderId: currentOrder.id,
         paymentMethod: method,
         amount: paid,
         cashGiven: method === 'CASH' ? cashGiven : undefined,
@@ -101,7 +167,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           : 0;
 
       const completedOrder: Order = {
-        ...(res.order || order),
+        ...(res.order || currentOrder),
         status: 'COMPLETED',
         paymentMethod: method,
         paymentStatus: 'SETTLED',
@@ -128,14 +194,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     try {
       // Check status via payment service
       const res = await posService.processPayment({
-        orderId: order.id,
+        orderId: currentOrder.id,
         paymentMethod: 'QRIS',
         amount: totalAmount,
       });
 
       const paymentData = (res as unknown as { payment?: { amount?: number; changeAmount?: number; paymentMethod?: PaymentMethod } })?.payment;
       const completedOrder: Order = {
-        ...(res.order || order),
+        ...(res.order || currentOrder),
         status: 'COMPLETED',
         paymentMethod: 'QRIS',
         paymentStatus: 'SETTLED',
@@ -157,13 +223,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   return (
-    <Modal
+    <>
+      <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Checkout & Pembayaran"
-      subtitle={`No. Order: ${order.orderNumber || order.id.slice(0, 8)} • ${
-        order.orderType === 'DINE_IN'
-          ? `Meja ${order.tableName || order.tableNumber || order.table?.name || '-'}`
+      subtitle={`No. Order: ${currentOrder.orderNumber || currentOrder.id.slice(0, 8)} • ${
+        currentOrder.orderType === 'DINE_IN'
+          ? `Meja ${currentOrder.tableName || currentOrder.tableNumber || currentOrder.table?.name || '-'}`
           : 'Take Away'
       }`}
       maxWidth="2xl"
@@ -381,20 +448,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <Receipt className="w-4 h-4 text-slate-500" />
                   Ringkasan Tagihan
                 </span>
-                <Badge variant={order.orderType === 'DINE_IN' ? 'success' : 'info'} size="sm">
-                  {order.orderType === 'DINE_IN'
-                    ? `Dine In • Meja ${order.tableName || order.tableNumber || order.table?.name || '-'}`
+                <Badge variant={currentOrder.orderType === 'DINE_IN' ? 'success' : 'info'} size="sm">
+                  {currentOrder.orderType === 'DINE_IN'
+                    ? `Dine In • Meja ${currentOrder.tableName || currentOrder.tableNumber || currentOrder.table?.name || '-'}`
                     : 'Take Away'}
                 </Badge>
               </div>
 
               {/* Items List Preview */}
               <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 divide-y divide-slate-100 text-xs">
-                {order.items?.map((item, idx) => (
+                {currentOrder.items?.map((item, idx) => (
                   <div key={idx} className="pt-1.5 first:pt-0 flex justify-between text-slate-700">
                     <div>
                       <span className="font-semibold">{item.quantity}x {item.productName}</span>
-                      {item.variantName && item.variantName.trim().toLowerCase() !== 'default' && (
+                      {item.variantName && !item.variantName.trim().toLowerCase().includes('default') && (
                         <span className="text-[10px] text-slate-400 block font-normal">
                           ({item.variantName})
                         </span>
@@ -417,36 +484,66 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span className="font-semibold text-slate-800">
-                    Rp {Number(order.subtotal || totalAmount).toLocaleString('id-ID')}
+                    Rp {Number(currentOrder.subtotal || totalAmount).toLocaleString('id-ID')}
                   </span>
                 </div>
-                {Number(order.discountAmount || 0) > 0 && (
-                  <div className="flex justify-between text-emerald-600">
-                    <span>Diskon</span>
-                    <span>-Rp {Number(order.discountAmount).toLocaleString('id-ID')}</span>
+
+                {/* Step Penambahan Diskon di Pop-Up Pembayaran */}
+                {Number(currentOrder.discountAmount || 0) > 0 ? (
+                  <div className="flex justify-between items-center bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-1.5 rounded-lg">
+                    <div className="flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="font-medium text-xs">
+                        {currentOrder.discountName || 'Diskon'}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={isApplyingDiscount || loading}
+                        onClick={handleRemoveDiscount}
+                        className="text-[10px] text-rose-600 hover:text-rose-800 font-semibold underline ml-1 cursor-pointer"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                    <span className="font-semibold font-mono text-emerald-700">
+                      -Rp {Number(currentOrder.discountAmount).toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center py-0.5">
+                    <button
+                      type="button"
+                      disabled={isApplyingDiscount || loading}
+                      onClick={() => setIsDiscountModalOpen(true)}
+                      className="text-xs text-[#0D5C53] hover:underline flex items-center gap-1.5 font-medium cursor-pointer"
+                    >
+                      <Tag className="w-3.5 h-3.5" />
+                      <span>+ Tambah Diskon / Promo</span>
+                    </button>
                   </div>
                 )}
-                {Number(order.packagingFee || 0) > 0 && (
+
+                {Number(currentOrder.packagingFee || 0) > 0 && (
                   <div className="flex justify-between">
                     <span>Biaya Kemasan</span>
                     <span className="font-semibold text-slate-800">
-                      Rp {Number(order.packagingFee).toLocaleString('id-ID')}
+                      Rp {Number(currentOrder.packagingFee).toLocaleString('id-ID')}
                     </span>
                   </div>
                 )}
-                {Number(order.serviceCharge || 0) > 0 && (
+                {Number(currentOrder.serviceCharge || 0) > 0 && (
                   <div className="flex justify-between">
                     <span>Service Charge</span>
                     <span className="font-semibold text-slate-800">
-                      Rp {Number(order.serviceCharge).toLocaleString('id-ID')}
+                      Rp {Number(currentOrder.serviceCharge).toLocaleString('id-ID')}
                     </span>
                   </div>
                 )}
-                {Number(order.taxAmount || 0) > 0 && (
+                {Number(currentOrder.taxAmount || 0) > 0 && (
                   <div className="flex justify-between">
-                    <span>{order.taxName || taxName || 'Pajak'}</span>
+                    <span>{currentOrder.taxName || taxName || 'Pajak'}</span>
                     <span className="font-semibold text-slate-800">
-                      Rp {Number(order.taxAmount).toLocaleString('id-ID')}
+                      Rp {Number(currentOrder.taxAmount).toLocaleString('id-ID')}
                     </span>
                   </div>
                 )}
@@ -466,5 +563,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         </div>
       </div>
     </Modal>
+
+    {/* DISCOUNT SELECTION MODAL FROM PAYMENT POP UP */}
+    <DiscountModal
+      isOpen={isDiscountModalOpen}
+      onClose={() => setIsDiscountModalOpen(false)}
+      subtotal={Number(currentOrder.subtotal || totalAmount)}
+      selectedDiscountId={currentOrder.discountId || null}
+      onApplyDiscount={handleApplyDiscount}
+    />
+  </>
   );
 };

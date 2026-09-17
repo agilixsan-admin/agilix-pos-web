@@ -39,6 +39,10 @@ const normalizeOrder = (order: Order): Order => {
       order.paymentMethod ||
       latestPayment?.paymentMethod ||
       undefined,
+    discountName:
+      order.discountName ||
+      (order as unknown as { discount?: { name?: string } }).discount?.name ||
+      undefined,
   };
 };
 
@@ -116,6 +120,14 @@ export const posService = {
   voidOrderItem: async (orderId: string, itemId: string, reason: string): Promise<OrderItem> => {
     const res = await httpClient.post(`/orders/${orderId}/void`, { orderItemId: itemId, reason });
     return res.data?.data || res.data;
+  },
+
+  applyOrderDiscount: async (
+    orderId: string,
+    payload: { discountId?: string | null; discountAmount?: number }
+  ): Promise<Order> => {
+    const res = await httpClient.put(`/orders/${orderId}/discount`, payload);
+    return normalizeOrder(res.data?.data || res.data);
   },
 
   printOrderBill: async (

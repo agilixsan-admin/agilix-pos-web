@@ -21,7 +21,6 @@ import { TableFloorView } from './table-floor-view';
 import { VariantModal } from './variant-modal';
 import { ItemNoteModal } from './item-note-modal';
 import { VoidItemModal } from './void-item-modal';
-import { DiscountModal } from './discount-modal';
 import { PaymentModal } from './payment-modal';
 import { PaymentSuccessModal } from './payment-success-modal';
 import { ReceiptModal } from './receipt-modal';
@@ -37,7 +36,6 @@ import {
   Edit2,
   Coffee,
   ArrowLeft,
-  Tag,
   Search,
   Receipt,
   LayoutGrid,
@@ -183,7 +181,6 @@ export const PosScreen: React.FC = () => {
   const [variantModalProduct, setVariantModalProduct] = useState<Product | null>(null);
   const [notesModalItem, setNotesModalItem] = useState<{ id: string; name: string; notes: string } | null>(null);
   const [voidModalItem, setVoidModalItem] = useState<{ orderId: string; itemId: string; name: string } | null>(null);
-  const [isDiscountModalOpen, setIsDiscountModalOpen] = useState<boolean>(false);
   const [activePaymentOrder, setActivePaymentOrder] = useState<Order | null>(null);
   const [activeAppendOrder, setActiveAppendOrder] = useState<Order | null>(null);
   const [successModalOrder, setSuccessModalOrder] = useState<Order | null>(null);
@@ -259,7 +256,6 @@ export const PosScreen: React.FC = () => {
       setVariantModalProduct(null);
       setNotesModalItem(null);
       setVoidModalItem(null);
-      setIsDiscountModalOpen(false);
       setIsOrderTypeModalOpen(false);
       setActivePaymentOrder(null);
       setIsOpenOrdersOpen(false);
@@ -688,7 +684,7 @@ export const PosScreen: React.FC = () => {
                             </span>
                             <span>{item.productName}</span>
                           </div>
-                          {item.variantName && item.variantName.trim().toLowerCase() !== 'default' && (
+                          {item.variantName && !item.variantName.trim().toLowerCase().includes('default') && (
                             <span className="text-[10px] text-slate-500 block pl-6">
                               Varian: {item.variantName}
                             </span>
@@ -764,7 +760,7 @@ export const PosScreen: React.FC = () => {
                     <h5 className="font-semibold text-slate-800 text-xs leading-tight">
                       {item.name}
                     </h5>
-                    {item.variantName && item.variantName.trim().toLowerCase() !== 'default' && (
+                    {item.variantName && !item.variantName.trim().toLowerCase().includes('default') && (
                       <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
                         Varian: {item.variantName}
                       </span>
@@ -847,20 +843,14 @@ export const PosScreen: React.FC = () => {
               </span>
             </div>
 
-            <div className="flex justify-between items-center text-xs">
-              <button
-                onClick={() => setIsDiscountModalOpen(true)}
-                className="text-teal-700 hover:underline flex items-center gap-1 cursor-pointer font-medium"
-              >
-                <Tag className="w-3.5 h-3.5" />
-                <span>{discountName || '+ Tambah Diskon / Promo'}</span>
-              </button>
-              {getDiscount() > 0 && (
-                <span className="font-bold text-emerald-600">
+            {getDiscount() > 0 && (
+              <div className="flex justify-between items-center text-xs text-emerald-600">
+                <span>Diskon</span>
+                <span className="font-bold">
                   -Rp {getDiscount().toLocaleString('id-ID')}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
 
             {getServiceCharge() > 0 && (
               <div className="flex justify-between">
@@ -1232,16 +1222,6 @@ export const PosScreen: React.FC = () => {
         }}
       />
 
-      {/* MODAL 4: DISCOUNT & PROMO SELECTOR */}
-      <DiscountModal
-        isOpen={isDiscountModalOpen}
-        onClose={() => setIsDiscountModalOpen(false)}
-        subtotal={getSubtotal()}
-        selectedDiscountId={discountId}
-        onApplyDiscount={({ id, name, amount }) => {
-          setDiscount(id, name, amount);
-        }}
-      />
 
       {/* MODAL 5: VOID ITEM CONFIRMATION */}
       {voidModalItem && (

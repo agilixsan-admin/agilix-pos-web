@@ -90,7 +90,7 @@ export const useCartStore = create<CartStoreState>()(
           const rawVariantName = selectedVariant?.name;
           const isDefaultVariant =
             !rawVariantName ||
-            rawVariantName.trim().toLowerCase() === 'default' ||
+            rawVariantName.trim().toLowerCase().includes('default') ||
             rawVariantName.trim().toLowerCase() === product.name.trim().toLowerCase();
 
           const newItem: CartItem = {

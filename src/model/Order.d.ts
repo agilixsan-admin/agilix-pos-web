@@ -95,6 +95,7 @@ export interface Order {
   serviceCharge: number;
   discountAmount: number;
   discountId?: string | null;
+  discountName?: string | null;
   packagingFee?: number;
   totalAmount: number;
   paidAmount?: number;

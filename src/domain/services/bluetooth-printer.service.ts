@@ -265,7 +265,7 @@ class BluetoothPrinterService {
       const name = item.productName || 'Item';
       const isDefaultVariant =
         !item.variantName ||
-        item.variantName.trim().toLowerCase() === 'default' ||
+        item.variantName.trim().toLowerCase().includes('default') ||
         item.variantName.trim().toLowerCase() === name.trim().toLowerCase();
       const variantName = !isDefaultVariant ? ` (${item.variantName})` : '';
       const fullName = `${name}${variantName}`;

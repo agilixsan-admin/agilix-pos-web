@@ -175,7 +175,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             {order.items?.map((item, idx) => {
               const isDefaultVariant =
                 !item.variantName ||
-                item.variantName.trim().toLowerCase() === 'default' ||
+                item.variantName.trim().toLowerCase().includes('default') ||
                 item.variantName.trim().toLowerCase() === item.productName?.trim().toLowerCase();
 
               return (
