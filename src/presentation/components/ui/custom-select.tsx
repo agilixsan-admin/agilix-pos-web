@@ -250,6 +250,7 @@ export interface CustomSelectProps {
   compact?: boolean;
   buttonClassName?: string;
   ariaLabel?: string;
+  align?: 'left' | 'right' | 'auto';
 }
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -263,9 +264,26 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   compact = false,
   buttonClassName = '',
   ariaLabel,
+  align = 'auto',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuAlign, setMenuAlign] = useState<'left' | 'right'>('left');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (align && align !== 'auto') {
+      setMenuAlign(align);
+      return;
+    }
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.left + 200 > window.innerWidth) {
+        setMenuAlign('right');
+      } else {
+        setMenuAlign('left');
+      }
+    }
+  }, [isOpen, align]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -284,7 +302,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   const selectedOption = options.find((o) => o.value === value);
 
   return (
-    <div ref={containerRef} className={`relative shrink-0 ${className}`}>
+    <div ref={containerRef} className={`relative shrink-0 ${isOpen ? 'z-50' : 'z-10'} ${className}`}>
       <button
         type="button"
         disabled={disabled}
@@ -321,7 +339,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute z-50 left-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl p-1 min-w-[160px] max-h-60 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100">
+        <div className={`absolute z-50 ${menuAlign === 'right' ? 'right-0' : 'left-0'} top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl p-1 min-w-[160px] max-h-60 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100`}>
           {options.map((opt) => {
             const isSelected = opt.value === value;
             return (

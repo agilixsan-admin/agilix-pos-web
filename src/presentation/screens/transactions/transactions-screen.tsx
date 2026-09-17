@@ -274,7 +274,7 @@ export const TransactionsScreen: React.FC = () => {
       </div>
 
       {/* Filter & Search Bar Card */}
-      <Card padding="md" className="space-y-3">
+      <Card padding="md" className="space-y-3 relative z-30 overflow-visible">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Search Input */}
           <div className="flex-1 max-w-md">
@@ -390,7 +390,7 @@ export const TransactionsScreen: React.FC = () => {
       </Card>
 
       {/* Transactions Table Card */}
-      <Card padding="none">
+      <Card padding="none" className="relative z-10">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">

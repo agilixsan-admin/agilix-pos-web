@@ -172,7 +172,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   const displayText = value ? formatDateDisplay(value) : '';
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative ${isOpen ? 'z-50' : 'z-10'} ${className}`}>
       {/* Trigger Button */}
       <button
         type="button"

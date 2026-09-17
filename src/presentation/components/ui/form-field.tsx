@@ -117,7 +117,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
   };
 
   return (
-    <div ref={containerRef} className={`space-y-1.5 w-full relative ${className}`}>
+    <div ref={containerRef} className={`space-y-1.5 w-full relative ${isOpen ? 'z-50' : 'z-10'} ${className}`}>
       {label && (
         <label className="block text-xs font-semibold text-slate-700">
           {label} {required && <span className="text-rose-500">*</span>}

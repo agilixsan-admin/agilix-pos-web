@@ -177,7 +177,7 @@ export const UsersScreen: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <Card padding="sm" className="bg-white border-slate-200">
+      <Card padding="sm" className="bg-white border-slate-200 relative z-30 overflow-visible">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Search */}
@@ -268,7 +268,7 @@ export const UsersScreen: React.FC = () => {
       </Card>
 
       {/* Users Table */}
-      <Card padding="none" className="overflow-hidden border-slate-200">
+      <Card padding="none" className="overflow-hidden border-slate-200 relative z-10">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">

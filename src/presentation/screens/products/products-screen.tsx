@@ -145,7 +145,7 @@ export const ProductsScreen: React.FC = () => {
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 border border-slate-200 rounded-2xl shadow-xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 border border-slate-200 rounded-2xl shadow-xs relative z-30">
         <div className="flex-1 max-w-xs">
           <SearchInput
             value={searchQuery}
@@ -172,7 +172,7 @@ export const ProductsScreen: React.FC = () => {
       </div>
 
       {/* Products Table */}
-      <Card padding="none">
+      <Card padding="none" className="relative z-10">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
