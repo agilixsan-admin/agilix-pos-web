@@ -3,9 +3,7 @@ import type { Product, Category } from '@model/Product';
 
 export const productService = {
   getProducts: async (params?: { outletId?: string; categoryId?: string; search?: string }): Promise<Product[]> => {
-    // Strip outletId because backend /api/v1/products is tenant-scoped with forbidNonWhitelisted ValidationPipe
-    const { outletId, ...queryParams } = params || {};
-    const res = await httpClient.get('/products', { params: queryParams });
+    const res = await httpClient.get('/products', { params });
     const raw = res.data?.data || res.data || [];
     return (Array.isArray(raw) ? raw : []).map((p: Product) => {
       let imageUrl = p.imageUrl || p.image;
@@ -20,8 +18,10 @@ export const productService = {
     });
   },
 
-  getProductById: async (id: string): Promise<Product> => {
-    const res = await httpClient.get(`/products/${id}`);
+  getProductById: async (id: string, outletId?: string): Promise<Product> => {
+    const res = await httpClient.get(`/products/${id}`, {
+      params: outletId ? { outletId } : undefined,
+    });
     const p = res.data?.data || res.data;
     if (!p) return p;
     let imageUrl = p.imageUrl || p.image;

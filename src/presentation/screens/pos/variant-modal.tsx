@@ -39,39 +39,79 @@ export const VariantModal: React.FC<VariantModalProps> = ({
         </p>
 
         <div className="grid grid-cols-1 gap-2.5 max-h-[50vh] overflow-y-auto pr-1">
-          {variants.map((v) => (
-            <button
-              key={v.id || v.name}
-              onClick={() => {
-                onSelectVariant(product, v);
-                onClose();
-              }}
-              className="w-full flex items-center justify-between p-3.5 rounded-xl border border-slate-200 hover:border-[#0D5C53] hover:bg-teal-50/40 transition-all cursor-pointer text-left group bg-white"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-[#0D5C53]/10 flex items-center justify-center text-slate-600 group-hover:text-[#0D5C53] transition-colors">
-                  <Check className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+          {variants.map((v) => {
+            const isVariantOutOfStock = v.isOutOfStock || v.isAvailable === false;
+
+            return (
+              <button
+                key={v.id || v.name}
+                type="button"
+                disabled={isVariantOutOfStock}
+                onClick={() => {
+                  if (isVariantOutOfStock) return;
+                  onSelectVariant(product, v);
+                  onClose();
+                }}
+                className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${
+                  isVariantOutOfStock
+                    ? 'border-slate-200 bg-slate-100/60 opacity-60 grayscale cursor-not-allowed select-none'
+                    : 'border-slate-200 hover:border-[#0D5C53] hover:bg-teal-50/40 cursor-pointer group bg-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      isVariantOutOfStock
+                        ? 'bg-slate-200 text-slate-400'
+                        : 'bg-slate-100 group-hover:bg-[#0D5C53]/10 text-slate-600 group-hover:text-[#0D5C53]'
+                    }`}
+                  >
+                    <Check
+                      className={`w-4 h-4 ${
+                        isVariantOutOfStock
+                          ? 'opacity-0'
+                          : 'opacity-0 group-hover:opacity-100 transition-opacity'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h5
+                        className={`font-semibold text-sm ${
+                          isVariantOutOfStock ? 'text-slate-500 line-through' : 'text-slate-800'
+                        }`}
+                      >
+                        {v.name}
+                      </h5>
+                      {isVariantOutOfStock && (
+                        <Badge variant="danger" size="sm">
+                          Habis
+                        </Badge>
+                      )}
+                    </div>
+                    {v.sku && (
+                      <span className="text-[11px] text-slate-400 font-mono">SKU: {v.sku}</span>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h5 className="font-semibold text-slate-800 text-sm">{v.name}</h5>
-                  {v.sku && (
-                    <span className="text-[11px] text-slate-400 font-mono">SKU: {v.sku}</span>
+
+                <div className="text-right">
+                  <span
+                    className={`font-bold text-sm block ${
+                      isVariantOutOfStock ? 'text-slate-400' : 'text-[#0D5C53]'
+                    }`}
+                  >
+                    Rp {Number(v.price).toLocaleString('id-ID')}
+                  </span>
+                  {v.stock !== undefined && !isVariantOutOfStock && (
+                    <span className="text-[10px] text-slate-400">
+                      Stok: {v.stock}
+                    </span>
                   )}
                 </div>
-              </div>
-
-              <div className="text-right">
-                <span className="font-bold text-[#0D5C53] text-sm block">
-                  Rp {Number(v.price).toLocaleString('id-ID')}
-                </span>
-                {v.stock !== undefined && (
-                  <span className="text-[10px] text-slate-400">
-                    Stok: {v.stock}
-                  </span>
-                )}
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </div>
     </Modal>

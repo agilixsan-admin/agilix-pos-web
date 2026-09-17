@@ -58,8 +58,16 @@ export const useCartStore = create<CartStoreState>()(
       discountAmount: 0,
 
       addItem: (product, variant, quantity = 1, notes = '') => {
+        // Prevent adding out-of-stock items (raw material exhausted)
+        const selectedVariant = variant || (product.variants && product.variants.length > 0 ? product.variants[0] : undefined);
+        if (product.isOutOfStock || product.isAvailable === false) {
+          return;
+        }
+        if (selectedVariant && (selectedVariant.isOutOfStock || selectedVariant.isAvailable === false)) {
+          return;
+        }
+
         set((state) => {
-          const selectedVariant = variant || (product.variants && product.variants.length > 0 ? product.variants[0] : undefined);
           const variantId = selectedVariant?.id;
           const itemId = variantId ? `${product.id}-${variantId}` : `${product.id}-default`;
           const existingIndex = state.items.findIndex((item) => item.id === itemId);

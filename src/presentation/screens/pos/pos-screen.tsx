@@ -109,7 +109,7 @@ export const PosScreen: React.FC = () => {
     data: products = [],
     isLoading: productsLoading,
     refetch: refetchProducts,
-  } = useProducts();
+  } = useProducts({ outletId: effectiveOutlet?.id });
 
   const {
     data: categories = [],
@@ -189,14 +189,29 @@ export const PosScreen: React.FC = () => {
 
   // Handle Product Click
   const handleProductClick = (product: Product) => {
+    const isOutOfStock = product.isOutOfStock || product.isAvailable === false;
+    if (isOutOfStock) {
+      toast.error(`Menu "${product.name}" sedang habis (stok bahan baku kosong).`);
+      return;
+    }
+
     if (product.variants && product.variants.length > 1) {
       setVariantModalProduct(product);
     } else {
+      const primaryVariant = product.variants?.[0];
+      if (primaryVariant && (primaryVariant.isOutOfStock || primaryVariant.isAvailable === false)) {
+        toast.error(`Menu "${product.name}" sedang habis (stok bahan baku kosong).`);
+        return;
+      }
       addItem(product);
     }
   };
 
   const handleSelectVariant = (product: Product, variant: Variant) => {
+    if (variant.isOutOfStock || variant.isAvailable === false) {
+      toast.error(`Varian "${variant.name}" sedang habis (stok bahan baku kosong).`);
+      return;
+    }
     addItem(product, variant);
     setVariantModalProduct(null);
   };
@@ -1006,12 +1021,17 @@ export const PosScreen: React.FC = () => {
                       ? rawImageUrl.replace(/^htts:\/\//, 'https://')
                       : rawImageUrl;
                     const hasVariants = product.variants && product.variants.length > 1;
+                    const isOutOfStock = product.isOutOfStock || product.isAvailable === false;
 
                     return (
                       <div
                         key={product.id}
                         onClick={() => handleProductClick(product)}
-                        className="bg-white border border-slate-200 hover:border-[#0D5C53]/60 hover:shadow-md rounded-2xl p-3.5 flex flex-col justify-between transition-all cursor-pointer group active:scale-[0.98]"
+                        className={`rounded-2xl p-3.5 flex flex-col justify-between transition-all select-none ${
+                          isOutOfStock
+                            ? 'bg-slate-100/70 border border-slate-200 opacity-60 grayscale cursor-not-allowed shadow-none'
+                            : 'bg-white border border-slate-200 hover:border-[#0D5C53]/60 hover:shadow-md cursor-pointer group active:scale-[0.98]'
+                        }`}
                       >
                         <div>
                           {/* Product Thumbnail with Image Fallback */}
@@ -1020,7 +1040,9 @@ export const PosScreen: React.FC = () => {
                               <img
                                 src={imageUrl}
                                 alt={product.name}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                className={`w-full h-full object-cover transition-transform duration-300 ${
+                                  isOutOfStock ? 'grayscale' : 'group-hover:scale-105'
+                                }`}
                                 onError={(e) => {
                                   // Hide broken image and fallback to icon
                                   (e.target as HTMLElement).style.display = 'none';
@@ -1031,17 +1053,36 @@ export const PosScreen: React.FC = () => {
                                 }}
                               />
                             ) : (
-                              <Coffee className="w-8 h-8 text-slate-300 group-hover:text-[#0D5C53] transition-colors" />
+                              <Coffee
+                                className={`w-8 h-8 text-slate-300 transition-colors ${
+                                  isOutOfStock ? 'text-slate-400' : 'group-hover:text-[#0D5C53]'
+                                }`}
+                              />
+                            )}
+
+                            {/* Habis Overlay Badge on Image */}
+                            {isOutOfStock && (
+                              <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px] flex items-center justify-center z-10">
+                                <span className="bg-rose-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md border border-rose-400/40 animate-pulse">
+                                  Habis
+                                </span>
+                              </div>
                             )}
 
                             {hasVariants && (
-                              <span className="absolute top-2 right-2 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                              <span className="absolute top-2 right-2 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs z-20">
                                 {product.variants?.length} Varian
                               </span>
                             )}
                           </div>
 
-                          <h4 className="font-bold text-slate-800 text-sm leading-snug line-clamp-2 mb-1 group-hover:text-[#0D5C53] transition-colors">
+                          <h4
+                            className={`font-bold text-sm leading-snug line-clamp-2 mb-1 transition-colors ${
+                              isOutOfStock
+                                ? 'text-slate-500 line-through decoration-slate-400'
+                                : 'text-slate-800 group-hover:text-[#0D5C53]'
+                            }`}
+                          >
                             {product.name}
                           </h4>
                           {product.categoryName && (
@@ -1052,19 +1093,33 @@ export const PosScreen: React.FC = () => {
                         <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
                           <div>
                             {product.minPrice !== undefined && product.maxPrice !== undefined && product.maxPrice > product.minPrice ? (
-                              <span className="font-bold text-[#0D5C53] text-xs">
+                              <span
+                                className={`font-bold text-xs ${
+                                  isOutOfStock ? 'text-slate-400' : 'text-[#0D5C53]'
+                                }`}
+                              >
                                 Rp {Number(product.minPrice).toLocaleString('id-ID')} - {Number(product.maxPrice).toLocaleString('id-ID')}
                               </span>
                             ) : (
-                              <span className="font-bold text-[#0D5C53] text-sm">
+                              <span
+                                className={`font-bold text-sm ${
+                                  isOutOfStock ? 'text-slate-400' : 'text-[#0D5C53]'
+                                }`}
+                              >
                                 Rp {Number(product.price ?? product.minPrice ?? 0).toLocaleString('id-ID')}
                               </span>
                             )}
                           </div>
 
-                          <div className="w-7 h-7 bg-teal-50 group-hover:bg-[#0D5C53] text-[#0D5C53] group-hover:text-white rounded-lg flex items-center justify-center transition-colors shadow-xs">
-                            <Plus className="w-4 h-4" />
-                          </div>
+                          {isOutOfStock ? (
+                            <div className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-md text-[10px] font-bold border border-rose-200/80">
+                              Habis
+                            </div>
+                          ) : (
+                            <div className="w-7 h-7 bg-teal-50 group-hover:bg-[#0D5C53] text-[#0D5C53] group-hover:text-white rounded-lg flex items-center justify-center transition-colors shadow-xs">
+                              <Plus className="w-4 h-4" />
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

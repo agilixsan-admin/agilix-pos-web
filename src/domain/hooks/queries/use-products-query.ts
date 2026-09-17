@@ -3,18 +3,18 @@ import { productService } from '@domain/services/product-service';
 import type { Product, Category } from '@model/Product';
 import { productKeys } from './query-keys';
 
-export function useProducts(params?: { categoryId?: string; search?: string }) {
+export function useProducts(params?: { outletId?: string; categoryId?: string; search?: string }) {
   return useQuery({
     queryKey: productKeys.list(params),
     queryFn: () => productService.getProducts(params),
-    staleTime: 2 * 60 * 1000, // 2 minutes cache
+    staleTime: 30 * 1000, // 30 seconds cache for responsive stock state
   });
 }
 
-export function useProduct(id?: string) {
+export function useProduct(id?: string, outletId?: string) {
   return useQuery({
-    queryKey: productKeys.detail(id || ''),
-    queryFn: () => productService.getProductById(id!),
+    queryKey: outletId ? [...productKeys.detail(id || ''), outletId] : productKeys.detail(id || ''),
+    queryFn: () => productService.getProductById(id!, outletId),
     enabled: Boolean(id),
   });
 }

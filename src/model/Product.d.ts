@@ -20,6 +20,10 @@ export interface Variant {
   stock?: number;
   status?: string;
   isActive?: boolean;
+  isAvailable?: boolean;
+  isOutOfStock?: boolean;
+  availableStock?: number;
+  missingIngredients?: string[];
   recipes?: RecipeItem[];
 }
 
@@ -52,6 +56,10 @@ export interface Product {
   description?: string;
   status?: 'ACTIVE' | 'INACTIVE' | string;
   isActive?: boolean;
+  isAvailable?: boolean;
+  isOutOfStock?: boolean;
+  availableStock?: number;
+  missingIngredients?: string[];
   variants?: Variant[];
   recipes?: RecipeItem[];
 }
