@@ -23,6 +23,8 @@ import {
   Store,
   Layers,
   Percent,
+  ShieldCheck,
+  Lock,
 } from 'lucide-react';
 import {
   Button,
@@ -299,6 +301,27 @@ export const TaxesScreen: React.FC = () => {
     }
   };
 
+  const handleUpdateVoidVerificationMode = async (mode: 'NONE' | 'SELF_PASSWORD' | 'SUPERVISOR_APPROVAL') => {
+    try {
+      await updateGlobalTaxConfigMutation.mutateAsync({
+        enableTaxCalculation: globalConfig?.enableTaxCalculation ?? false,
+        defaultGlobalTaxId: globalConfig?.defaultGlobalTaxId ?? null,
+        serviceChargeEnabled: globalConfig?.serviceChargeEnabled ?? false,
+        serviceChargeRate: Number(serviceChargeRate) || 0,
+        serviceChargeApplicableTo: serviceChargeApplicableTo,
+        voidVerificationMode: mode,
+        outletId: selectedOutletId || undefined,
+      });
+      showToast('Kebijakan otorisasi void berhasil disimpan');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      showToast(
+        error.response?.data?.message || error.message || 'Gagal menyimpan kebijakan void',
+        'error'
+      );
+    }
+  };
+
   // Filtered taxes based on search query
   const filteredTaxes = taxes.filter((t) => {
     const q = searchQuery.toLowerCase();
@@ -545,6 +568,90 @@ export const TaxesScreen: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Divider */}
+            <div className="border-t border-slate-100 my-4" />
+
+            {/* Void Authorization Policy */}
+            <div className="space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#0D5C53] flex items-center justify-center border border-teal-100/60">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-800">Kebijakan Otorisasi Void (Pembatalan Menu)</h3>
+                    <p className="text-[11px] text-slate-500">
+                      Tentukan tingkat validasi keamanan saat kasir membatalkan menu yang sudah dikirim ke station/kitchen.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Option 1: SUPERVISOR_APPROVAL */}
+                <div
+                  onClick={() => handleUpdateVoidVerificationMode('SUPERVISOR_APPROVAL')}
+                  className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    (globalConfig?.voidVerificationMode ?? 'SUPERVISOR_APPROVAL') === 'SUPERVISOR_APPROVAL'
+                      ? 'border-[#0D5C53] bg-teal-50/40 ring-1 ring-[#0D5C53]'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-[#0D5C53]" />
+                      Otorisasi Atasan
+                    </span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 text-[#0D5C53]">
+                      Rekomendasi
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Wajib password atasan (Supervisor/Manager/Owner). Sistem mencatat data siapa yang menyetujui.
+                  </p>
+                </div>
+
+                {/* Option 2: SELF_PASSWORD */}
+                <div
+                  onClick={() => handleUpdateVoidVerificationMode('SELF_PASSWORD')}
+                  className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    globalConfig?.voidVerificationMode === 'SELF_PASSWORD'
+                      ? 'border-[#0D5C53] bg-teal-50/40 ring-1 ring-[#0D5C53]'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-slate-600" />
+                      Password Kasir
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Kasir menginput password akun kasirnya sendiri untuk konfirmasi pembatalan menu.
+                  </p>
+                </div>
+
+                {/* Option 3: NONE */}
+                <div
+                  onClick={() => handleUpdateVoidVerificationMode('NONE')}
+                  className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    globalConfig?.voidVerificationMode === 'NONE'
+                      ? 'border-[#0D5C53] bg-teal-50/40 ring-1 ring-[#0D5C53]'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-slate-900">
+                      Bebas (Tanpa Password)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Kasir dapat langsung membatalkan menu tanpa verifikasi password apapun.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </Card>

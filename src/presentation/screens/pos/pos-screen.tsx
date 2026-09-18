@@ -43,6 +43,7 @@ import {
   Send,
   X,
   ChevronRight,
+  Ban,
 } from 'lucide-react';
 import {
   Button,
@@ -695,14 +696,35 @@ export const PosScreen: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <span className="font-mono text-xs font-semibold text-slate-700">
-                          Rp{' '}
-                          {Number(
-                            item.subtotal ??
-                              Number(item.unitPrice || item.price || 0) *
-                                item.quantity,
-                          ).toLocaleString('id-ID')}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="font-mono text-xs font-semibold text-slate-700">
+                            Rp{' '}
+                            {Number(
+                              item.subtotal ??
+                                Number(item.unitPrice || item.price || 0) *
+                                  item.quantity,
+                            ).toLocaleString('id-ID')}
+                          </span>
+                          <button
+                            type="button"
+                            title="Batalkan menu ini (Void)"
+                            onClick={() =>
+                              setVoidModalItem({
+                                orderId: activeAppendOrder.id,
+                                itemId: item.id,
+                                name: `${item.productName}${
+                                  item.variantName &&
+                                  !item.variantName.trim().toLowerCase().includes('default')
+                                    ? ` (${item.variantName})`
+                                    : ''
+                                }`,
+                              })
+                            }
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-100/80 rounded transition-colors"
+                          >
+                            <Ban className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
 
@@ -1229,10 +1251,24 @@ export const PosScreen: React.FC = () => {
           isOpen={!!voidModalItem}
           onClose={() => setVoidModalItem(null)}
           itemName={voidModalItem.name}
-          onConfirmVoid={async (reason) => {
-            await posService.voidOrderItem(voidModalItem.orderId, voidModalItem.itemId, reason);
+          onConfirmVoid={async (reason, password) => {
+            const result = await posService.voidOrderItem(
+              voidModalItem.orderId,
+              voidModalItem.itemId,
+              reason,
+              password,
+            );
             refreshAllData();
-            toast.success('Item berhasil dibatalkan (void).');
+            if (result?.order?.status === 'VOID') {
+              setActiveAppendOrder(null);
+              clearCart();
+              toast.success('Seluruh menu dibatalkan. Meja telah dikosongkan.');
+            } else if (result?.order) {
+              setActiveAppendOrder(result.order);
+              toast.success('Menu berhasil dibatalkan (void).');
+            } else {
+              toast.success('Menu berhasil dibatalkan (void).');
+            }
           }}
         />
       )}

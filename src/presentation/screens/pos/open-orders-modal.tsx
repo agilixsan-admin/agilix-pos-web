@@ -3,7 +3,7 @@ import type { Order } from '@model/Order';
 import { posService } from '@domain/services/pos-service';
 import { useAuthStore } from '@domain/state/auth-store';
 import { useCartStore } from '@domain/state/cart-store';
-import { Clock, PlusCircle, CreditCard, RefreshCw } from 'lucide-react';
+import { Clock, PlusCircle, CreditCard, RefreshCw, Ban } from 'lucide-react';
 import {
   Button,
   Badge,
@@ -12,6 +12,7 @@ import {
   EmptyState,
   toast,
 } from '@presentation/components/ui';
+import { VoidItemModal } from './void-item-modal';
 
 interface OpenOrdersModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [voidTarget, setVoidTarget] = useState<{ orderId: string; itemId: string; name: string } | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -142,17 +144,46 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
                   </div>
 
                   {/* Order Items Preview */}
-                  <div className="bg-slate-50 rounded-lg p-2.5 space-y-1 mb-3 text-xs">
-                    {order.items?.map((item, idx) => (
-                      <div key={idx} className="flex justify-between text-slate-600">
-                        <span>
-                          {item.quantity}x {item.productName}
-                        </span>
-                        <span className="font-mono">
-                          Rp {Number(item.subtotal ?? (Number(item.unitPrice || item.price || 0) * item.quantity)).toLocaleString('id-ID')}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="bg-slate-50 rounded-lg p-2.5 space-y-1.5 mb-3 text-xs">
+                    {order.items
+                      ?.filter((item) => !item.status || item.status === 'ACTIVE')
+                      .map((item, idx) => (
+                        <div key={item.id || idx} className="flex items-center justify-between text-slate-600">
+                          <span className="truncate pr-2">
+                            {item.quantity}x {item.productName}
+                            {item.variantName && !item.variantName.trim().toLowerCase().includes('default')
+                              ? ` (${item.variantName})`
+                              : ''}
+                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="font-mono">
+                              Rp{' '}
+                              {Number(
+                                item.subtotal ??
+                                  Number(item.unitPrice || item.price || 0) * item.quantity,
+                              ).toLocaleString('id-ID')}
+                            </span>
+                            <button
+                              type="button"
+                              title="Batalkan menu ini (Void)"
+                              onClick={() => {
+                                setVoidTarget({
+                                  orderId: order.id,
+                                  itemId: item.id,
+                                  name: `${item.productName}${
+                                    item.variantName && !item.variantName.trim().toLowerCase().includes('default')
+                                      ? ` (${item.variantName})`
+                                      : ''
+                                  }`,
+                                });
+                              }}
+                              className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-100/80 rounded transition-colors"
+                            >
+                              <Ban className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 </div>
 
@@ -192,6 +223,25 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
           </div>
         )}
       </div>
+
+      {voidTarget && (
+        <VoidItemModal
+          isOpen={!!voidTarget}
+          onClose={() => setVoidTarget(null)}
+          itemName={voidTarget.name}
+          onConfirmVoid={async (reason, password) => {
+            await posService.voidOrderItem(
+              voidTarget.orderId,
+              voidTarget.itemId,
+              reason,
+              password,
+            );
+            await fetchOrders();
+            onOrderUpdated();
+            toast.success('Menu berhasil dibatalkan (void).');
+          }}
+        />
+      )}
     </Modal>
   );
 };

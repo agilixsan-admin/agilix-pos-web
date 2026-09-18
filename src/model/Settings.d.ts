@@ -64,6 +64,8 @@ export interface UpdateTaxPayload {
   outletId?: string | null;
 }
 
+export type VoidVerificationMode = 'NONE' | 'SELF_PASSWORD' | 'SUPERVISOR_APPROVAL';
+
 export interface GlobalTaxConfig {
   enableTaxCalculation: boolean;
   defaultGlobalTaxId?: string | null;
@@ -72,6 +74,7 @@ export interface GlobalTaxConfig {
   serviceChargeRate?: number;
   serviceChargeName?: string;
   serviceChargeApplicableTo?: 'ALL' | 'DINE_IN';
+  voidVerificationMode?: VoidVerificationMode;
 }
 
 export interface UpdateGlobalTaxConfigPayload {
@@ -82,6 +85,41 @@ export interface UpdateGlobalTaxConfigPayload {
   serviceChargeRate?: number;
   serviceChargeName?: string;
   serviceChargeApplicableTo?: 'ALL' | 'DINE_IN';
+  voidVerificationMode?: VoidVerificationMode;
+}
+
+export interface PosSettings {
+  id: string;
+  tenantId: string;
+  outletId?: string | null;
+  taxEnabled: boolean;
+  taxRate: number;
+  taxName: string;
+  discountEnabled: boolean;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  discountValue: number;
+  cashEnabled: boolean;
+  qrisEnabled: boolean;
+  voidVerificationMode: VoidVerificationMode;
+  billLogoUrl?: string | null;
+  billFooterText?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdatePosSettingsPayload {
+  outletId?: string | null;
+  taxEnabled?: boolean;
+  taxRate?: number;
+  taxName?: string;
+  discountEnabled?: boolean;
+  discountType?: 'PERCENTAGE' | 'FIXED';
+  discountValue?: number;
+  cashEnabled?: boolean;
+  qrisEnabled?: boolean;
+  voidVerificationMode?: VoidVerificationMode;
+  billLogoUrl?: string | null;
+  billFooterText?: string | null;
 }
 
 export type DiscountCalculationType = 'PERCENTAGE' | 'FIXED';

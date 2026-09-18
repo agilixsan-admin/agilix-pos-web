@@ -117,9 +117,22 @@ export const posService = {
     return normalizeOrder(res.data?.data || res.data);
   },
 
-  voidOrderItem: async (orderId: string, itemId: string, reason: string): Promise<OrderItem> => {
-    const res = await httpClient.post(`/orders/${orderId}/void`, { orderItemId: itemId, reason });
-    return res.data?.data || res.data;
+  voidOrderItem: async (
+    orderId: string,
+    itemId: string,
+    reason: string,
+    password?: string
+  ): Promise<{ order: Order; voidedItem: OrderItem; void?: unknown }> => {
+    const res = await httpClient.post(`/orders/${orderId}/void`, {
+      orderItemId: itemId,
+      reason,
+      password: password || undefined,
+    });
+    const data = res.data?.data || res.data;
+    if (data?.order) {
+      data.order = normalizeOrder(data.order);
+    }
+    return data;
   },
 
   applyOrderDiscount: async (

@@ -44,6 +44,7 @@ const DEFAULT_PERMISSION_GROUPS: PermissionGroup[] = [
           { code: 'order.create', name: 'Buat Pesanan Baru', description: 'Membuat pesanan baru di kasir POS', action: 'create' },
           { code: 'order.update', name: 'Ubah / Edit Pesanan', description: 'Mengubah item atau catatan pesanan', action: 'update' },
           { code: 'order.void', name: 'Void / Batalkan Pesanan', description: 'Membatalkan item atau seluruh pesanan', action: 'void' },
+          { code: 'order.void.approve', name: 'Otorisasi Persetujuan Void', description: 'Menyetujui pembatalan menu dengan password atasan', action: 'approve' },
           { code: 'payment.create', name: 'Proses Pembayaran (Cash / QRIS)', description: 'Menerima pembayaran tunai atau QRIS', action: 'create' },
           { code: 'transaction.read', name: 'Lihat Riwayat Transaksi', description: 'Melihat struk dan rekap transaksi', action: 'read' },
         ],
