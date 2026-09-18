@@ -110,8 +110,19 @@ export interface Order {
   creator?: OrderCreator | null;
   outlet?: OrderOutlet | null;
   table?: OrderTable | null;
+  voids?: OrderVoidInfo[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface OrderVoidInfo {
+  id: string;
+  orderId: string;
+  orderItemId?: string | null;
+  reason: string;
+  voidedBy?: string | null;
+  approvedBy?: string | null;
+  voidedAt: string;
 }
 
 export interface CreateOrderPayload {

@@ -36,6 +36,8 @@ export function useKeyboardShortcuts(
 
       // Build key string
       const pressedKey = event.key;
+      if (!pressedKey) return;
+
       const isCtrl = event.ctrlKey || event.metaKey;
       const isAlt = event.altKey;
       const isShift = event.shiftKey;

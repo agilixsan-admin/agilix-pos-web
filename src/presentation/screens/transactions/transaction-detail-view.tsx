@@ -19,6 +19,7 @@ import {
   Receipt,
   FileText,
   Store,
+  Ban,
 } from 'lucide-react';
 import { Button, Badge, Card } from '@presentation/components/ui';
 
@@ -38,6 +39,9 @@ export const TransactionDetailView: React.FC<TransactionDetailViewProps> = ({
   const [isPrintErrorOpen, setIsPrintErrorOpen] = useState<boolean>(false);
   const [printErrorMessage, setPrintErrorMessage] = useState<string>('');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState<boolean>(false);
+
+  const activeItems = (order.items || []).filter((item) => item.status !== 'VOID' && !item.isVoid);
+  const voidedItems = (order.items || []).filter((item) => item.status === 'VOID' || item.isVoid);
 
   const totalAmount = Number(order.totalAmount || 0);
   const subtotal = Number(order.subtotal || totalAmount);
@@ -183,49 +187,130 @@ export const TransactionDetailView: React.FC<TransactionDetailViewProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <Coffee className="w-4 h-4 text-[#0D5C53]" />
-                Daftar Menu Pesanan ({order.items?.length || 0} Item)
+                Daftar Menu Pesanan ({activeItems.length} Item)
               </h3>
             </div>
 
-            {/* Item Rows */}
-            <div className="divide-y divide-slate-100 mt-2">
-              {order.items?.map((item) => (
-                <div key={item.id} className="py-3.5 first:pt-2 flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0 mt-0.5 border border-slate-200/60">
-                      <Coffee className="w-5 h-5 text-slate-500" />
+            {/* Active Item Rows */}
+            {activeItems.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-500 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 mt-3">
+                <p className="font-semibold text-slate-700">Tidak ada menu aktif pada pesanan ini.</p>
+                {order.status === 'VOID' && (
+                  <p className="text-[11px] text-rose-600 mt-1">Seluruh pesanan telah dibatalkan (Order Void).</p>
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 mt-2">
+                {activeItems.map((item) => (
+                  <div key={item.id} className="py-3.5 first:pt-2 flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0 mt-0.5 border border-slate-200/60">
+                        <Coffee className="w-5 h-5 text-slate-500" />
+                      </div>
+
+                      <div>
+                        <h4 className="font-bold text-xs text-slate-900 leading-snug">
+                          {item.productName}
+                        </h4>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          {item.variantName && !item.variantName.trim().toLowerCase().includes('default') && (
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-semibold">
+                              Varian: {item.variantName}
+                            </span>
+                          )}
+                          {item.notes && (
+                            <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
+                              Catatan: {item.notes}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-slate-500 block mt-1">
+                          {item.quantity} x Rp {Number(item.price || item.unitPrice || 0).toLocaleString('id-ID')}
+                        </span>
+                      </div>
                     </div>
 
-                    <div>
-                      <h4 className="font-bold text-xs text-slate-900 leading-snug">
-                        {item.productName}
-                      </h4>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        {item.variantName && !item.variantName.trim().toLowerCase().includes('default') && (
-                          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-semibold">
-                            Varian: {item.variantName}
-                          </span>
-                        )}
-                        {item.notes && (
-                          <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
-                            Catatan: {item.notes}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-slate-500 block mt-1">
-                        {item.quantity} x Rp {Number(item.price || item.unitPrice || 0).toLocaleString('id-ID')}
+                    <div className="text-right">
+                      <span className="font-bold text-slate-900 text-xs font-mono">
+                        Rp {(Number(item.price || item.unitPrice || 0) * item.quantity).toLocaleString('id-ID')}
                       </span>
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
 
-                  <div className="text-right">
-                    <span className="font-bold text-slate-900 text-xs font-mono">
-                      Rp {(Number(item.price || item.unitPrice || 0) * item.quantity).toLocaleString('id-ID')}
-                    </span>
-                  </div>
+            {/* Voided Items Section */}
+            {voidedItems.length > 0 && (
+              <div className="mt-6 pt-5 border-t border-dashed border-rose-200">
+                <div className="flex items-center justify-between pb-3">
+                  <h4 className="text-xs font-bold text-rose-800 flex items-center gap-1.5">
+                    <Ban className="w-3.5 h-3.5 text-rose-600" />
+                    Menu Dibatalkan / Void ({voidedItems.length} Item)
+                  </h4>
+                  <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-md font-semibold">
+                    Tidak masuk tagihan
+                  </span>
                 </div>
-              ))}
-            </div>
+
+                <div className="divide-y divide-rose-100/60 rounded-xl bg-rose-50/30 p-2 border border-rose-100 space-y-1">
+                  {voidedItems.map((item) => {
+                    const voidInfo = order.voids?.find((v) => v.orderItemId === item.id);
+                    return (
+                      <div key={item.id} className="py-2.5 px-2 first:pt-1.5 last:pb-1.5 flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-9 h-9 bg-rose-100/70 rounded-lg flex items-center justify-center text-rose-500 shrink-0 mt-0.5 border border-rose-200/60">
+                            <Ban className="w-4 h-4 text-rose-600" />
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-semibold text-xs text-slate-700 line-through">
+                                {item.productName}
+                              </h5>
+                              <span className="text-[9px] bg-rose-100 text-rose-800 font-bold px-1.5 py-0.2 rounded uppercase">
+                                Void
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                              {item.variantName && !item.variantName.trim().toLowerCase().includes('default') && (
+                                <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.2 rounded line-through">
+                                  Varian: {item.variantName}
+                                </span>
+                              )}
+                              {voidInfo?.reason && (
+                                <span className="text-[10px] bg-white text-rose-700 border border-rose-200 px-1.5 py-0.2 rounded font-medium">
+                                  Alasan: {voidInfo.reason}
+                                </span>
+                              )}
+                              {item.notes && !voidInfo?.reason && (
+                                <span className="text-[10px] bg-white text-slate-600 border border-slate-200 px-1.5 py-0.2 rounded">
+                                  Catatan: {item.notes}
+                                </span>
+                              )}
+                            </div>
+
+                            <span className="text-[10px] text-slate-400 block mt-0.5">
+                              {item.quantity} x Rp {Number(item.price || item.unitPrice || 0).toLocaleString('id-ID')}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="text-xs font-mono text-slate-400 line-through block">
+                            Rp {(Number(item.price || item.unitPrice || 0) * item.quantity).toLocaleString('id-ID')}
+                          </span>
+                          <span className="text-[10px] font-bold text-rose-600 font-mono">
+                            Rp 0
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {order.notes && (

@@ -483,7 +483,16 @@ export const TransactionsScreen: React.FC = () => {
                       <td className="py-3.5 px-4 text-right font-bold text-[#0D5C53] font-mono whitespace-nowrap">
                         Rp {Number(order.totalAmount).toLocaleString('id-ID')}
                       </td>
-                      <td className="py-3.5 px-4 text-center">{getStatusBadge(order.status)}</td>
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          {getStatusBadge(order.status)}
+                          {order.items?.some((i) => i.status === 'VOID' || i.isVoid) && order.status !== 'VOID' && (
+                            <span className="text-[9px] bg-rose-50 text-rose-600 border border-rose-200 px-1.5 py-0.2 rounded font-semibold whitespace-nowrap">
+                              Ada Item Void
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
                           <Button

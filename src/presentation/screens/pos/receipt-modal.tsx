@@ -172,7 +172,9 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
           {/* Items List */}
           <div className="py-3 border-b border-dashed border-slate-300 space-y-2">
-            {order.items?.map((item, idx) => {
+            {order.items
+              ?.filter((item) => item.status !== 'VOID' && !item.isVoid)
+              .map((item, idx) => {
               const isDefaultVariant =
                 !item.variantName ||
                 item.variantName.trim().toLowerCase().includes('default') ||
