@@ -201,6 +201,11 @@ export const PosScreen: React.FC = () => {
 
   // Handle Product Click
   const handleProductClick = (product: Product) => {
+    if (product.isOutletActive === false) {
+      toast.error(`Menu "${product.name}" sedang dinonaktifkan di cabang ini.`);
+      return;
+    }
+
     const isOutOfStock = product.isOutOfStock || product.isAvailable === false;
     if (isOutOfStock) {
       toast.error(`Menu "${product.name}" sedang habis (stok bahan baku kosong).`);
@@ -220,6 +225,10 @@ export const PosScreen: React.FC = () => {
   };
 
   const handleSelectVariant = (product: Product, variant: Variant) => {
+    if (product.isOutletActive === false) {
+      toast.error(`Menu "${product.name}" sedang dinonaktifkan di cabang ini.`);
+      return;
+    }
     if (variant.isOutOfStock || variant.isAvailable === false) {
       toast.error(`Varian "${variant.name}" sedang habis (stok bahan baku kosong).`);
       return;
@@ -1060,14 +1069,16 @@ export const PosScreen: React.FC = () => {
                       ? rawImageUrl.replace(/^htts:\/\//, 'https://')
                       : rawImageUrl;
                     const hasVariants = product.variants && product.variants.length > 1;
-                    const isOutOfStock = product.isOutOfStock || product.isAvailable === false;
+                    const isInactiveInOutlet = product.isOutletActive === false;
+                    const isOutOfStock = !isInactiveInOutlet && (product.isOutOfStock || product.isAvailable === false);
+                    const isUnavailable = isInactiveInOutlet || isOutOfStock;
 
                     return (
                       <div
                         key={product.id}
                         onClick={() => handleProductClick(product)}
                         className={`rounded-2xl p-3.5 flex flex-col justify-between transition-all select-none ${
-                          isOutOfStock
+                          isUnavailable
                             ? 'bg-slate-100/70 border border-slate-200 opacity-60 grayscale cursor-not-allowed shadow-none'
                             : 'bg-white border border-slate-200 hover:border-[#0D5C53]/60 hover:shadow-md cursor-pointer group active:scale-[0.98]'
                         }`}
@@ -1080,7 +1091,7 @@ export const PosScreen: React.FC = () => {
                                 src={imageUrl}
                                 alt={product.name}
                                 className={`w-full h-full object-cover transition-transform duration-300 ${
-                                  isOutOfStock ? 'grayscale' : 'group-hover:scale-105'
+                                  isUnavailable ? 'grayscale' : 'group-hover:scale-105'
                                 }`}
                                 onError={(e) => {
                                   // Hide broken image and fallback to icon
@@ -1094,19 +1105,25 @@ export const PosScreen: React.FC = () => {
                             ) : (
                               <Coffee
                                 className={`w-8 h-8 text-slate-300 transition-colors ${
-                                  isOutOfStock ? 'text-slate-400' : 'group-hover:text-[#0D5C53]'
+                                  isUnavailable ? 'text-slate-400' : 'group-hover:text-[#0D5C53]'
                                 }`}
                               />
                             )}
 
-                            {/* Habis Overlay Badge on Image */}
-                            {isOutOfStock && (
+                            {/* Nonaktif di Cabang vs Habis Overlay Badge on Image */}
+                            {isInactiveInOutlet ? (
+                              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center z-10 p-1 text-center">
+                                <span className="bg-slate-800 text-slate-100 font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-full shadow-md border border-slate-600/60">
+                                  Nonaktif di Cabang
+                                </span>
+                              </div>
+                            ) : isOutOfStock ? (
                               <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px] flex items-center justify-center z-10">
                                 <span className="bg-rose-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md border border-rose-400/40 animate-pulse">
                                   Habis
                                 </span>
                               </div>
-                            )}
+                            ) : null}
 
                             {hasVariants && (
                               <span className="absolute top-2 right-2 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs z-20">
@@ -1117,7 +1134,7 @@ export const PosScreen: React.FC = () => {
 
                           <h4
                             className={`font-bold text-sm leading-snug line-clamp-2 mb-1 transition-colors ${
-                              isOutOfStock
+                              isUnavailable
                                 ? 'text-slate-500 line-through decoration-slate-400'
                                 : 'text-slate-800 group-hover:text-[#0D5C53]'
                             }`}
@@ -1134,7 +1151,7 @@ export const PosScreen: React.FC = () => {
                             {product.minPrice !== undefined && product.maxPrice !== undefined && product.maxPrice > product.minPrice ? (
                               <span
                                 className={`font-bold text-xs ${
-                                  isOutOfStock ? 'text-slate-400' : 'text-[#0D5C53]'
+                                  isUnavailable ? 'text-slate-400' : 'text-[#0D5C53]'
                                 }`}
                               >
                                 Rp {Number(product.minPrice).toLocaleString('id-ID')} - {Number(product.maxPrice).toLocaleString('id-ID')}
@@ -1142,7 +1159,7 @@ export const PosScreen: React.FC = () => {
                             ) : (
                               <span
                                 className={`font-bold text-sm ${
-                                  isOutOfStock ? 'text-slate-400' : 'text-[#0D5C53]'
+                                  isUnavailable ? 'text-slate-400' : 'text-[#0D5C53]'
                                 }`}
                               >
                                 Rp {Number(product.price ?? product.minPrice ?? 0).toLocaleString('id-ID')}
@@ -1150,7 +1167,11 @@ export const PosScreen: React.FC = () => {
                             )}
                           </div>
 
-                          {isOutOfStock ? (
+                          {isInactiveInOutlet ? (
+                            <div className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-bold border border-slate-300">
+                              Nonaktif
+                            </div>
+                          ) : isOutOfStock ? (
                             <div className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-md text-[10px] font-bold border border-rose-200/80">
                               Habis
                             </div>

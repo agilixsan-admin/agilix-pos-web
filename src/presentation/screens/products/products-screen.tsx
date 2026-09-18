@@ -5,12 +5,14 @@ import { useAuthStore } from '@domain/state/auth-store';
 import {
   useProducts,
   useCategories,
+  useOutlets,
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
+  useUpdateProductOutletAvailabilityMutation,
   useDebounce,
 } from '@domain/hooks';
-import { Plus, Edit2, Trash2, Coffee } from 'lucide-react';
+import { Plus, Edit2, Trash2, Coffee, Store } from 'lucide-react';
 import {
   Button,
   Badge,
@@ -23,21 +25,29 @@ import {
   LoadingState,
   EmptyState,
   CustomSelect,
+  toast,
 } from '@presentation/components/ui';
 
 export const ProductsScreen: React.FC = () => {
   const navigate = useNavigate();
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const [selectedOutletId, setSelectedOutletId] = useState<string>(currentOutlet?.id || '');
+
+  // Outlets
+  const { data: outlets = [], isLoading: outletsLoading } = useOutlets();
 
   // Query Hooks
-  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: products = [], isLoading: productsLoading } = useProducts(
+    selectedOutletId ? { outletId: selectedOutletId } : undefined
+  );
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
-  const loading = productsLoading || categoriesLoading;
+  const loading = productsLoading || categoriesLoading || outletsLoading;
 
   // Mutations
   const createProductMutation = useCreateProductMutation();
   const updateProductMutation = useUpdateProductMutation();
   const deleteProductMutation = useDeleteProductMutation();
+  const updateOutletAvailabilityMutation = useUpdateProductOutletAvailabilityMutation();
   const submitting = createProductMutation.isPending || updateProductMutation.isPending;
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -116,6 +126,28 @@ export const ProductsScreen: React.FC = () => {
     }
   };
 
+  const handleToggleOutletStatus = async (p: Product) => {
+    if (!selectedOutletId) return;
+    const newActive = !(p.isOutletActive !== false);
+    try {
+      await updateOutletAvailabilityMutation.mutateAsync({
+        id: p.id,
+        outletId: selectedOutletId,
+        isActive: newActive,
+      });
+      toast.success(
+        newActive
+          ? `Menu "${p.name}" telah diaktifkan di cabang ini.`
+          : `Menu "${p.name}" telah dinonaktifkan di cabang ini.`
+      );
+    } catch (err: unknown) {
+      toast.error(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Gagal mengubah status ketersediaan cabang.'
+      );
+    }
+  };
+
   const filteredProducts = products.filter((p) => {
     const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -131,7 +163,7 @@ export const ProductsScreen: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Daftar Menu & Produk</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Kelola katalog menu makanan, minuman, harga jual, dan varian POS.
+            Kelola katalog menu makanan, minuman, harga jual, dan ketersediaan per cabang.
           </p>
         </div>
 
@@ -154,7 +186,21 @@ export const ProductsScreen: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <CustomSelect
+            ariaLabel="Pilih Cabang"
+            value={selectedOutletId}
+            onChange={(val) => setSelectedOutletId(val)}
+            options={[
+              { value: '', label: 'Semua Cabang (Master Global)' },
+              ...outlets.map((o) => ({
+                value: o.id,
+                label: `${o.name} (${o.code})`,
+              })),
+            ]}
+            buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl min-w-[210px]"
+          />
+
           <CustomSelect
             ariaLabel="Filter Kategori"
             value={selectedCategory}
@@ -171,6 +217,33 @@ export const ProductsScreen: React.FC = () => {
         </div>
       </div>
 
+      {/* Mode Cabang Active Banner */}
+      {selectedOutletId && (
+        <div className="bg-teal-50/80 border border-teal-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-teal-950 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center text-teal-700 shrink-0">
+              <Store className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-900">
+                Mode Cabang: {outlets.find((o) => o.id === selectedOutletId)?.name || 'Cabang Terpilih'}
+              </p>
+              <p className="text-slate-600 text-[11px] mt-0.5">
+                Klik tombol toggle status di tabel untuk mengaktifkan atau menonaktifkan penjualan menu di cabang ini secara instan.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSelectedOutletId('')}
+            className="text-teal-800 hover:bg-teal-100/60 self-start sm:self-auto text-xs"
+          >
+            Kembali ke Master Global
+          </Button>
+        </div>
+      )}
+
       {/* Products Table */}
       <Card padding="none" className="relative z-10">
         <div className="overflow-x-auto">
@@ -182,7 +255,9 @@ export const ProductsScreen: React.FC = () => {
                 <th className="py-3.5 px-4">Kategori</th>
                 <th className="py-3.5 px-4 text-right">Harga Jual</th>
                 <th className="py-3.5 px-4 text-center">Varian</th>
-                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-center">
+                  {selectedOutletId ? 'Status Cabang' : 'Status Master'}
+                </th>
                 <th className="py-3.5 px-4 text-right">Aksi</th>
               </tr>
             </thead>
@@ -226,9 +301,30 @@ export const ProductsScreen: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <Badge variant={p.isActive !== false ? 'success' : 'danger'} dot>
-                          {p.isActive !== false ? 'Aktif' : 'Nonaktif'}
-                        </Badge>
+                        {selectedOutletId ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleOutletStatus(p)}
+                            disabled={updateOutletAvailabilityMutation.isPending}
+                            title="Klik untuk ubah ketersediaan menu di cabang ini"
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                              p.isOutletActive !== false
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400'
+                                : 'bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200'
+                            }`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                p.isOutletActive !== false ? 'bg-emerald-500' : 'bg-slate-400'
+                              }`}
+                            />
+                            {p.isOutletActive !== false ? 'Aktif di Cabang' : 'Nonaktif'}
+                          </button>
+                        ) : (
+                          <Badge variant={p.isActive !== false ? 'success' : 'danger'} dot>
+                            {p.isActive !== false ? 'Aktif' : 'Nonaktif'}
+                          </Badge>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">

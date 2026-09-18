@@ -58,8 +58,16 @@ export interface Product {
   isActive?: boolean;
   isAvailable?: boolean;
   isOutOfStock?: boolean;
+  isOutletActive?: boolean;
   availableStock?: number;
   missingIngredients?: string[];
   variants?: Variant[];
   recipes?: RecipeItem[];
+}
+
+export interface OutletProductAvailability {
+  outletId: string;
+  outletName: string;
+  outletCode: string;
+  isActive: boolean;
 }

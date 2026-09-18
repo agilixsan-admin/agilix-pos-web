@@ -90,3 +90,50 @@ export function useDeleteCategoryMutation() {
   });
 }
 
+export function useProductOutletAvailability(productId?: string) {
+  return useQuery({
+    queryKey: ['products', productId, 'outlet-availability'],
+    queryFn: () => productService.getProductOutletAvailability(productId!),
+    enabled: Boolean(productId),
+  });
+}
+
+export function useUpdateProductOutletAvailabilityMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      outletId,
+      isActive,
+    }: {
+      id: string;
+      outletId: string;
+      isActive: boolean;
+    }) => productService.updateProductOutletAvailability(id, outletId, isActive),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
+      queryClient.invalidateQueries({
+        queryKey: ['products', variables.id, 'outlet-availability'],
+      });
+    },
+  });
+}
+
+export function useBatchUpdateOutletAvailabilityMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      outletId,
+      productIds,
+      isActive,
+    }: {
+      outletId: string;
+      productIds: string[];
+      isActive: boolean;
+    }) => productService.batchUpdateOutletAvailability(outletId, productIds, isActive),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
+    },
+  });
+}
+

@@ -1,5 +1,5 @@
 import { httpClient } from './http-client';
-import type { Product, Category } from '@model/Product';
+import type { Product, Category, OutletProductAvailability } from '@model/Product';
 
 export const productService = {
   getProducts: async (params?: { outletId?: string; categoryId?: string; search?: string }): Promise<Product[]> => {
@@ -81,6 +81,36 @@ export const productService = {
 
   deleteProductImage: async (id: string): Promise<Product> => {
     const res = await httpClient.delete(`/products/${id}/image`);
+    return res.data?.data || res.data;
+  },
+
+  getProductOutletAvailability: async (id: string): Promise<OutletProductAvailability[]> => {
+    const res = await httpClient.get(`/products/${id}/outlet-availability`);
+    return res.data?.data || res.data || [];
+  },
+
+  updateProductOutletAvailability: async (
+    id: string,
+    outletId: string,
+    isActive: boolean,
+  ): Promise<{ productId: string; outletId: string; isActive: boolean }> => {
+    const res = await httpClient.put(`/products/${id}/outlet-availability`, {
+      outletId,
+      isActive,
+    });
+    return res.data?.data || res.data;
+  },
+
+  batchUpdateOutletAvailability: async (
+    outletId: string,
+    productIds: string[],
+    isActive: boolean,
+  ): Promise<{ updatedCount: number }> => {
+    const res = await httpClient.put('/products/outlet-availability/batch', {
+      outletId,
+      productIds,
+      isActive,
+    });
     return res.data?.data || res.data;
   },
 };
