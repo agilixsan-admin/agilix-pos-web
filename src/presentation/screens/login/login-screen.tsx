@@ -20,6 +20,75 @@ import { Button, FormInput } from '@presentation/components/ui';
 
 const REMEMBERED_EMAIL_KEY = 'agilix_pos_saved_email';
 
+const getFriendlyErrorMessage = (err: unknown): string => {
+  const axiosErr = err as {
+    response?: {
+      status?: number;
+      data?: {
+        message?: string | string[];
+        code?: string;
+      };
+    };
+    code?: string;
+    message?: string;
+  };
+
+  const status = axiosErr.response?.status;
+  const rawMessage = axiosErr.response?.data?.message;
+  const errorCode = axiosErr.response?.data?.code;
+
+  // Network / Connection Error
+  if (
+    axiosErr.code === 'ERR_NETWORK' ||
+    axiosErr.code === 'ECONNABORTED' ||
+    (!axiosErr.response && axiosErr.message?.toLowerCase().includes('network'))
+  ) {
+    return 'Tidak dapat terhubung ke server. Pastikan koneksi internet aktif dan server backend berjalan.';
+  }
+
+  if (status === 429) {
+    return 'Terlalu banyak percobaan masuk. Mohon tunggu beberapa saat sebelum mencoba kembali.';
+  }
+
+  const messageStr = Array.isArray(rawMessage)
+    ? rawMessage.join(', ')
+    : typeof rawMessage === 'string'
+      ? rawMessage
+      : '';
+
+  // Mapping known backend codes & messages
+  if (
+    errorCode === 'INVALID_CREDENTIALS' ||
+    messageStr.toLowerCase().includes('invalid credential')
+  ) {
+    return 'Email atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.';
+  }
+
+  if (
+    errorCode === 'USER_INACTIVE' ||
+    messageStr.toLowerCase().includes('inactive')
+  ) {
+    return 'Akun pengguna ini berstatus non-aktif. Silakan hubungi pengelola toko.';
+  }
+
+  if (
+    errorCode === 'TENANT_LOCKED' ||
+    messageStr.toLowerCase().includes('locked')
+  ) {
+    return 'Akses outlet/tenant sedang ditangguhkan. Silakan hubungi pengelola toko.';
+  }
+
+  if (status && status >= 500) {
+    return 'Terjadi gangguan internal pada server. Silakan coba beberapa saat lagi.';
+  }
+
+  if (messageStr) {
+    return messageStr;
+  }
+
+  return 'Email atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.';
+};
+
 export const LoginScreen: React.FC = () => {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -73,10 +142,7 @@ export const LoginScreen: React.FC = () => {
 
       navigate('/pos');
     } catch (err: unknown) {
-      const errorMsg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Email atau password salah. Silakan coba lagi.';
-      setError(errorMsg);
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -299,20 +365,6 @@ export const LoginScreen: React.FC = () => {
                 </Button>
               </div>
             </form>
-
-            {/* Quick Fill / Demo Helper (Helpful for quick testing & development) */}
-            <div className="mt-6 pt-5 border-t border-slate-100">
-              <p className="text-[11px] text-slate-400 font-semibold mb-2">Akses Cepat Uji Coba (Demo):</p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickFill('owner@testcafe.com', 'Password123!')}
-                  className="px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200/60 text-[#0D5C53] text-[11px] font-semibold hover:bg-teal-100/80 transition-colors cursor-pointer"
-                >
-                  Owner Test Cafe
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Footer Security Note */}
@@ -321,7 +373,7 @@ export const LoginScreen: React.FC = () => {
               <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
               Koneksi aman terenkripsi dengan standar Agilix POS
             </p>
-            <p>© 2026 Agilix Technology • v1.0 Enterprise</p>
+            <p>© 2026 Agilix Tech • v1.0.0 Enterprise</p>
           </div>
         </div>
       </div>
