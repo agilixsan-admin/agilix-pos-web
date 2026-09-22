@@ -438,7 +438,7 @@ export function usePosSettings(outletId?: string) {
   return useQuery({
     queryKey: settingsKeys.posSettings(outletId),
     queryFn: () => settingsService.getPosSettings(outletId),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
 }
 
