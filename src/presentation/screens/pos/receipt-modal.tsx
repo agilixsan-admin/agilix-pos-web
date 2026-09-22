@@ -141,7 +141,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               </div>
             )}
             <h3 className="font-bold text-sm tracking-wider uppercase">
-              {tenant?.name || 'AGILIX POS'}
+              {tenant?.businessName || tenant?.name || 'AGILIX POS'}
             </h3>
             <p className="text-[11px] text-slate-600">{currentOutlet?.name || 'Outlet Utama'}</p>
             {currentOutlet?.address && (

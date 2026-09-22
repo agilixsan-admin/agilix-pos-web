@@ -37,15 +37,27 @@ export const useAuthStore = create<AuthStoreState>()(
       isTenantLocked: false,
 
       setAuth: ({ user, tenant, outlets, accessToken, refreshToken }) => {
+        const rawTenant =
+          tenant ||
+          (user as unknown as { tenant?: Tenant & { businessName?: string } })?.tenant ||
+          null;
+        const normalizedTenant = rawTenant
+          ? {
+              ...rawTenant,
+              name: rawTenant.businessName || rawTenant.name || '',
+              businessName: rawTenant.businessName || rawTenant.name || '',
+            }
+          : null;
         const defaultOutlet = outlets.find((o) => o.id === user.outletId) || outlets[0] || null;
         set({
           user,
-          tenant,
+          tenant: normalizedTenant,
           outlets,
           currentOutlet: get().currentOutlet || defaultOutlet,
           accessToken,
           refreshToken: refreshToken || null,
-          isTenantLocked: tenant?.status === 'LOCKED' || tenant?.status === 'SUSPENDED',
+          isTenantLocked:
+            normalizedTenant?.status === 'LOCKED' || normalizedTenant?.status === 'SUSPENDED',
         });
       },
 
@@ -83,6 +95,21 @@ export const useAuthStore = create<AuthStoreState>()(
         refreshToken: state.refreshToken,
         isTenantLocked: state.isTenantLocked,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          const rawTenant =
+            state.tenant ||
+            (state.user as unknown as { tenant?: Tenant & { businessName?: string } })?.tenant;
+          if (rawTenant) {
+            const resolvedName = rawTenant.businessName || rawTenant.name || '';
+            state.tenant = {
+              ...rawTenant,
+              name: resolvedName,
+              businessName: rawTenant.businessName || resolvedName,
+            };
+          }
+        }
+      },
     }
   )
 );

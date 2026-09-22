@@ -417,7 +417,7 @@ export const TransactionDetailView: React.FC<TransactionDetailViewProps> = ({
             <div className="bg-white p-4 rounded-xl border border-slate-200 font-mono text-[11px] text-slate-800 space-y-2 shadow-xs">
               <div className="text-center pb-2 border-b border-dashed border-slate-300">
                 <h4 className="font-bold text-xs uppercase tracking-wider">
-                  {tenant?.name || 'AGILIX POS'}
+                  {tenant?.businessName || tenant?.name || 'AGILIX POS'}
                 </h4>
                 <p className="text-[10px] text-slate-500">{currentOutlet?.name || 'Outlet Utama'}</p>
                 <p className="text-[9px] text-slate-400">

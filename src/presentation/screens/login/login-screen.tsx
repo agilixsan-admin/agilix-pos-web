@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { Tenant } from '@model/Auth';
 import { useAuthStore } from '@domain/state/auth-store';
 import { authService } from '@domain/services/auth-service';
 import {
@@ -129,7 +130,7 @@ export const LoginScreen: React.FC = () => {
 
       setAuth({
         user: data.user,
-        tenant: data.tenant,
+        tenant: data.tenant || (data.user as unknown as { tenant?: Tenant })?.tenant,
         outlets: data.outlets || [],
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,

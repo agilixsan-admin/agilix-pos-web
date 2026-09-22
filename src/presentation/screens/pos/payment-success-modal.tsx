@@ -309,7 +309,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                 <div className="space-y-2">
                   <div className="text-center pb-2 border-b border-dashed border-slate-200">
                     <h5 className="font-bold text-sm tracking-wider uppercase">
-                      {tenant?.name || 'AGILIX POS'}
+                      {tenant?.businessName || tenant?.name || 'AGILIX POS'}
                     </h5>
                     <p className="text-[10px] text-slate-500">{currentOutlet?.name || 'Outlet Utama'}</p>
                     <p className="text-[9px] text-slate-400">

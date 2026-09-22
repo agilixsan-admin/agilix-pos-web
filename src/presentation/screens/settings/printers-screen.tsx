@@ -1113,7 +1113,7 @@ export const PrintersScreen: React.FC = () => {
                       </div>
                     )}
                     <h4 className="font-bold text-xs tracking-wider uppercase">
-                      {tenant?.name || 'AGILIX POS'}
+                      {tenant?.businessName || tenant?.name || 'AGILIX POS'}
                     </h4>
                     <p className="text-[10px] text-slate-600 font-sans font-medium">
                       {activeOutlet?.name || 'Outlet Utama'}

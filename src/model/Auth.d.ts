@@ -34,6 +34,7 @@ export interface Outlet {
 export interface Tenant {
   id: string;
   name: string;
+  businessName?: string;
   status: 'ACTIVE' | 'LOCKED' | 'SUSPENDED' | 'EXPIRED';
   plan: string;
 }
