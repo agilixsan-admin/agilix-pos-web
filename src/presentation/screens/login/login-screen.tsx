@@ -150,80 +150,41 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-white font-sans text-slate-800 antialiased selection:bg-[#0D5C53] selection:text-white">
-      {/* ─── SISI KIRI: VISUAL ATMOSFER F&B (DESKTOP & TABLET LANDSCAPE) ─── */}
-      <div className="hidden lg:relative lg:flex lg:w-1/2 xl:w-[54%] flex-col justify-between p-12 xl:p-16 overflow-hidden bg-slate-900 text-white select-none">
-        {/* Foto Suasana Kafe / Barista Autentik */}
-        <img
-          src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=1600&auto=format&fit=crop"
-          alt="Coffee Shop Counter"
-          className="absolute inset-0 w-full h-full object-cover object-center"
-        />
+    <div className="min-h-screen w-full flex flex-col justify-between items-center p-4 sm:p-6 md:p-8 bg-[#F8FAFC] relative overflow-hidden font-sans text-slate-800 antialiased selection:bg-[#0D5C53] selection:text-white">
+      {/* Background Architectural Texture (Subtle dot grid & soft ambient gradient) */}
+      <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-gradient-to-b from-[#0D5C53]/[0.06] to-transparent rounded-full blur-3xl pointer-events-none" />
 
-        {/* Gradasi Gelap Hangat untuk Kontras & Keterbacaan */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/55 pointer-events-none" />
+      {/* Top Bar / Status */}
+      <header className="relative z-10 w-full max-w-[420px] flex items-center justify-between py-2 text-[11px] text-slate-400 font-medium">
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse" />
+          Terminal POS Siap
+        </span>
+        <span>v1.0 Enterprise</span>
+      </header>
 
-        {/* Identitas Brand di Pojok Kiri Atas */}
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-sm">
-            <Store className="w-5 h-5 text-teal-200" />
-          </div>
-          <div>
-            <span className="text-lg font-bold tracking-tight text-white">Agilix POS</span>
-            <span className="block text-[10px] text-white/70 font-semibold tracking-wider uppercase">
-              Terminal Operasional
-            </span>
-          </div>
-        </div>
-
-        {/* Kutipan / Suasana di Pojok Kiri Bawah */}
-        <div className="relative z-10 max-w-lg space-y-3">
-          <p className="text-2xl xl:text-3xl font-serif italic text-white/95 leading-snug">
-            “Setiap racikan terbaik dan pelayanan berkesan bermula dari operasional yang rapi.”
-          </p>
-          <div className="pt-2 flex items-center gap-3 text-xs text-white/60 font-medium">
-            <span>Sistem Kasir & ERP Multi-Outlet</span>
-            <span>•</span>
-            <span>Versi 1.0</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── SISI KANAN: FORMULIR LOGIN BERSIH & FOKUS ─── */}
-      <div className="w-full lg:w-1/2 xl:w-[46%] flex flex-col justify-between p-8 sm:p-12 lg:p-14 xl:p-20 min-h-screen bg-white">
-        {/* Header Bagian Atas / Mobile Branding */}
-        <div className="w-full max-w-sm mx-auto flex items-center justify-between lg:justify-end">
-          <div className="lg:hidden flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-[#0D5C53] rounded-xl flex items-center justify-center text-white">
-              <Store className="w-5 h-5" />
+      {/* Card Utama (Centered Studio Workstation) */}
+      <main className="relative z-10 w-full max-w-[420px] my-auto">
+        <div className="bg-white border border-slate-200/90 rounded-2xl shadow-[0_12px_40px_rgba(15,23,42,0.06)] p-7 sm:p-9 transition-all">
+          {/* Brand Header */}
+          <div className="flex flex-col items-center text-center mb-7">
+            <div className="w-12 h-12 rounded-2xl bg-[#0D5C53] text-white flex items-center justify-center shadow-md shadow-[#0D5C53]/15 mb-3.5 ring-4 ring-[#0D5C53]/10">
+              <Store className="w-6 h-6 text-teal-100" />
             </div>
-            <span className="text-base font-bold text-slate-900 tracking-tight">Agilix POS</span>
-          </div>
-
-          <div className="text-[11px] font-medium text-slate-400">
-            Terminal Kasir
-          </div>
-        </div>
-
-        {/* Konten Utama Formulir */}
-        <div className="w-full max-w-sm mx-auto my-auto py-8">
-          <div className="space-y-1.5 mb-8">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              Masuk ke Terminal
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              Masuk ke Agilix POS
             </h1>
-            <p className="text-xs text-slate-500">
-              Masukkan akun staf atau pengelola untuk membuka sesi kasir.
+            <p className="text-xs text-slate-500 mt-1">
+              Sistem Kasir & Operasional Multi-Outlet
             </p>
           </div>
 
           {/* Banner Error */}
           {error && (
-            <div className="mb-6 bg-rose-50 border border-rose-200/90 rounded-xl p-3.5 flex items-start gap-3 text-rose-800 text-xs">
+            <div className="mb-5 bg-rose-50 border border-rose-200/90 rounded-xl p-3 flex items-start gap-2.5 text-rose-800 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
-              <div className="space-y-0.5">
-                <p className="font-semibold text-rose-900">Gagal Masuk</p>
-                <p className="text-rose-700 leading-relaxed">{error}</p>
-              </div>
+              <div className="leading-relaxed font-medium">{error}</div>
             </div>
           )}
 
@@ -231,7 +192,7 @@ export const LoginScreen: React.FC = () => {
             {/* Input Email */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">
-                Email Akun
+                Email Staf / Pengelola
               </label>
               <div className="relative">
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
@@ -244,7 +205,7 @@ export const LoginScreen: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="kasir@toko.com"
-                  className="w-full bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl pl-10 pr-3.5 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/15 focus:border-[#0D5C53] transition-all"
+                  className="w-full h-11 bg-white border border-slate-200 rounded-xl pl-10 pr-3.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/15 focus:border-[#0D5C53] transition-all"
                 />
               </div>
             </div>
@@ -264,7 +225,7 @@ export const LoginScreen: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl pl-10 pr-10 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/15 focus:border-[#0D5C53] transition-all"
+                  className="w-full h-11 bg-white border border-slate-200 rounded-xl pl-10 pr-10 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/15 focus:border-[#0D5C53] transition-all"
                 />
                 <button
                   type="button"
@@ -290,12 +251,12 @@ export const LoginScreen: React.FC = () => {
               </label>
             </div>
 
-            {/* Tombol Submit */}
-            <div className="pt-3">
+            {/* Tombol Masuk */}
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#0D5C53] hover:bg-[#094740] active:scale-[0.99] disabled:opacity-70 text-white font-semibold text-xs py-3.5 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full h-11 bg-[#0D5C53] hover:bg-[#094740] active:scale-[0.99] disabled:opacity-70 text-white font-semibold text-xs rounded-xl shadow-sm shadow-[#0D5C53]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -304,7 +265,7 @@ export const LoginScreen: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <span>Buka Sesi Kasir</span>
+                    <span>Masuk ke Sistem Kasir</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -313,14 +274,14 @@ export const LoginScreen: React.FC = () => {
           </form>
 
           {/* Quick Fill / Akses Demo Pengujian */}
-
+         
         </div>
+      </main>
 
-        {/* Footer Bawah */}
-        <div className="w-full max-w-sm mx-auto text-center text-[11px] text-slate-400">
-          Lupa kata sandi? Hubungi Supervisor atau Administrator Toko.
-        </div>
-      </div>
+      {/* Footer Bawah */}
+      <footer className="relative z-10 w-full max-w-[420px] text-center text-[11px] text-slate-400 py-3">
+        Lupa kata sandi? Hubungi Supervisor atau Administrator Toko.
+      </footer>
     </div>
   );
 };
