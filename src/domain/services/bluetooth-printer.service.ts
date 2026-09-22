@@ -39,6 +39,7 @@ export interface PrintOptions {
   outletName?: string;
   outletAddress?: string;
   outletPhone?: string;
+  footerText?: string | null;
 }
 
 class BluetoothPrinterService {
@@ -320,9 +321,15 @@ class BluetoothPrinterService {
     addLine(divider('-'));
 
     // 6. Footer Notes
-    add(...ESC_ALIGN_CENTER);
-    addLine('Terima kasih atas kunjungan Anda!');
-    addLine('Powered by Agilix POS');
+    if (options.footerText && options.footerText.trim()) {
+      add(...ESC_ALIGN_CENTER);
+      const lines = options.footerText.split('\n');
+      for (const line of lines) {
+        if (line.trim()) {
+          addLine(line.trim());
+        }
+      }
+    }
 
     // 7. Feed and Cut Paper
     add(...ESC_FEED_3);

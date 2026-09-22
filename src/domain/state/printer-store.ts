@@ -16,7 +16,7 @@ interface PrinterStoreState {
   setPaperWidth: (width: '58mm' | '80mm') => void;
   printReceipt: (
     order: Order,
-    outletInfo?: { name?: string; address?: string; phone?: string }
+    outletInfo?: { name?: string; address?: string; phone?: string; footerText?: string | null }
   ) => Promise<void>;
 }
 
@@ -71,6 +71,7 @@ export const usePrinterStore = create<PrinterStoreState>()(
             outletName: outletInfo?.name,
             outletAddress: outletInfo?.address,
             outletPhone: outletInfo?.phone,
+            footerText: outletInfo?.footerText,
           });
         },
       };

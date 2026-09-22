@@ -143,11 +143,6 @@ export const LoginScreen: React.FC = () => {
     }
   };
 
-  const handleQuickFill = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setError(null);
-  };
 
   return (
     <div className="min-h-screen w-full flex flex-col justify-between items-center p-4 sm:p-6 md:p-8 bg-[#F8FAFC] relative overflow-hidden font-sans text-slate-800 antialiased selection:bg-[#0D5C53] selection:text-white">

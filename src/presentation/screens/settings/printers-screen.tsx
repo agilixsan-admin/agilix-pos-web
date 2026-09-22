@@ -16,6 +16,9 @@ import {
   useUpdatePrinterRoutingRulesMutation,
   useCategories,
   useOutlets,
+  usePosSettings,
+  useUpdatePosSettingsMutation,
+  useUploadBillLogoMutation,
 } from '@domain/hooks';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -35,6 +38,14 @@ import {
   PrinterCheck,
   AlertCircle,
   Store,
+  Receipt,
+  UploadCloud,
+  Image as ImageIcon,
+  Globe,
+  Save,
+  RotateCcw,
+  Sparkles,
+  Eye,
 } from 'lucide-react';
 import {
   Button,
@@ -46,6 +57,7 @@ import {
   CustomSelect,
   LoadingState,
   EmptyState,
+  Tabs,
 } from '@presentation/components/ui';
 
 export const PrintersScreen: React.FC = () => {
@@ -123,6 +135,85 @@ export const PrintersScreen: React.FC = () => {
 
   // Routing Rules Form State
   const [routingState, setRoutingState] = useState<Record<string, string>>({});
+
+  // Active Tab & Global Format Struk State
+  const tenant = useAuthStore((state) => state.tenant);
+  const [activeTab, setActiveTab] = useState<'devices' | 'routing' | 'format'>('devices');
+
+  const { data: posSettings } = usePosSettings();
+  const updatePosSettingsMutation = useUpdatePosSettingsMutation();
+  const uploadLogoMutation = useUploadBillLogoMutation();
+
+  const [billLogoUrl, setBillLogoUrl] = useState<string | null>(null);
+  const [isFooterEnabled, setIsFooterEnabled] = useState<boolean>(true);
+  const [billFooterText, setBillFooterText] = useState<string>('Terima kasih atas kunjungan Anda!');
+  const [isUploadingLogo, setIsUploadingLogo] = useState<boolean>(false);
+  const [isSavingFormat, setIsSavingFormat] = useState<boolean>(false);
+  const [previewPaperSize, setPreviewPaperSize] = useState<'58mm' | '80mm'>('58mm');
+  const logoFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // Sync with fetched posSettings
+  useEffect(() => {
+    if (posSettings) {
+      setBillLogoUrl(posSettings.billLogoUrl || null);
+      if (posSettings.billFooterText !== undefined) {
+        const text = posSettings.billFooterText || '';
+        setBillFooterText(text);
+        setIsFooterEnabled(Boolean(text && text.trim().length > 0));
+      }
+    }
+  }, [posSettings]);
+
+  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Ukuran file logo maksimal 2MB.');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      const res = await uploadLogoMutation.mutateAsync(file);
+      setBillLogoUrl(res.url);
+      showToast('Logo berhasil diunggah! Klik "Simpan Format Struk" untuk menerapkan.');
+    } catch (err: unknown) {
+      alert(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Gagal mengunggah logo toko.'
+      );
+    } finally {
+      setIsUploadingLogo(false);
+      if (logoFileInputRef.current) {
+        logoFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setBillLogoUrl(null);
+    showToast('Logo dihapus dari pratinjau. Klik "Simpan Format Struk" untuk menerapkan.');
+  };
+
+  const handleSaveReceiptFormat = async () => {
+    setIsSavingFormat(true);
+    try {
+      await updatePosSettingsMutation.mutateAsync({
+        outletId: null,
+        billLogoUrl: billLogoUrl || null,
+        billFooterText: isFooterEnabled ? (billFooterText.trim() || null) : null,
+      });
+      showToast('Format struk & logo toko berhasil disimpan secara global!');
+    } catch (err: unknown) {
+      alert(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Gagal menyimpan format struk.'
+      );
+    } finally {
+      setIsSavingFormat(false);
+    }
+  };
 
   const showToast = (message: string) => {
     setSuccessToast(message);
@@ -357,30 +448,85 @@ export const PrintersScreen: React.FC = () => {
             />
           </div>
 
-          <Button
-            variant="outline"
-            leftIcon={<SlidersHorizontal className="w-4 h-4" />}
-            onClick={handleOpenRouting}
-            className="text-xs font-semibold border-slate-200 hover:bg-slate-50"
-          >
-            Routing Kategori
-          </Button>
+          {activeTab === 'devices' && (
+            <>
+              <Button
+                variant="outline"
+                leftIcon={<SlidersHorizontal className="w-4 h-4" />}
+                onClick={handleOpenRouting}
+                className="text-xs font-semibold border-slate-200 hover:bg-slate-50"
+              >
+                Routing Kategori
+              </Button>
 
-          <Button
-            variant="primary"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={handleOpenAdd}
-            className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm"
-          >
-            + Tambah Printer
-          </Button>
+              <Button
+                variant="primary"
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={handleOpenAdd}
+                className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm"
+              >
+                + Tambah Printer
+              </Button>
+            </>
+          )}
+
+          {activeTab === 'routing' && (
+            <Button
+              variant="primary"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={handleOpenAdd}
+              className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm"
+            >
+              + Tambah Printer
+            </Button>
+          )}
+
+          {activeTab === 'format' && (
+            <Button
+              variant="primary"
+              leftIcon={<Save className="w-4 h-4" />}
+              onClick={handleSaveReceiptFormat}
+              isLoading={isSavingFormat || updatePosSettingsMutation.isPending}
+              className="bg-[#0D5C53] hover:bg-[#09423c] text-white shadow-sm font-bold"
+            >
+              Simpan Format Struk
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* 2-Column Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Printer Cards (8 Cols) */}
-        <div className="lg:col-span-8 space-y-3.5">
+      {/* Navigation Tabs */}
+      <div className="bg-white p-2 sm:px-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <Tabs
+          tabs={[
+            {
+              id: 'devices',
+              label: 'Perangkat Printer',
+              icon: <Printer className="w-4 h-4" />,
+              count: printers.length,
+            },
+            {
+              id: 'routing',
+              label: 'Routing Kategori',
+              icon: <SlidersHorizontal className="w-4 h-4" />,
+              count: configuredRules.length,
+            },
+            {
+              id: 'format',
+              label: 'Format Struk & Logo Toko',
+              icon: <Receipt className="w-4 h-4" />,
+            },
+          ]}
+          activeTab={activeTab}
+          onChange={(id) => setActiveTab(id as 'devices' | 'routing' | 'format')}
+        />
+      </div>
+
+      {/* Tab 1: Perangkat Printer */}
+      {activeTab === 'devices' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Printer Cards (8 Cols) */}
+          <div className="lg:col-span-8 space-y-3.5">
           <div className="flex items-center justify-between px-1">
             <div>
               <h2 className="text-sm font-bold text-slate-900">
@@ -630,6 +776,434 @@ export const PrintersScreen: React.FC = () => {
           </Card>
         </div>
       </div>
+      )}
+
+      {/* Tab 2: Routing Kategori */}
+      {activeTab === 'routing' && (
+        <Card padding="lg" className="border-slate-200 bg-white shadow-2xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900">
+                  Aturan Routing Kategori Pesanan
+                </h2>
+                <Badge variant="info">{activeOutlet?.name || 'Cabang Terpilih'}</Badge>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Tentukan printer tujuan (Dapur, Bar, atau Kasir) untuk setiap kategori menu saat pesanan dikirim.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              onClick={handleOpenRouting}
+              leftIcon={<SlidersHorizontal className="w-4 h-4" />}
+              className="bg-[#0D5C53] hover:bg-[#09423C] text-white self-start sm:self-auto text-xs font-semibold"
+            >
+              Ubah Konfigurasi Routing
+            </Button>
+          </div>
+
+          {categories.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 text-xs">
+              Belum ada kategori produk terdaftar di sistem. Silakan tambahkan kategori di menu Produk.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {categories.map((cat) => {
+                const matchedRule = routingRules.find((r) => r.categoryId === cat.id);
+                return (
+                  <div
+                    key={cat.id}
+                    className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-3"
+                  >
+                    <div>
+                      <span className="text-xs font-bold text-slate-900">{cat.name}</span>
+                      <p className="text-[11px] text-slate-500">Tiket pesanan kategori</p>
+                    </div>
+                    {matchedRule?.printerName ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-[#0D5C53] border border-teal-200">
+                        <Printer className="w-3.5 h-3.5" />
+                        {matchedRule.printerName}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-200/70 text-slate-600">
+                        Printer Default
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Tab 3: Format Struk & Logo Bisnis */}
+      {activeTab === 'format' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Form Settings (7 cols) */}
+          <div className="lg:col-span-7 space-y-5">
+            {/* Global Scope Banner */}
+            <div className="p-4 bg-teal-50/80 border border-teal-200/80 rounded-2xl flex items-start gap-3.5 shadow-2xs">
+              <div className="w-9 h-9 rounded-xl bg-teal-100 text-[#0D5C53] flex items-center justify-center shrink-0 mt-0.5">
+                <Globe className="w-5 h-5" />
+              </div>
+              <div className="space-y-1 text-xs">
+                <div className="font-bold text-[#0D5C53] flex items-center gap-2">
+                  <span>Logo Bisnis & Pengaturan Struk Global</span>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                    Berlaku Semua Cabang
+                  </span>
+                </div>
+                <p className="text-slate-600 leading-relaxed">
+                  Logo resmi bisnis berlaku secara global untuk seluruh cabang outlet. Setiap struk transaksi di cabang mana pun akan mencetak logo ini di posisi teratas, diikuti oleh nama cabang, alamat, dan kontak telepon cabang terkait secara otomatis.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 1: Logo Toko */}
+            <Card padding="lg" className="border-slate-200 bg-white shadow-2xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-[#0D5C53]" />
+                    Logo Bisnis / Toko Resmi
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Dicetak di posisi paling atas pada setiap struk kasir pembayaran.
+                  </p>
+                </div>
+                {billLogoUrl ? (
+                  <Badge variant="success">Logo Aktif</Badge>
+                ) : (
+                  <Badge variant="neutral">Belum Ada Logo</Badge>
+                )}
+              </div>
+
+              {/* Hidden File Input */}
+              <input
+                type="file"
+                ref={logoFileInputRef}
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleLogoFileChange}
+                className="hidden"
+              />
+
+              {billLogoUrl ? (
+                <div className="space-y-4">
+                  <div className="p-6 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col items-center justify-center gap-2.5">
+                    <div className="p-3 bg-white rounded-xl shadow-xs border border-slate-200/80">
+                      <img
+                        src={billLogoUrl}
+                        alt="Logo Toko"
+                        className="max-h-24 max-w-[220px] object-contain"
+                      />
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      Pratinjau Logo Bisnis Aktif
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => logoFileInputRef.current?.click()}
+                      isLoading={isUploadingLogo}
+                      leftIcon={<UploadCloud className="w-3.5 h-3.5" />}
+                      className="text-xs font-semibold border-slate-200 hover:bg-slate-50"
+                    >
+                      Ganti Logo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRemoveLogo}
+                      leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-500" />}
+                      className="text-xs font-semibold text-rose-600 hover:bg-rose-50 border-rose-200"
+                    >
+                      Hapus Logo
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => logoFileInputRef.current?.click()}
+                  className="p-8 border-2 border-dashed border-slate-300 hover:border-[#0D5C53] rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer bg-slate-50/50 hover:bg-teal-50/20 transition-all group"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#0D5C53] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-xs">
+                    {isUploadingLogo ? (
+                      <div className="w-5 h-5 border-2 border-[#0D5C53] border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <UploadCloud className="w-6 h-6" />
+                    )}
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-800">
+                    {isUploadingLogo ? 'Mengunggah logo...' : 'Klik untuk Unggah Logo Bisnis'}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 max-w-sm">
+                    Mendukung format gambar PNG, JPG, atau WebP (Maks. 2MB). Disarankan berlatar belakang transparan atau putih polos.
+                  </p>
+                </div>
+              )}
+            </Card>
+
+            {/* Card 2: Catatan Kaki (Footer Struk) */}
+            <Card padding="lg" className="border-slate-200 bg-white shadow-2xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <Receipt className="w-4 h-4 text-[#0D5C53]" />
+                    Catatan Kaki Struk (Footer)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Pesan penutup di bagian paling bawah struk kasir pembayaran.
+                  </p>
+                </div>
+
+                {/* Toggle Switch */}
+                <div className="flex items-center gap-2.5">
+                  <span className={`text-xs font-semibold ${isFooterEnabled ? 'text-[#0D5C53]' : 'text-slate-400'}`}>
+                    {isFooterEnabled ? 'Footer Aktif' : 'Footer Nonaktif'}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isFooterEnabled}
+                    onClick={() => setIsFooterEnabled(!isFooterEnabled)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                      isFooterEnabled ? 'bg-[#0D5C53]' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        isFooterEnabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {isFooterEnabled ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Isi Pesan Catatan Kaki
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={billFooterText}
+                      onChange={(e) => setBillFooterText(e.target.value)}
+                      placeholder="Contoh: Terima kasih atas kunjungan Anda!&#10;Barang yang sudah dibeli tidak dapat ditukar.&#10;Follow IG: @tokocoffee"
+                      className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] transition-all resize-y font-mono"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Tips: Tekan tombol Enter pada keyboard untuk memisahkan baris baru pada struk cetak.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setBillFooterText('Terima kasih atas kunjungan Anda!')}
+                      className="text-[11px] text-[#0D5C53] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Gunakan Contoh Standar
+                    </button>
+                    <span className="text-slate-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setBillFooterText('')}
+                      className="text-[11px] text-slate-500 hover:text-slate-800 hover:underline font-medium cursor-pointer"
+                    >
+                      Kosongkan Teks
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 italic">
+                  Catatan kaki saat ini dinonaktifkan. Struk kasir akan dicetak tanpa teks penutup tambahan.
+                </div>
+              )}
+            </Card>
+
+            {/* Bottom Save Action Bar */}
+            <div className="flex items-center justify-between bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="text-xs text-slate-500 max-w-sm">
+                Perubahan logo dan catatan kaki akan langsung berlaku saat kasir mencetak struk transaksi berikutnya.
+              </div>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleSaveReceiptFormat}
+                isLoading={isSavingFormat || updatePosSettingsMutation.isPending}
+                leftIcon={<Save className="w-4 h-4" />}
+                className="bg-[#0D5C53] hover:bg-[#09423C] text-white shadow-sm font-bold px-6"
+              >
+                Simpan Format Struk
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Column: Live Thermal Receipt Simulator (5 cols) */}
+          <div className="lg:col-span-5 sticky top-6 space-y-4">
+            <Card padding="md" className="border-slate-200 bg-white shadow-2xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-[#0D5C53]" />
+                  <h3 className="text-xs font-bold text-slate-900">Simulasi Struk Kasir</h3>
+                </div>
+                {/* Paper Width Toggle */}
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-lg text-[10px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewPaperSize('58mm')}
+                    className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
+                      previewPaperSize === '58mm'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    58mm
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewPaperSize('80mm')}
+                    className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
+                      previewPaperSize === '80mm'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    80mm
+                  </button>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-slate-500 flex items-center justify-between">
+                <span>Simulasi Cabang:</span>
+                <span className="font-semibold text-slate-800">{activeOutlet?.name || 'Outlet Utama'}</span>
+              </div>
+
+              {/* Thermal Paper Look Container */}
+              <div className="bg-slate-100 p-4 sm:p-5 rounded-2xl flex justify-center">
+                <div
+                  className={`bg-white border border-slate-200/90 p-5 font-mono text-slate-900 text-xs leading-relaxed transition-all duration-200 rounded-lg ${
+                    previewPaperSize === '58mm' ? 'w-[260px]' : 'w-[320px]'
+                  }`}
+                  style={{
+                    boxShadow: '0 6px 18px 0 rgba(0, 0, 0, 0.08)',
+                  }}
+                >
+                  {/* Receipt Header */}
+                  <div className="text-center pb-3 border-b border-dashed border-slate-300">
+                    {billLogoUrl ? (
+                      <div className="flex justify-center mb-2">
+                        <img
+                          src={billLogoUrl}
+                          alt="Logo Toko"
+                          className="max-h-12 max-w-[130px] object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="p-1 mb-1.5 border border-dashed border-slate-200 rounded text-[9px] text-slate-400 italic">
+                        [ Belum Ada Logo Bisnis ]
+                      </div>
+                    )}
+                    <h4 className="font-bold text-xs tracking-wider uppercase">
+                      {tenant?.name || 'AGILIX POS'}
+                    </h4>
+                    <p className="text-[10px] text-slate-600 font-sans font-medium">
+                      {activeOutlet?.name || 'Outlet Utama'}
+                    </p>
+                    <p className="text-[9px] text-slate-500">
+                      {activeOutlet?.address || 'Alamat Cabang Outlet'}
+                    </p>
+                    {activeOutlet?.phone && (
+                      <p className="text-[9px] text-slate-500">Telp: {activeOutlet.phone}</p>
+                    )}
+                  </div>
+
+                  {/* Order Info */}
+                  <div className="py-2 border-b border-dashed border-slate-300 text-[10px] space-y-0.5">
+                    <div className="flex justify-between">
+                      <span>No. Order:</span>
+                      <span className="font-semibold">ORD-2026-0042</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Waktu:</span>
+                      <span>22/09/2026, 12:30</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tipe:</span>
+                      <span className="font-semibold">Dine-In (Meja 04)</span>
+                    </div>
+                  </div>
+
+                  {/* Sample Items */}
+                  <div className="py-2.5 border-b border-dashed border-slate-300 space-y-1.5 text-[10px]">
+                    <div>
+                      <div className="flex justify-between font-semibold">
+                        <span>Kopi Susu Gula Aren</span>
+                        <span>Rp 22.000</span>
+                      </div>
+                      <div className="text-[9px] text-slate-400 flex justify-between">
+                        <span>1 x Rp 22.000</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between font-semibold">
+                        <span>Croissant Butter</span>
+                        <span>Rp 28.000</span>
+                      </div>
+                      <div className="text-[9px] text-slate-400 flex justify-between">
+                        <span>1 x Rp 28.000</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Totals */}
+                  <div className="py-2 border-b border-dashed border-slate-300 text-[10px] space-y-1">
+                    <div className="flex justify-between">
+                      <span>Subtotal</span>
+                      <span>Rp 50.000</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>PB1 (10%)</span>
+                      <span>Rp 5.000</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-xs pt-1 border-t border-slate-100">
+                      <span>TOTAL</span>
+                      <span>Rp 55.000</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-slate-600">
+                      <span>Bayar (QRIS)</span>
+                      <span>Rp 55.000</span>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  {isFooterEnabled && billFooterText && billFooterText.trim() ? (
+                    <div className="text-center pt-3 text-[9px] text-slate-600 space-y-0.5">
+                      <p className="whitespace-pre-line">{billFooterText.trim()}</p>
+                      <p className="text-[8px] text-slate-400 pt-1">Powered by Agilix POS</p>
+                    </div>
+                  ) : (
+                    <div className="text-center pt-2 text-[8px] text-slate-400">
+                      <p>Powered by Agilix POS</p>
+                    </div>
+                  )}
+
+                  {/* Jagged Bottom Tear Effect */}
+                  <div className="mt-4 pt-2 border-b-2 border-dotted border-slate-300" />
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
 
       {/* Modal: Add / Edit Printer */}
       <Modal

@@ -29,6 +29,8 @@ import type {
   UpdateDiscountPayload,
   QueryDiscountParams,
   AuditLogItem,
+  PosSettings,
+  UpdatePosSettingsPayload,
 } from '@model/Settings';
 
 export const settingsService = {
@@ -367,5 +369,24 @@ export const settingsService = {
       return { items: data, total: data.length };
     }
     return { items: [], total: 0 };
+  },
+
+  getPosSettings: async (outletId?: string): Promise<PosSettings> => {
+    const res = await httpClient.get('/settings', { params: { outletId } });
+    return res.data?.data || res.data;
+  },
+
+  updatePosSettings: async (payload: UpdatePosSettingsPayload): Promise<PosSettings> => {
+    const res = await httpClient.put('/settings', payload);
+    return res.data?.data || res.data;
+  },
+
+  uploadBillLogo: async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await httpClient.post('/settings/upload-logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data?.data || res.data;
   },
 };

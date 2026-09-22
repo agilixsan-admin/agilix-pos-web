@@ -63,6 +63,7 @@ export const settingsKeys = {
   discountDetail: (id: string) => [...settingsKeys.all, 'discounts', 'detail', id] as const,
   applicableDiscounts: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'discounts', 'applicable', filters || {}] as const,
   auditLogs: (filters?: Record<string, unknown>) => [...settingsKeys.all, 'auditLogs', filters || {}] as const,
+  posSettings: (outletId?: string) => [...settingsKeys.all, 'posSettings', outletId || 'global'] as const,
 };
 
 export const reportKeys = {

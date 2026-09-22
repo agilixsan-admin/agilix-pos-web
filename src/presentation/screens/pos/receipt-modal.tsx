@@ -3,6 +3,7 @@ import type { Order } from '@model/Order';
 import { Printer, CheckCircle2, Bluetooth } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
 import { usePrinterStore } from '@domain/state/printer-store';
+import { usePosSettings } from '@domain/hooks';
 import { Button, Modal, Badge, toast } from '@presentation/components/ui';
 
 interface ReceiptModalProps {
@@ -19,6 +20,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   taxName,
 }) => {
   const { tenant, currentOutlet } = useAuthStore();
+  const { data: posSettings } = usePosSettings(currentOutlet?.id);
   const {
     isConnected: isPrinterConnected,
     deviceName: printerName,
@@ -42,6 +44,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         name: tenant?.name || currentOutlet?.name,
         address: currentOutlet?.address,
         phone: currentOutlet?.phone,
+        footerText: posSettings?.billFooterText,
       });
       toast.success('Struk berhasil dicetak ke printer Bluetooth!');
     } catch (err: unknown) {
@@ -128,10 +131,22 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         >
           {/* Header */}
           <div className="text-center pb-3 border-b border-dashed border-slate-300">
+            {posSettings?.billLogoUrl && (
+              <div className="flex justify-center mb-2">
+                <img
+                  src={posSettings.billLogoUrl}
+                  alt="Logo Toko"
+                  className="max-h-14 max-w-[140px] object-contain"
+                />
+              </div>
+            )}
             <h3 className="font-bold text-sm tracking-wider uppercase">
               {tenant?.name || 'AGILIX POS'}
             </h3>
             <p className="text-[11px] text-slate-600">{currentOutlet?.name || 'Outlet Utama'}</p>
+            {currentOutlet?.address && (
+              <p className="text-[10px] text-slate-500">{currentOutlet.address}</p>
+            )}
             {currentOutlet?.phone && (
               <p className="text-[10px] text-slate-500">Telp: {currentOutlet.phone}</p>
             )}
@@ -259,10 +274,16 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           </div>
 
           {/* Footer Receipt Note */}
-          <div className="text-center pt-3 text-[10px] text-slate-500 space-y-0.5">
-            <p>Terima kasih atas kunjungan Anda!</p>
-            <p className="text-[9px] text-slate-400">Powered by Agilix POS</p>
-          </div>
+          {posSettings?.billFooterText && posSettings.billFooterText.trim() ? (
+            <div className="text-center pt-3 text-[10px] text-slate-500 space-y-0.5">
+              <p className="whitespace-pre-line">{posSettings.billFooterText.trim()}</p>
+              <p className="text-[9px] text-slate-400">Powered by Agilix POS</p>
+            </div>
+          ) : (
+            <div className="text-center pt-2 text-[9px] text-slate-400">
+              <p>Powered by Agilix POS</p>
+            </div>
+          )}
         </div>
       </div>
     </Modal>

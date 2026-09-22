@@ -28,6 +28,8 @@ import type {
   CreateDiscountPayload,
   UpdateDiscountPayload,
   QueryDiscountParams,
+  PosSettings,
+  UpdatePosSettingsPayload,
 } from '@model/Settings';
 import { settingsKeys } from './query-keys';
 
@@ -429,6 +431,31 @@ export function useDeleteDiscountMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.all });
     },
+  });
+}
+
+export function usePosSettings(outletId?: string) {
+  return useQuery({
+    queryKey: settingsKeys.posSettings(outletId),
+    queryFn: () => settingsService.getPosSettings(outletId),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpdatePosSettingsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdatePosSettingsPayload) =>
+      settingsService.updatePosSettings(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
+    },
+  });
+}
+
+export function useUploadBillLogoMutation() {
+  return useMutation({
+    mutationFn: (file: File) => settingsService.uploadBillLogo(file),
   });
 }
 
