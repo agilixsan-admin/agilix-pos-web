@@ -25,7 +25,7 @@ import {
 export const SetPasswordScreen: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') || '';
+  const token = (searchParams.get('token') || '').trim();
 
   const setAuth = useAuthStore((state) => state.setAuth);
 
@@ -225,6 +225,8 @@ export const SetPasswordScreen: React.FC = () => {
                   type={showPassword ? 'text' : 'password'}
                   required
                   autoFocus
+                  autoComplete="new-password"
+                  className="text-base sm:text-xs"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimal 6 karakter"
@@ -245,6 +247,8 @@ export const SetPasswordScreen: React.FC = () => {
                   label="Konfirmasi Kata Sandi"
                   type={showConfirmPassword ? 'text' : 'password'}
                   required
+                  autoComplete="new-password"
+                  className="text-base sm:text-xs"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Ketik ulang kata sandi baru"
