@@ -223,3 +223,34 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
   );
 };
 
+export interface FormFieldProps {
+  label?: string;
+  error?: string;
+  helperText?: string;
+  required?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const FormField: React.FC<FormFieldProps> = ({
+  label,
+  error,
+  helperText,
+  required,
+  children,
+  className = '',
+}) => {
+  return (
+    <div className={`space-y-1.5 w-full ${className}`}>
+      {label && (
+        <label className="block text-xs font-semibold text-slate-700">
+          {label} {required && <span className="text-rose-500">*</span>}
+        </label>
+      )}
+      {children}
+      {error && <p className="text-[11px] text-rose-600 font-medium">{error}</p>}
+      {helperText && !error && <p className="text-[11px] text-slate-400">{helperText}</p>}
+    </div>
+  );
+};
+

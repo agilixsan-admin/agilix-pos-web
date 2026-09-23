@@ -27,6 +27,12 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Wallet,
+  Layers,
+  BookOpen,
+  Clock,
+  FileSpreadsheet,
+  ReceiptText,
   type LucideIcon,
 } from 'lucide-react';
 import { useAccess } from '@domain/hooks/use-access';
@@ -72,9 +78,20 @@ const MENU_GROUPS: MenuGroup[] = [
     ],
   },
   {
+    groupTitle: 'KEUANGAN',
+    items: [
+      { title: 'Kas & Bank', path: '/finance/accounts', icon: Wallet, permission: 'finance.account.read' },
+      { title: 'Biaya Operasional', path: '/finance/expenses', icon: ReceiptText, permission: 'finance.expense.read' },
+      { title: 'Aset Tetap', path: '/finance/assets', icon: Layers, permission: 'finance.asset.read' },
+      { title: 'Buku Besar & COA', path: '/finance/general-ledger', icon: BookOpen, permission: 'finance.journal.read' },
+    ],
+  },
+  {
     groupTitle: 'LAPORAN',
     items: [
       { title: 'Penjualan', path: '/reports/sales', icon: TrendingUp, permission: 'report:read' },
+      { title: 'Rekonsiliasi Shift', path: '/reports/shifts', icon: Clock, permission: 'report.shift.read' },
+      { title: 'Laporan Keuangan', path: '/reports/financial', icon: FileSpreadsheet, permission: 'report.financial.read' },
       { title: 'Profit', path: '/reports/profit', icon: CircleDollarSign, permission: 'report:read' },
       { title: 'Inventory', path: '/reports/inventory', icon: ScrollText, permission: 'report:read' },
     ],

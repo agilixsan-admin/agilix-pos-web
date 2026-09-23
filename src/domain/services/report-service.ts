@@ -56,6 +56,16 @@ export interface SalesReportData {
     count: string | number;
   }>;
   summary: {
+    grossSales?: number;
+    totalDiscount?: number;
+    netSales?: number;
+    totalCogs?: number;
+    grossProfit?: number;
+    marginPercentage?: number;
+    totalTax?: number;
+    totalService?: number;
+    totalPackaging?: number;
+    totalCollected?: number;
     totalRevenue: number;
     totalOrders: number;
     totalTransactions: number;
@@ -89,6 +99,148 @@ export interface InventoryReportData {
     totalItems: number;
     lowStockItems: number;
     totalValuation: number;
+  };
+}
+
+// ─── Laporan Rekonsiliasi Shift ─────────────────────────────────────────────
+export interface ShiftReconciliationParams {
+  startDate?: string;
+  endDate?: string;
+  outletId?: string;
+  userId?: string;
+}
+
+export interface ShiftReconciliationItem {
+  id: string;
+  outletId: string;
+  outletName: string;
+  userId: string;
+  cashierName: string;
+  openedAt: string;
+  closedAt?: string | null;
+  status: 'OPEN' | 'CLOSED';
+  openingCash: number;
+  totalCashSales: number;
+  totalCashOut: number;
+  expectedCash: number;
+  actualCash: number;
+  cashDifference: number;
+  differenceStatus: 'MATCH' | 'SURPLUS' | 'SHORT';
+  notes?: string | null;
+  pettyCashCount: number;
+  pettyCashList: Array<{
+    id: string;
+    amount: number;
+    category: string;
+    notes?: string;
+    receiptPhotoUrl: string;
+    createdAt: string;
+  }>;
+}
+
+export interface ShiftReconciliationData {
+  shifts: ShiftReconciliationItem[];
+  summary: {
+    totalShifts: number;
+    totalCashSales: number;
+    totalCashOut: number;
+    totalDifference: number;
+    totalShortCount: number;
+    totalSurplusCount: number;
+  };
+}
+
+// ─── Tiga Laporan Keuangan Standar Akuntansi ────────────────────────────────
+export interface IncomeStatementParams {
+  startDate: string;
+  endDate: string;
+  outletId?: string;
+}
+
+export interface IncomeStatementData {
+  revenue: {
+    grossSales: number;
+    discounts: number;
+    netSales: number;
+  };
+  cogs: {
+    rawMaterialCogs: number;
+    totalCogs: number;
+  };
+  grossProfit: number;
+  marginPercentage: number;
+  operatingExpenses: {
+    breakdown: Array<{
+      category: string;
+      amount: number;
+    }>;
+    totalExpenses: number;
+  };
+  netProfit: number;
+  meta: {
+    startDate: string;
+    endDate: string;
+    outletId: string | null;
+  };
+}
+
+export interface BalanceSheetParams {
+  asOfDate?: string;
+  outletId?: string;
+}
+
+export interface BalanceSheetData {
+  asOfDate: string;
+  outletId: string | null;
+  assets: {
+    currentAssets: {
+      cashInDrawer: number;
+      bankAndEwallet: number;
+      inventoryValuation: number;
+      totalCurrentAssets: number;
+    };
+    fixedAssets: {
+      totalAssetCost: number;
+      totalAccumulatedDepreciation: number;
+      netFixedAssets: number;
+    };
+    totalAssets: number;
+  };
+  liabilities: {
+    taxPayables: number;
+    accountsPayable: number;
+    totalLiabilities: number;
+  };
+  equity: {
+    retainedEarnings: number;
+    totalEquity: number;
+  };
+}
+
+export interface CashFlowParams {
+  startDate: string;
+  endDate: string;
+  outletId?: string;
+}
+
+export interface CashFlowData {
+  operatingActivities: {
+    cashFromSales: number;
+    cashPaidForExpenses: number;
+    netOperatingCash: number;
+  };
+  investingActivities: {
+    cashPaidForAssets: number;
+    netInvestingCash: number;
+  };
+  financingActivities: {
+    netFinancingCash: number;
+  };
+  netCashChange: number;
+  meta: {
+    startDate: string;
+    endDate: string;
+    outletId: string | null;
   };
 }
 
@@ -154,5 +306,24 @@ export const reportService = {
       summary,
     };
   },
-};
 
+  getShiftReconciliationReport: async (params: ShiftReconciliationParams): Promise<ShiftReconciliationData> => {
+    const res = await httpClient.get<{ data: ShiftReconciliationData }>('/reports/shifts', { params });
+    return res.data?.data ?? (res.data as unknown as ShiftReconciliationData);
+  },
+
+  getIncomeStatement: async (params: IncomeStatementParams): Promise<IncomeStatementData> => {
+    const res = await httpClient.get<{ data: IncomeStatementData }>('/reports/financial/income-statement', { params });
+    return res.data?.data ?? (res.data as unknown as IncomeStatementData);
+  },
+
+  getBalanceSheet: async (params: BalanceSheetParams): Promise<BalanceSheetData> => {
+    const res = await httpClient.get<{ data: BalanceSheetData }>('/reports/financial/balance-sheet', { params });
+    return res.data?.data ?? (res.data as unknown as BalanceSheetData);
+  },
+
+  getCashFlowStatement: async (params: CashFlowParams): Promise<CashFlowData> => {
+    const res = await httpClient.get<{ data: CashFlowData }>('/reports/financial/cash-flow', { params });
+    return res.data?.data ?? (res.data as unknown as CashFlowData);
+  },
+};

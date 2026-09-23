@@ -136,36 +136,76 @@ export const SalesReportScreen: React.FC = () => {
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
-              title="Total Pendapatan (Omzet)"
-              value={`Rp ${Number(summary.totalRevenue || 0).toLocaleString('id-ID')}`}
+              title="Penjualan Bersih (Net Sales)"
+              value={`Rp ${Number(summary.netSales ?? summary.totalRevenue ?? 0).toLocaleString('id-ID')}`}
               icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
               theme="emerald"
-              subtitle="Dari transaksi selesai"
+              subtitle={`Gross: Rp ${Number(summary.grossSales ?? summary.totalRevenue ?? 0).toLocaleString('id-ID')}`}
             />
 
             <KpiCard
-              title="Total Pesanan Selesai"
-              value={`${summary.totalOrders || 0} Order`}
-              icon={<ShoppingCart className="w-5 h-5 text-teal-600" />}
+              title="Laba Kotor (Gross Profit)"
+              value={`Rp ${Number(summary.grossProfit ?? 0).toLocaleString('id-ID')}`}
+              icon={<TrendingUp className="w-5 h-5 text-teal-600" />}
               theme="teal"
-              subtitle={`${summary.totalTransactions || 0} transaksi berhasil`}
+              subtitle={`Margin: ${summary.marginPercentage ?? 0}% • HPP: Rp ${Number(summary.totalCogs ?? 0).toLocaleString('id-ID')}`}
             />
 
             <KpiCard
-              title="Rata-rata Transaksi (AOV)"
-              value={`Rp ${Number(summary.averageOrderValue || 0).toLocaleString('id-ID')}`}
-              icon={<TrendingUp className="w-5 h-5 text-indigo-600" />}
+              title="Total Diterima (Kas Masuk)"
+              value={`Rp ${Number(summary.totalCollected ?? summary.totalRevenue ?? 0).toLocaleString('id-ID')}`}
+              icon={<CreditCard className="w-5 h-5 text-indigo-600" />}
               theme="indigo"
-              subtitle="Per struk pesanan"
+              subtitle={`Pajak: Rp ${Number(summary.totalTax ?? 0).toLocaleString('id-ID')} • Service: Rp ${Number(summary.totalService ?? 0).toLocaleString('id-ID')}`}
             />
 
             <KpiCard
-              title="Cakupan Operasional"
-              value={activeBranchName}
-              icon={<Store className="w-5 h-5 text-amber-600" />}
+              title="Volume Transaksi"
+              value={`${summary.totalOrders || 0} Order`}
+              icon={<ShoppingCart className="w-5 h-5 text-amber-600" />}
               theme="amber"
-              subtitle={isAllBranches ? `${outlets.length} outlet terdaftar` : 'Spesifik cabang'}
+              subtitle={`AOV: Rp ${Number(summary.averageOrderValue || 0).toLocaleString('id-ID')}`}
             />
+          </div>
+
+          {/* Detailed Financial Breakdown Strip */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 text-xs">
+            <div className="flex items-center gap-6 flex-wrap">
+              <div>
+                <span className="text-slate-400 font-semibold block uppercase text-[10px]">Gross Sales</span>
+                <span className="font-bold text-slate-800 font-mono">
+                  Rp {Number(summary.grossSales ?? summary.totalRevenue ?? 0).toLocaleString('id-ID')}
+                </span>
+              </div>
+              <div className="text-rose-600">
+                <span className="font-semibold block uppercase text-[10px]">Diskon (-)</span>
+                <span className="font-bold font-mono">
+                  -Rp {Number(summary.totalDiscount ?? 0).toLocaleString('id-ID')}
+                </span>
+              </div>
+              <div>
+                <span className="text-[#0D5C53] font-semibold block uppercase text-[10px]">Net Sales</span>
+                <span className="font-bold text-slate-900 font-mono">
+                  Rp {Number(summary.netSales ?? summary.totalRevenue ?? 0).toLocaleString('id-ID')}
+                </span>
+              </div>
+              <div>
+                <span className="text-amber-700 font-semibold block uppercase text-[10px]">HPP Bahan Baku (-)</span>
+                <span className="font-bold font-mono text-amber-900">
+                  -Rp {Number(summary.totalCogs ?? 0).toLocaleString('id-ID')}
+                </span>
+              </div>
+              <div>
+                <span className="text-emerald-700 font-semibold block uppercase text-[10px]">Laba Kotor</span>
+                <span className="font-bold font-mono text-emerald-900">
+                  Rp {Number(summary.grossProfit ?? 0).toLocaleString('id-ID')} ({summary.marginPercentage ?? 0}%)
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] text-slate-500 border-l border-slate-200 pl-4">
+              <span>Pajak: <strong className="text-slate-700">Rp {Number(summary.totalTax ?? 0).toLocaleString('id-ID')}</strong></span>
+              <span>Service: <strong className="text-slate-700">Rp {Number(summary.totalService ?? 0).toLocaleString('id-ID')}</strong></span>
+            </div>
           </div>
 
           {/* Section: Product Sales Breakdown & Payment Methods */}

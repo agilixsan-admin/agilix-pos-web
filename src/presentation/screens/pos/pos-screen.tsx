@@ -25,6 +25,10 @@ import { PaymentModal } from './payment-modal';
 import { PaymentSuccessModal } from './payment-success-modal';
 import { ReceiptModal } from './receipt-modal';
 import { OpenOrdersModal } from './open-orders-modal';
+import { OpenShiftModal } from './open-shift-modal';
+import { PettyCashModal } from './petty-cash-modal';
+import { CloseShiftModal } from './close-shift-modal';
+import { useCurrentShift } from '@domain/hooks/queries/use-shift-query';
 import {
   Plus,
   Minus,
@@ -38,6 +42,9 @@ import {
   ArrowLeft,
   Search,
   Receipt,
+  ArrowUpRight,
+  Lock,
+  Banknote,
   LayoutGrid,
   Building2,
   Send,
@@ -162,6 +169,12 @@ export const PosScreen: React.FC = () => {
     clearCart();
   }, [currentOutlet?.id, clearCart]);
 
+  const {
+    data: currentShift,
+    isLoading: shiftLoading,
+    refetch: refetchShift,
+  } = useCurrentShift(effectiveOutlet?.id);
+
   const loading = productsLoading || categoriesLoading || tablesLoading;
 
   const refreshAllData = () => {
@@ -169,6 +182,7 @@ export const PosScreen: React.FC = () => {
     refetchCategories();
     refetchTables();
     refetchOpenOrders();
+    refetchShift();
   };
 
   // Filter States
@@ -187,8 +201,18 @@ export const PosScreen: React.FC = () => {
   const [successModalOrder, setSuccessModalOrder] = useState<Order | null>(null);
   const [receiptModalOrder, setReceiptModalOrder] = useState<Order | null>(null);
   const [isOpenOrdersOpen, setIsOpenOrdersOpen] = useState<boolean>(false);
+  const [isOpenShiftModalOpen, setIsOpenShiftModalOpen] = useState<boolean>(false);
+  const [isPettyCashModalOpen, setIsPettyCashModalOpen] = useState<boolean>(false);
+  const [isCloseShiftModalOpen, setIsCloseShiftModalOpen] = useState<boolean>(false);
   const [orderProcessing, setOrderProcessing] = useState<boolean>(false);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState<boolean>(false);
+
+  // Auto-prompt Open Shift Modal when cashier opens POS and has no active shift
+  useEffect(() => {
+    if (!shiftLoading && effectiveOutlet?.id && currentShift === null) {
+      setIsOpenShiftModalOpen(true);
+    }
+  }, [shiftLoading, effectiveOutlet?.id, currentShift]);
 
   // Filtered Products
   const filteredProducts = products.filter((product) => {
@@ -962,10 +986,14 @@ export const PosScreen: React.FC = () => {
           tables={tables}
           openOrders={openOrders}
           loading={loading || openOrdersLoading}
+          currentShift={currentShift}
           onSelectTableForOrder={handleSelectTableForOrder}
           onSelectOpenOrderForPayment={(order) => setActivePaymentOrder(order)}
           onSelectOpenOrderForAppend={handleSelectOpenOrderForAppend}
           onNewOrderClick={handleInitiateNewOrder}
+          onOpenShiftClick={() => setIsOpenShiftModalOpen(true)}
+          onPettyCashClick={() => setIsPettyCashModalOpen(true)}
+          onCloseShiftClick={() => setIsCloseShiftModalOpen(true)}
         />
       ) : (
         /* VIEW 2: MENU CATALOG & CART MANAGEMENT */
@@ -974,7 +1002,7 @@ export const PosScreen: React.FC = () => {
           <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
             {/* Top Filter Bar */}
             <div className="p-2.5 sm:p-4 border-b border-slate-100 space-y-2.5 sm:space-y-3">
-              <div className="flex items-center justify-between gap-2 sm:gap-3">
+              <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1011,15 +1039,52 @@ export const PosScreen: React.FC = () => {
                   />
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Clock className="w-4 h-4 text-amber-600" />}
-                  onClick={() => setIsOpenOrdersOpen(true)}
-                >
-                  <span className="hidden sm:inline">Pesanan ({openOrders.length})</span>
-                  <span className="sm:hidden">({openOrders.length})</span>
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<Clock className="w-4 h-4 text-amber-600" />}
+                    onClick={() => setIsOpenOrdersOpen(true)}
+                  >
+                    <span className="hidden sm:inline">Pesanan ({openOrders.length})</span>
+                    <span className="sm:hidden">({openOrders.length})</span>
+                  </Button>
+
+                  {currentShift ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<ArrowUpRight className="w-3.5 h-3.5 text-rose-600" />}
+                        onClick={() => setIsPettyCashModalOpen(true)}
+                        className="text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200"
+                      >
+                        <span className="hidden sm:inline">Kas Keluar</span>
+                        <span className="sm:hidden">Keluar</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<Lock className="w-3.5 h-3.5 text-slate-600" />}
+                        onClick={() => setIsCloseShiftModalOpen(true)}
+                        className="text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                      >
+                        <span className="hidden sm:inline">Tutup Shift</span>
+                        <span className="sm:hidden">Tutup</span>
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Banknote className="w-3.5 h-3.5 text-emerald-600" />}
+                      onClick={() => setIsOpenShiftModalOpen(true)}
+                      className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-emerald-300"
+                    >
+                      Buka Shift
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Category Filter Pills */}
@@ -1348,6 +1413,34 @@ export const PosScreen: React.FC = () => {
         onSelectForAppend={handleSelectOpenOrderForAppend}
         onOrderUpdated={refreshAllData}
       />
+
+      {/* MODAL 10: OPEN SHIFT MODAL */}
+      <OpenShiftModal
+        isOpen={isOpenShiftModalOpen}
+        onClose={() => setIsOpenShiftModalOpen(false)}
+        outletId={effectiveOutlet?.id || ''}
+        outletName={effectiveOutlet?.name || 'Outlet Utama'}
+      />
+
+      {/* MODAL 11: PETTY CASH (KAS KELUAR) MODAL */}
+      <PettyCashModal
+        isOpen={isPettyCashModalOpen}
+        onClose={() => setIsPettyCashModalOpen(false)}
+        outletId={effectiveOutlet?.id || ''}
+      />
+
+      {/* MODAL 12: CLOSE SHIFT MODAL */}
+      {currentShift && (
+        <CloseShiftModal
+          isOpen={isCloseShiftModalOpen}
+          onClose={() => setIsCloseShiftModalOpen(false)}
+          currentShift={currentShift}
+          openOrders={openOrders}
+          onShiftClosedSuccess={() => {
+            refreshAllData();
+          }}
+        />
+      )}
     </div>
   );
 };

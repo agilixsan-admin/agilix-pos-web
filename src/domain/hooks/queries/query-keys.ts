@@ -66,10 +66,31 @@ export const settingsKeys = {
   posSettings: (outletId?: string) => [...settingsKeys.all, 'posSettings', outletId || 'global'] as const,
 };
 
+export const shiftKeys = {
+  all: ['shifts'] as const,
+  current: (outletId?: string) => [...shiftKeys.all, 'current', outletId || 'all'] as const,
+  summary: (id: string) => [...shiftKeys.all, 'summary', id] as const,
+};
+
+export const financeKeys = {
+  all: ['finance'] as const,
+  accounts: (outletId?: string) => [...financeKeys.all, 'accounts', outletId || 'all'] as const,
+  transfers: (filters?: Record<string, unknown>) => [...financeKeys.all, 'transfers', filters || {}] as const,
+  categories: () => [...financeKeys.all, 'categories'] as const,
+  expenses: (filters?: Record<string, unknown>) => [...financeKeys.all, 'expenses', filters || {}] as const,
+  assets: (filters?: Record<string, unknown>) => [...financeKeys.all, 'assets', filters || {}] as const,
+  coa: () => [...financeKeys.all, 'coa'] as const,
+  journals: (filters?: Record<string, unknown>) => [...financeKeys.all, 'journals', filters || {}] as const,
+};
+
 export const reportKeys = {
   all: ['reports'] as const,
   sales: (filters?: Record<string, unknown>) => [...reportKeys.all, 'sales', filters || {}] as const,
   profit: (filters?: Record<string, unknown>) => [...reportKeys.all, 'profit', filters || {}] as const,
   inventory: (filters?: Record<string, unknown>) => [...reportKeys.all, 'inventory', filters || {}] as const,
+  shiftReconciliation: (filters?: Record<string, unknown>) => [...reportKeys.all, 'shiftReconciliation', filters || {}] as const,
+  incomeStatement: (filters?: Record<string, unknown>) => [...reportKeys.all, 'incomeStatement', filters || {}] as const,
+  balanceSheet: (filters?: Record<string, unknown>) => [...reportKeys.all, 'balanceSheet', filters || {}] as const,
+  cashFlow: (filters?: Record<string, unknown>) => [...reportKeys.all, 'cashFlow', filters || {}] as const,
 };
 

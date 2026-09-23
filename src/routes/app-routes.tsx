@@ -160,10 +160,42 @@ const AdjustmentDetailScreen = lazy(() =>
   }))
 );
 
+// Finance Screens
+const AccountsScreen = lazy(() =>
+  import('@presentation/screens/finance/accounts-screen').then((m) => ({
+    default: m.AccountsScreen,
+  }))
+);
+const ExpensesScreen = lazy(() =>
+  import('@presentation/screens/finance/expenses-screen').then((m) => ({
+    default: m.ExpensesScreen,
+  }))
+);
+const AssetsScreen = lazy(() =>
+  import('@presentation/screens/finance/assets-screen').then((m) => ({
+    default: m.AssetsScreen,
+  }))
+);
+const GeneralLedgerScreen = lazy(() =>
+  import('@presentation/screens/finance/general-ledger-screen').then((m) => ({
+    default: m.GeneralLedgerScreen,
+  }))
+);
+
 // Reports Screens
 const SalesReportScreen = lazy(() =>
   import('@presentation/screens/reports/sales-report-screen').then((m) => ({
     default: m.SalesReportScreen,
+  }))
+);
+const ShiftReconciliationScreen = lazy(() =>
+  import('@presentation/screens/reports/shift-reconciliation-screen').then((m) => ({
+    default: m.ShiftReconciliationScreen,
+  }))
+);
+const FinancialReportsScreen = lazy(() =>
+  import('@presentation/screens/reports/financial-reports-screen').then((m) => ({
+    default: m.FinancialReportsScreen,
   }))
 );
 const ProfitReportScreen = lazy(() =>
@@ -623,6 +655,48 @@ export const AppRoutes: React.FC = () => {
             }
           />
 
+          {/* KEUANGAN & AKUNTANSI (ERP) */}
+          <Route
+            path="finance/accounts"
+            element={
+              <ProtectedRoute requiredPermission="finance.account.read">
+                <SuspenseLoader>
+                  <AccountsScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="finance/expenses"
+            element={
+              <ProtectedRoute requiredPermission="finance.expense.read">
+                <SuspenseLoader>
+                  <ExpensesScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="finance/assets"
+            element={
+              <ProtectedRoute requiredPermission="finance.asset.read">
+                <SuspenseLoader>
+                  <AssetsScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="finance/general-ledger"
+            element={
+              <ProtectedRoute requiredPermission="finance.journal.read">
+                <SuspenseLoader>
+                  <GeneralLedgerScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+
           {/* 4. LAPORAN */}
           <Route
             path="reports/sales"
@@ -630,6 +704,26 @@ export const AppRoutes: React.FC = () => {
               <ProtectedRoute requiredPermission="report:read">
                 <SuspenseLoader>
                   <SalesReportScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="reports/shifts"
+            element={
+              <ProtectedRoute requiredPermission="report.shift.read">
+                <SuspenseLoader>
+                  <ShiftReconciliationScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="reports/financial"
+            element={
+              <ProtectedRoute requiredPermission="report.financial.read">
+                <SuspenseLoader>
+                  <FinancialReportsScreen />
                 </SuspenseLoader>
               </ProtectedRoute>
             }
