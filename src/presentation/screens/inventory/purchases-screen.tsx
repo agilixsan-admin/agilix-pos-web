@@ -20,7 +20,7 @@ import {
   useSuppliers,
   useOutlets,
 } from '@domain/hooks';
-import type { PurchaseStatus } from '@model/Inventory';
+import type { PurchaseStatus, PurchasePaymentStatus } from '@model/Inventory';
 import {
   Card,
   Badge,
@@ -134,6 +134,30 @@ export const PurchasesScreen: React.FC = () => {
         return (
           <Badge variant="neutral" dot>
             Draft
+          </Badge>
+        );
+    }
+  };
+
+  const getPaymentStatusBadge = (status?: PurchasePaymentStatus | string) => {
+    switch (status) {
+      case 'PAID':
+        return (
+          <Badge variant="success" dot>
+            Lunas
+          </Badge>
+        );
+      case 'PARTIAL':
+        return (
+          <Badge variant="warning" dot>
+            Sebagian
+          </Badge>
+        );
+      case 'UNPAID':
+      default:
+        return (
+          <Badge variant="danger" dot>
+            Hutang
           </Badge>
         );
     }
@@ -390,7 +414,19 @@ export const PurchasesScreen: React.FC = () => {
 
                       {/* Status */}
                       <td className="py-3.5 px-4 text-center">
-                        {getStatusBadge(purchase.status)}
+                        <div className="flex flex-col items-center gap-1">
+                          {getStatusBadge(purchase.status)}
+                          {purchase.status === 'RECEIVED' &&
+                            getPaymentStatusBadge(
+                              purchase.paymentStatus ||
+                                (Number(purchase.paidAmount ?? 0) >=
+                                Number(purchase.totalAmount || purchase.subtotal || 0)
+                                  ? 'PAID'
+                                  : Number(purchase.paidAmount ?? 0) > 0
+                                  ? 'PARTIAL'
+                                  : 'UNPAID')
+                            )}
+                        </div>
                       </td>
 
                       {/* Aksi */}

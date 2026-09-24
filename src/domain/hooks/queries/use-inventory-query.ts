@@ -7,6 +7,8 @@ import type {
   PackagingCategory,
   Supplier,
   Purchase,
+  PurchasePayment,
+  CreatePurchasePaymentPayload,
   CreatePurchasePayload,
   UpdatePurchasePayload,
   ReceivePurchasePayload,
@@ -381,6 +383,38 @@ export function useReceivePurchaseMutation() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.purchaseDetail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+}
+
+export function usePurchasePayments(purchaseId?: string) {
+  return useQuery({
+    queryKey: ['inventory', 'purchases', purchaseId, 'payments'],
+    queryFn: () => inventoryService.getPurchasePayments(purchaseId!),
+    enabled: Boolean(purchaseId),
+  });
+}
+
+export function useCreatePurchasePaymentMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      purchaseId,
+      data,
+    }: {
+      purchaseId: string;
+      data: CreatePurchasePaymentPayload;
+    }) => inventoryService.createPurchasePayment(purchaseId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+      queryClient.invalidateQueries({
+        queryKey: inventoryKeys.purchaseDetail(variables.purchaseId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['inventory', 'purchases', variables.purchaseId, 'payments'],
+      });
       queryClient.invalidateQueries({ queryKey: ['finance'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     },

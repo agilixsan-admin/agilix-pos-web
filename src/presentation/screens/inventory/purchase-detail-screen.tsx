@@ -18,14 +18,19 @@ import {
   Sparkles,
   CreditCard,
   Wallet,
+  Receipt,
+  History,
+  CheckCheck,
 } from 'lucide-react';
 import {
   usePurchaseDetail,
   useDeletePurchaseMutation,
   useReceivePurchaseMutation,
+  usePurchasePayments,
+  useCreatePurchasePaymentMutation,
   useFinancialAccounts,
 } from '@domain/hooks';
-import type { PurchaseStatus } from '@model/Inventory';
+import type { PurchaseStatus, PurchasePaymentStatus } from '@model/Inventory';
 import {
   Card,
   Button,
@@ -36,6 +41,7 @@ import {
   EmptyState,
   LoadingState,
 } from '@presentation/components/ui';
+import { toast } from '@presentation/components/ui/toast';
 
 export const PurchaseDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,8 +51,10 @@ export const PurchaseDetailScreen: React.FC = () => {
   // Queries & Mutations
   const { data: purchase, isLoading, refetch } = usePurchaseDetail(id);
   const { data: accounts = [] } = useFinancialAccounts(purchase?.outletId);
+  const { data: payments = [], refetch: refetchPayments } = usePurchasePayments(id);
   const deleteMutation = useDeletePurchaseMutation();
   const receiveMutation = useReceivePurchaseMutation();
+  const createPaymentMutation = useCreatePurchasePaymentMutation();
 
   const queryOutletId = searchParams.get('outletId');
   const effectiveOutletId = queryOutletId || purchase?.outletId || '';
@@ -60,6 +68,15 @@ export const PurchaseDetailScreen: React.FC = () => {
   const [receiveNotes, setReceiveNotes] = useState<string>('');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+
+  // Payment Modal State (Bayar Hutang)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentAccountId, setPaymentAccountId] = useState<string>('');
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentDate, setPaymentDate] = useState<string>(
+    new Date().toISOString().slice(0, 10)
+  );
+  const [paymentNotes, setPaymentNotes] = useState<string>('');
 
   // Format Currency
   const formatRupiah = (val: number) => {
@@ -121,6 +138,32 @@ export const PurchaseDetailScreen: React.FC = () => {
     }
   };
 
+  const getPaymentStatusBadge = (status?: PurchasePaymentStatus | string) => {
+    const effectiveStatus =
+      status || (remainingDebt === 0 ? 'PAID' : paidAmount > 0 ? 'PARTIAL' : 'UNPAID');
+    switch (effectiveStatus) {
+      case 'PAID':
+        return (
+          <Badge variant="success" dot>
+            Lunas
+          </Badge>
+        );
+      case 'PARTIAL':
+        return (
+          <Badge variant="warning" dot>
+            Sebagian (Dicicil)
+          </Badge>
+        );
+      case 'UNPAID':
+      default:
+        return (
+          <Badge variant="danger" dot>
+            Hutang / Belum Lunas
+          </Badge>
+        );
+    }
+  };
+
   // Open Receive Modal and initialize items
   const handleOpenReceiveModal = () => {
     if (!purchase) return;
@@ -158,6 +201,41 @@ export const PurchaseDetailScreen: React.FC = () => {
       refetch();
     } catch (err: any) {
       alert(err?.response?.data?.message || err?.message || 'Gagal menerima pesanan');
+    }
+  };
+
+  // Open Payment Modal
+  const handleOpenPaymentModal = () => {
+    if (!purchase) return;
+    const defaultAcc = accounts.length > 0 ? accounts[0].id : '';
+    setPaymentAccountId(defaultAcc);
+    setPaymentAmount(remainingDebt);
+    setPaymentDate(new Date().toISOString().slice(0, 10));
+    setPaymentNotes('');
+    setIsPaymentModalOpen(true);
+  };
+
+  // Submit Payment
+  const handleConfirmPayment = async () => {
+    if (!id || !paymentAccountId || paymentAmount <= 0) return;
+    try {
+      await createPaymentMutation.mutateAsync({
+        purchaseId: id,
+        data: {
+          financialAccountId: paymentAccountId,
+          amount: Number(paymentAmount),
+          paymentDate: paymentDate || undefined,
+          notes: paymentNotes.trim() || undefined,
+        },
+      });
+      toast.success('Pembayaran hutang berhasil dicatat.');
+      setIsPaymentModalOpen(false);
+      refetch();
+      refetchPayments();
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || err?.message || 'Gagal mencatat pembayaran hutang'
+      );
     }
   };
 
@@ -199,6 +277,8 @@ export const PurchaseDetailScreen: React.FC = () => {
   const isDraft = purchase.status === 'DRAFT';
   const isReceived = purchase.status === 'RECEIVED';
   const totalAmount = Number(purchase.totalAmount ?? purchase.subtotal ?? 0);
+  const paidAmount = Number(purchase.paidAmount ?? 0);
+  const remainingDebt = Math.max(0, Math.round((totalAmount - paidAmount) * 100) / 100);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
@@ -221,11 +301,15 @@ export const PurchaseDetailScreen: React.FC = () => {
               <span>/</span>
               <span className="text-slate-800 font-semibold">{purchase.purchaseNumber}</span>
             </div>
-            <div className="flex items-center gap-2.5 mt-0.5">
+            <div className="flex items-center gap-2.5 mt-0.5 flex-wrap">
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">
                 {purchase.purchaseNumber}
               </h1>
               {getStatusBadge(purchase.status)}
+              {isReceived &&
+                getPaymentStatusBadge(
+                  purchase.paymentStatus || (remainingDebt === 0 ? 'PAID' : 'UNPAID')
+                )}
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <Store className="w-3 h-3" />
                 {purchase.outlet?.name || 'Cabang Utama'}
@@ -235,7 +319,7 @@ export const PurchaseDetailScreen: React.FC = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
           {isDraft && (
             <>
               <Button
@@ -266,10 +350,24 @@ export const PurchaseDetailScreen: React.FC = () => {
           )}
 
           {isReceived && (
-            <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200 font-semibold">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Stok & HPP Telah Terupdate</span>
-            </div>
+            <>
+              {remainingDebt > 0 && (
+                <Button
+                  variant="primary"
+                  className="bg-amber-600 hover:bg-amber-700 text-white shadow-xs"
+                  leftIcon={<Wallet className="w-4 h-4" />}
+                  onClick={handleOpenPaymentModal}
+                >
+                  Bayar Hutang
+                </Button>
+              )}
+              <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200 font-semibold">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>
+                  {remainingDebt === 0 ? 'Lunas & Stok Terupdate' : 'Stok Terupdate'}
+                </span>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -376,9 +474,9 @@ export const PurchaseDetailScreen: React.FC = () => {
           </Card>
         </div>
 
-        {/* Right Column: Ringkasan Pembayaran */}
+        {/* Right Column: Ringkasan Pembayaran & Finansial */}
         <div className="space-y-6">
-          <Card header={<h3 className="text-sm font-bold text-slate-900">Ringkasan Pembayaran</h3>}>
+          <Card header={<h3 className="text-sm font-bold text-slate-900">Ringkasan Finansial</h3>}>
             <div className="space-y-3.5 text-xs">
               <div className="flex items-center justify-between text-slate-600">
                 <span>Total Item</span>
@@ -400,6 +498,47 @@ export const PurchaseDetailScreen: React.FC = () => {
                   {formatRupiah(totalAmount)}
                 </span>
               </div>
+
+              {isReceived && (
+                <div className="pt-2 border-t border-slate-100 space-y-2.5">
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span>Sudah Dibayar</span>
+                    <span className="font-semibold text-emerald-600 font-mono">
+                      {formatRupiah(paidAmount)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-slate-700">Sisa Hutang Usaha</span>
+                    <span
+                      className={`font-bold font-mono text-sm ${
+                        remainingDebt > 0 ? 'text-rose-600' : 'text-emerald-700'
+                      }`}
+                    >
+                      {formatRupiah(remainingDebt)}
+                    </span>
+                  </div>
+
+                  <div className="pt-1 flex items-center justify-between">
+                    <span className="text-slate-500">Status Bayar:</span>
+                    {getPaymentStatusBadge(
+                      purchase.paymentStatus || (remainingDebt === 0 ? 'PAID' : 'UNPAID')
+                    )}
+                  </div>
+
+                  {remainingDebt > 0 && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      className="w-full mt-2 bg-amber-600 hover:bg-amber-700 text-white shadow-xs justify-center"
+                      leftIcon={<Wallet className="w-4 h-4" />}
+                      onClick={handleOpenPaymentModal}
+                    >
+                      Bayar Hutang Sekarang
+                    </Button>
+                  )}
+                </div>
+              )}
 
               <div className="pt-2">
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
@@ -465,6 +604,98 @@ export const PurchaseDetailScreen: React.FC = () => {
           </table>
         </div>
       </Card>
+
+      {/* Riwayat Pembayaran Hutang (Hanya jika pembelian sudah diterima) */}
+      {isReceived && (
+        <Card
+          header={
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-[#0D5C53]" />
+                <h3 className="text-sm font-bold text-slate-900">Riwayat Pembayaran Hutang</h3>
+              </div>
+              {remainingDebt > 0 && (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5"
+                  leftIcon={<Wallet className="w-3.5 h-3.5" />}
+                  onClick={handleOpenPaymentModal}
+                >
+                  Bayar Hutang
+                </Button>
+              )}
+            </div>
+          }
+          padding="none"
+        >
+          {payments.length === 0 ? (
+            <div className="p-8 text-center text-xs text-slate-500">
+              <Receipt className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="font-semibold text-slate-700">Belum ada catatan pembayaran hutang</p>
+              <p className="text-slate-400 mt-0.5">
+                {remainingDebt > 0
+                  ? 'Gunakan tombol "Bayar Hutang" untuk mencatat pelunasan atau cicilan hutang ke supplier.'
+                  : 'Seluruh pembayaran telah lunas saat penerimaan barang.'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+                  <tr>
+                    <th className="py-3 px-4 w-12 text-center">#</th>
+                    <th className="py-3 px-4">No. Bukti Bayar</th>
+                    <th className="py-3 px-4">Tanggal</th>
+                    <th className="py-3 px-4">Sumber Dana (Akun Kas/Bank)</th>
+                    <th className="py-3 px-4">Dicatat Oleh</th>
+                    <th className="py-3 px-4">Catatan</th>
+                    <th className="py-3 px-4 text-right">Jumlah Bayar</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {payments.map((payment, idx) => (
+                    <tr key={payment.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3 px-4 text-center font-mono text-slate-400">{idx + 1}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                        {payment.paymentNumber}
+                      </td>
+                      <td className="py-3 px-4 text-slate-700">
+                        {formatDate(payment.paymentDate)}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 font-medium">
+                          <CreditCard className="w-3 h-3 text-slate-500" />
+                          {payment.financialAccount?.accountName || 'Kas / Bank'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-slate-700">
+                        {payment.creator?.name || 'Petugas'}
+                      </td>
+                      <td className="py-3 px-4 text-slate-500 italic max-w-xs truncate">
+                        {payment.notes || '-'}
+                      </td>
+                      <td className="py-3 px-4 text-right font-bold text-emerald-600 font-mono">
+                        {formatRupiah(Number(payment.amount))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-slate-50 border-t border-slate-200 font-bold text-xs text-slate-800">
+                  <tr>
+                    <td colSpan={6} className="py-3 px-4 text-right">
+                      Total Dibayar:
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-emerald-700">
+                      {formatRupiah(paidAmount)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* MODAL: Review & Terima Pembelian */}
       <Modal
@@ -688,6 +919,180 @@ export const PurchaseDetailScreen: React.FC = () => {
             >
               Ya, Batalkan Pembelian
             </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* MODAL: Bayar Hutang Pembelian (Pelunasan / Cicilan) */}
+      <Modal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        title="Bayar Hutang Pembelian"
+        maxWidth="lg"
+      >
+        <div className="space-y-4 text-xs">
+          {/* Info Card Hutang */}
+          <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/80 text-amber-900 flex items-start gap-2.5">
+            <Wallet className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="leading-relaxed">
+              <span className="font-bold text-amber-800 block">
+                Pelunasan / Pembayaran Hutang Supplier
+              </span>
+              <p className="mt-0.5 text-amber-700 text-[11px]">
+                Pembayaran ini akan memotong saldo akun Kas/Bank yang dipilih dan otomatis mencatat jurnal akuntansi debit Hutang Usaha (2-1100).
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+            <div>
+              <span className="text-slate-400 block text-[11px]">No. Pembelian</span>
+              <span className="font-mono font-bold text-slate-800">{purchase.purchaseNumber}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[11px]">Supplier</span>
+              <span className="font-bold text-slate-800">{purchase.supplier?.name}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[11px]">Sisa Hutang Saat Ini</span>
+              <span className="font-mono font-bold text-rose-600 text-sm">{formatRupiah(remainingDebt)}</span>
+            </div>
+          </div>
+
+          {/* Form Pembayaran */}
+          <div className="space-y-3.5">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Tanggal Pembayaran
+              </label>
+              <FormInput
+                type="date"
+                value={paymentDate}
+                onChange={(e) => setPaymentDate(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Sumber Dana (Akun Kas / Bank) <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={paymentAccountId}
+                onChange={(e) => setPaymentAccountId(e.target.value)}
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
+              >
+                <option value="">-- Pilih Akun Pembayaran --</option>
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.accountName} ({acc.accountType === 'CASH' ? 'Kas Laci' : 'Bank'}) - Saldo: {formatRupiah(Number(acc.currentBalance))}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-700">
+                  Jumlah Pembayaran <span className="text-rose-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setPaymentAmount(remainingDebt)}
+                  className="text-[11px] font-bold text-[#0D5C53] hover:underline cursor-pointer"
+                >
+                  Bayar Lunas ({formatRupiah(remainingDebt)})
+                </button>
+              </div>
+              <FormInput
+                type="number"
+                min="1"
+                max={remainingDebt}
+                step="any"
+                value={paymentAmount || ''}
+                onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                placeholder="Masukkan nominal bayar..."
+              />
+            </div>
+
+            {/* Validasi Saldo & Peringatan */}
+            {(() => {
+              const selectedAcc = accounts.find((a) => a.id === paymentAccountId);
+              const isInsufficient = selectedAcc ? Number(selectedAcc.currentBalance) < paymentAmount : false;
+              const isExceeding = paymentAmount > remainingDebt;
+
+              return (
+                <>
+                  {isExceeding && (
+                    <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px] flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>Nominal pembayaran tidak boleh melebihi sisa hutang ({formatRupiah(remainingDebt)}).</span>
+                    </div>
+                  )}
+
+                  {isInsufficient && (
+                    <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px] flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>
+                        Saldo akun {selectedAcc?.accountName} ({formatRupiah(Number(selectedAcc?.currentBalance || 0))}) tidak mencukupi untuk pembayaran ini!
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Auto-Journal Preview */}
+                  {selectedAcc && paymentAmount > 0 && !isExceeding && (
+                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 space-y-1">
+                      <div className="font-semibold text-slate-800 flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        Jurnal Akuntansi Otomatis:
+                      </div>
+                      <div>• <strong className="text-emerald-700">Debit:</strong> Hutang Usaha / Supplier (2-1100) sebesar {formatRupiah(paymentAmount)}</div>
+                      <div>• <strong className="text-slate-700">Kredit:</strong> {selectedAcc.accountName} ({selectedAcc.accountType === 'CASH' ? '1-1100' : '1-1200'}) sebesar {formatRupiah(paymentAmount)}</div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+
+            <div>
+              <FormTextarea
+                label="Catatan Pembayaran (Opsional)"
+                rows={2}
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+                placeholder="Contoh: Pembayaran transfer pelunasan..."
+              />
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsPaymentModalOpen(false)}
+            >
+              Batal
+            </Button>
+            {(() => {
+              const selectedAcc = accounts.find((a) => a.id === paymentAccountId);
+              const isInsufficient = selectedAcc ? Number(selectedAcc.currentBalance) < paymentAmount : false;
+              const isExceeding = paymentAmount > remainingDebt;
+              const isInvalid = !paymentAccountId || paymentAmount <= 0 || isExceeding || isInsufficient;
+
+              return (
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  leftIcon={<CheckCircle2 className="w-4 h-4" />}
+                  isLoading={createPaymentMutation.isPending}
+                  disabled={isInvalid || createPaymentMutation.isPending}
+                  onClick={handleConfirmPayment}
+                >
+                  Konfirmasi Pembayaran
+                </Button>
+              );
+            })()}
           </div>
         </div>
       </Modal>

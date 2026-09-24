@@ -8,6 +8,8 @@ import type {
   StockMovement,
   StockAdjustment,
   Purchase,
+  PurchasePayment,
+  CreatePurchasePaymentPayload,
   CreatePurchasePayload,
   UpdatePurchasePayload,
   ReceivePurchasePayload,
@@ -391,6 +393,19 @@ export const inventoryService = {
   receivePurchase: async (id: string, data?: ReceivePurchasePayload): Promise<Purchase> => {
     const res = await httpClient.post(`/purchases/${id}/receive`, data || {});
     return res.data?.data || res.data;
+  },
+
+  createPurchasePayment: async (
+    purchaseId: string,
+    data: CreatePurchasePaymentPayload,
+  ): Promise<PurchasePayment> => {
+    const res = await httpClient.post(`/purchases/${purchaseId}/payments`, data);
+    return res.data?.data || res.data;
+  },
+
+  getPurchasePayments: async (purchaseId: string): Promise<PurchasePayment[]> => {
+    const res = await httpClient.get(`/purchases/${purchaseId}/payments`);
+    return res.data?.data || res.data || [];
   },
 
   // Stock Overview & Summary

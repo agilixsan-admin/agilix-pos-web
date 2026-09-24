@@ -231,6 +231,40 @@ export interface PurchaseItem {
   updatedAt?: string;
 }
 
+export type PurchasePaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID';
+
+export interface PurchasePayment {
+  id: string;
+  tenantId: string;
+  outletId: string;
+  purchaseId: string;
+  financialAccountId: string;
+  financialAccount?: {
+    id: string;
+    accountName: string;
+    accountType: 'CASH' | 'BANK' | 'EWALLET' | string;
+    currentBalance?: number;
+  };
+  paymentNumber: string;
+  paymentDate: string;
+  amount: number;
+  notes?: string | null;
+  createdBy?: string | null;
+  creator?: {
+    id: string;
+    name: string;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePurchasePaymentPayload {
+  financialAccountId: string;
+  amount: number;
+  paymentDate?: string;
+  notes?: string;
+}
+
 export interface Purchase {
   id: string;
   tenantId: string;
@@ -244,9 +278,11 @@ export interface Purchase {
   purchaseNumber: string;
   purchaseDate: string;
   status: PurchaseStatus;
+  paymentStatus?: PurchasePaymentStatus;
   totalItems: number;
   subtotal: number;
   totalAmount: number;
+  paidAmount?: number;
   notes?: string | null;
   receivedAt?: string | null;
   receivedBy?: string | null;
@@ -262,6 +298,7 @@ export interface Purchase {
   createdAt: string;
   updatedAt: string;
   items: PurchaseItem[];
+  payments?: PurchasePayment[];
 }
 
 export interface CreatePurchaseItemPayload {
