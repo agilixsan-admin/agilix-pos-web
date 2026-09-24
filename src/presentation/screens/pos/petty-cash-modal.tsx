@@ -8,6 +8,7 @@ interface PettyCashModalProps {
   isOpen: boolean;
   onClose: () => void;
   outletId: string;
+  currentExpectedCash?: number;
 }
 
 const CATEGORIES = [
@@ -22,6 +23,7 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
   isOpen,
   onClose,
   outletId,
+  currentExpectedCash,
 }) => {
   const [amount, setAmount] = useState<number>(0);
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
@@ -52,8 +54,16 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
       setReceiptPhotoUrl(res.url);
       toast.success('Foto nota berhasil diunggah.');
     } catch (err: unknown) {
+      const resData = (
+        err as {
+          response?: {
+            data?: { message?: string | string[]; errors?: string[]; error?: string };
+          };
+        }
+      )?.response?.data;
       const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (Array.isArray(resData?.message) ? resData.message.join(', ') : resData?.message) ||
+        (err as { message?: string })?.message ||
         'Gagal mengunggah foto nota.';
       toast.error(msg);
     } finally {
@@ -64,6 +74,13 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
   const handleSubmit = async () => {
     if (!amount || amount <= 0) {
       toast.error('Nominal kas keluar harus lebih besar dari 0.');
+      return;
+    }
+
+    if (typeof currentExpectedCash === 'number' && amount > currentExpectedCash) {
+      toast.error(
+        `Saldo uang di laci kasir (Rp ${currentExpectedCash.toLocaleString('id-ID')}) tidak mencukupi untuk pengeluaran sebesar Rp ${amount.toLocaleString('id-ID')}.`
+      );
       return;
     }
 
@@ -94,12 +111,31 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
       setReceiptPhotoUrl('');
       onClose();
     } catch (err: unknown) {
-      const errorMsg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Gagal mencatat kas keluar.';
+      const resData = (
+        err as {
+          response?: {
+            data?: { message?: string | string[]; errors?: string[]; error?: string };
+          };
+        }
+      )?.response?.data;
+
+      let errorMsg = 'Gagal mencatat kas keluar.';
+      if (Array.isArray(resData?.message)) {
+        errorMsg = resData.message.join(', ');
+      } else if (typeof resData?.message === 'string') {
+        errorMsg = resData.message;
+      } else if (Array.isArray(resData?.errors)) {
+        errorMsg = resData.errors.join(', ');
+      } else if (typeof resData?.error === 'string') {
+        errorMsg = resData.error;
+      } else if ((err as { message?: string })?.message) {
+        errorMsg = (err as { message: string }).message;
+      }
       toast.error(errorMsg);
     }
   };
+
+  const isExceedingCash = typeof currentExpectedCash === 'number' && amount > currentExpectedCash;
 
   return (
     <Modal
@@ -118,9 +154,9 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
             size="sm"
             onClick={handleSubmit}
             isLoading={pettyCashMutation.isPending}
-            disabled={uploading}
+            disabled={uploading || isExceedingCash}
             leftIcon={<ArrowUpRight className="w-4 h-4" />}
-            className="font-bold bg-rose-600 hover:bg-rose-700 border-rose-600"
+            className="font-bold bg-rose-600 hover:bg-rose-700 border-rose-600 disabled:opacity-50"
           >
             Simpan Kas Keluar
           </Button>
@@ -128,6 +164,16 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
       }
     >
       <div className="space-y-4">
+        {/* Indikator Saldo Kas Laci Saat Ini */}
+        {typeof currentExpectedCash === 'number' && (
+          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+            <span className="text-xs font-semibold text-slate-600">Saldo Kas Laci Tersedia:</span>
+            <span className={`text-xs font-bold ${currentExpectedCash > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+              Rp {currentExpectedCash.toLocaleString('id-ID')}
+            </span>
+          </div>
+        )}
+
         {/* Nominal Pengeluaran */}
         <FormField label="Nominal Kas Keluar (Rp)" required>
           <div className="relative">
@@ -141,9 +187,18 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
               value={amount === 0 ? '' : amount}
               onChange={(e) => setAmount(Number(e.target.value) || 0)}
               placeholder="0"
-              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+              className={`w-full pl-11 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 ${
+                isExceedingCash
+                  ? 'border-rose-300 text-rose-600 focus:ring-rose-500/20 focus:border-rose-500'
+                  : 'border-slate-200 text-rose-600 focus:ring-rose-500/20 focus:border-rose-500'
+              }`}
             />
           </div>
+          {isExceedingCash && (
+            <p className="text-[11px] text-rose-600 font-medium mt-1">
+              Nominal melebihi saldo uang laci saat ini (Rp {currentExpectedCash.toLocaleString('id-ID')}).
+            </p>
+          )}
         </FormField>
 
         {/* Kategori Pengeluaran */}

@@ -10,20 +10,35 @@ import type {
 
 export const shiftService = {
   getCurrentShift: async (outletId?: string): Promise<PosShift | null> => {
-    const res = await httpClient.get<{ data: PosShift | null }>('/shifts/current', {
-      params: outletId ? { outletId } : undefined,
-    });
-    return res.data?.data ?? (res.data as unknown as PosShift) ?? null;
+    try {
+      const res = await httpClient.get<{ data: PosShift | null }>('/shifts/current', {
+        params: outletId ? { outletId } : undefined,
+      });
+      if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+        return res.data.data;
+      }
+      return res.data ?? null;
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) {
+        return null;
+      }
+      throw err;
+    }
   },
 
   openShift: async (payload: OpenShiftPayload): Promise<PosShift> => {
     const res = await httpClient.post<{ data: PosShift }>('/shifts/open', payload);
-    return res.data?.data ?? (res.data as unknown as PosShift);
+    return res.data && typeof res.data === 'object' && 'data' in res.data
+      ? res.data.data
+      : (res.data as unknown as PosShift);
   },
 
   recordPettyCash: async (payload: PettyCashPayload): Promise<PettyCashTransaction> => {
     const res = await httpClient.post<{ data: PettyCashTransaction }>('/shifts/petty-cash', payload);
-    return res.data?.data ?? (res.data as unknown as PettyCashTransaction);
+    return res.data && typeof res.data === 'object' && 'data' in res.data
+      ? res.data.data
+      : (res.data as unknown as PettyCashTransaction);
   },
 
   uploadReceipt: async (file: File): Promise<{ url: string; filename: string }> => {
@@ -38,17 +53,23 @@ export const shiftService = {
         },
       }
     );
-    return res.data?.data ?? (res.data as unknown as { url: string; filename: string });
+    return res.data && typeof res.data === 'object' && 'data' in res.data
+      ? res.data.data
+      : (res.data as unknown as { url: string; filename: string });
   },
 
   closeShift: async (shiftId: string, payload: CloseShiftPayload): Promise<PosShift> => {
     const res = await httpClient.post<{ data: PosShift }>(`/shifts/${shiftId}/close`, payload);
-    return res.data?.data ?? (res.data as unknown as PosShift);
+    return res.data && typeof res.data === 'object' && 'data' in res.data
+      ? res.data.data
+      : (res.data as unknown as PosShift);
   },
 
   getShiftSummary: async (shiftId: string): Promise<ShiftSummaryData> => {
     const res = await httpClient.get<{ data: ShiftSummaryData }>(`/shifts/${shiftId}/summary`);
-    return res.data?.data ?? (res.data as unknown as ShiftSummaryData);
+    return res.data && typeof res.data === 'object' && 'data' in res.data
+      ? res.data.data
+      : (res.data as unknown as ShiftSummaryData);
   },
 };
 

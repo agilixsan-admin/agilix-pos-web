@@ -61,6 +61,7 @@ export const AccountsScreen: React.FC = () => {
   const [fromAccountId, setFromAccountId] = useState<string>('');
   const [toAccountId, setToAccountId] = useState<string>('');
   const [transferAmount, setTransferAmount] = useState<number>(0);
+  const [transferDate, setTransferDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [transferNotes, setTransferNotes] = useState<string>('');
 
   const createAccountMutation = useCreateAccountMutation();
@@ -138,6 +139,7 @@ export const AccountsScreen: React.FC = () => {
         fromAccountId,
         toAccountId,
         amount: transferAmount,
+        transferDate: transferDate || new Date().toISOString().slice(0, 10),
         notes: transferNotes.trim() || undefined,
       });
 
@@ -146,6 +148,7 @@ export const AccountsScreen: React.FC = () => {
       setFromAccountId('');
       setToAccountId('');
       setTransferAmount(0);
+      setTransferDate(new Date().toISOString().slice(0, 10));
       setTransferNotes('');
     } catch (err: unknown) {
       const msg =
@@ -576,22 +579,33 @@ export const AccountsScreen: React.FC = () => {
             </FormField>
           </div>
 
-          <FormField label="Nominal Transfer (Rp)" required>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
-                Rp
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Nominal Transfer (Rp)" required>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
+                  Rp
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={transferAmount === 0 ? '' : transferAmount}
+                  onChange={(e) => setTransferAmount(Number(e.target.value) || 0)}
+                  placeholder="0"
+                  className="w-full pl-11 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                />
               </div>
+            </FormField>
+
+            <FormField label="Tanggal Transfer" required>
               <input
-                type="number"
-                min="0"
-                step="1000"
-                value={transferAmount === 0 ? '' : transferAmount}
-                onChange={(e) => setTransferAmount(Number(e.target.value) || 0)}
-                placeholder="0"
-                className="w-full pl-11 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                type="date"
+                value={transferDate}
+                onChange={(e) => setTransferDate(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
               />
-            </div>
-          </FormField>
+            </FormField>
+          </div>
 
           <FormField label="Catatan / Keperluan">
             <textarea

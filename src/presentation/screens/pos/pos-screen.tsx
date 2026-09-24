@@ -1519,6 +1519,7 @@ export const PosScreen: React.FC = () => {
         isOpen={isPettyCashModalOpen}
         onClose={() => setIsPettyCashModalOpen(false)}
         outletId={effectiveOutlet?.id || ''}
+        currentExpectedCash={currentShift?.currentExpectedCash}
       />
 
       {/* MODAL 12: CLOSE SHIFT MODAL */}

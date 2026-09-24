@@ -97,16 +97,24 @@ export const AssetsScreen: React.FC = () => {
       return;
     }
 
+    const targetOutletId =
+      assetOutletId || effectiveOutletId || currentOutlet?.id || (outlets.length > 0 ? outlets[0].id : undefined);
+
+    if (!targetOutletId) {
+      toast.error('Cabang / outlet penempatan aset wajib dipilih.');
+      return;
+    }
+
     try {
       await createAssetMutation.mutateAsync({
         name: name.trim(),
         category,
         purchaseDate,
         purchaseCost,
-        financialAccountId: financialAccountId || undefined,
+        financialAccountId: financialAccountId.trim() ? financialAccountId : undefined,
         usefulLifeMonths,
         salvageValue: salvageValue || 0,
-        outletId: assetOutletId || effectiveOutletId || undefined,
+        outletId: targetOutletId,
       });
 
       toast.success('Aset tetap berhasil ditambahkan dan dicatat di neraca.');
@@ -117,10 +125,28 @@ export const AssetsScreen: React.FC = () => {
       setUsefulLifeMonths(48);
       setSalvageValue(0);
       setFinancialAccountId('');
+      setAssetOutletId('');
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Gagal mencatat aset tetap.';
+      const resData = (
+        err as {
+          response?: {
+            data?: { message?: string | string[]; errors?: string[]; error?: string };
+          };
+        }
+      )?.response?.data;
+
+      let msg = 'Gagal mencatat aset tetap.';
+      if (Array.isArray(resData?.message)) {
+        msg = resData.message.join(', ');
+      } else if (typeof resData?.message === 'string') {
+        msg = resData.message;
+      } else if (Array.isArray(resData?.errors)) {
+        msg = resData.errors.join(', ');
+      } else if (typeof resData?.error === 'string') {
+        msg = resData.error;
+      } else if ((err as { message?: string })?.message) {
+        msg = (err as { message: string }).message;
+      }
       toast.error(msg);
     }
   };
@@ -348,6 +374,22 @@ export const AssetsScreen: React.FC = () => {
         }
       >
         <div className="space-y-3.5">
+          {outlets.length > 0 && (
+            <FormField label="Cabang / Outlet Penempatan Aset" required>
+              <select
+                value={assetOutletId || effectiveOutletId || currentOutlet?.id || outlets[0]?.id}
+                onChange={(e) => setAssetOutletId(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+              >
+                {outlets.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          )}
+
           <FormField label="Nama Aset" required>
             <input
               type="text"
