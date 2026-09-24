@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Product, Variant } from '@model/Product';
 import type { Table } from '@model/Settings';
 import type { Order, OrderType, OrderItem } from '@model/Order';
+import type { PosShift } from '@model/Shift';
 import { posService } from '@domain/services/pos-service';
 import { useAuthStore } from '@domain/state/auth-store';
 import { useCartStore } from '@domain/state/cart-store';
