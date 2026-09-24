@@ -23,6 +23,9 @@ export interface PosShift {
   closedAt?: string | null;
   openingCash: number;
   expectedCash?: number | null;
+  currentExpectedCash?: number;
+  currentCashSales?: number;
+  completedOrdersCount?: number;
   actualCash?: number | null;
   cashDifference?: number | null;
   totalCashSales: number;
