@@ -295,6 +295,7 @@ export interface ReceivePurchaseItemPayload {
 export interface ReceivePurchasePayload {
   items?: ReceivePurchaseItemPayload[];
   notes?: string;
+  financialAccountId?: string;
 }
 
 export type StockStatus = 'NORMAL' | 'LOW_STOCK' | 'OUT_OF_STOCK';

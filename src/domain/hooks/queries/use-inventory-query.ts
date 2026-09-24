@@ -381,6 +381,8 @@ export function useReceivePurchaseMutation() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.purchaseDetail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     },
   });
 }
