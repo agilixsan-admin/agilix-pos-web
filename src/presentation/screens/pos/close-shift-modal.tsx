@@ -57,6 +57,7 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
     }
 
     setIsSubmitting(true);
+    setIsSubmitting(true);
     try {
       const closed = await closeShiftMutation.mutateAsync({
         shiftId: currentShift.id,
@@ -67,12 +68,34 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
       });
 
       // Fetch complete summary for receipt preview
-      const summary = await shiftService.getShiftSummary(closed.id);
-      setSummaryData(summary);
-      toast.success('Shift kasir berhasil ditutup!');
-      if (onShiftClosedSuccess) {
-        onShiftClosedSuccess();
+      try {
+        const summary = await shiftService.getShiftSummary(closed.id);
+        setSummaryData(summary);
+      } catch {
+        // Fallback to closed shift object if summary fetch fails
+        setSummaryData({
+          shift: closed,
+          cashierName: currentShift.user?.name || 'Kasir',
+          outletName: currentShift.outlet?.name || 'Cabang',
+          openedAt: currentShift.openedAt,
+          closedAt: closed.closedAt || new Date().toISOString(),
+          durationHours: 0,
+          openingCash: Number(closed.openingCash || 0),
+          totalCashSales: Number(closed.totalCashSales || 0),
+          totalCashOut: Number(closed.totalCashOut || 0),
+          expectedCash: Number(closed.expectedCash || 0),
+          actualCash: Number(closed.actualCash || actualCash || 0),
+          cashDifference: Number(closed.cashDifference || 0),
+          differenceStatus:
+            Number(closed.cashDifference || 0) === 0
+              ? 'MATCH'
+              : Number(closed.cashDifference || 0) > 0
+              ? 'SURPLUS'
+              : 'SHORT',
+          pettyCashList: [],
+        });
       }
+      toast.success('Shift kasir berhasil ditutup!');
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -87,17 +110,67 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
     window.print();
   };
 
+  const handleFinishAndExit = () => {
+    onClose();
+    if (onShiftClosedSuccess) {
+      onShiftClosedSuccess();
+    }
+  };
+
+  const formatRupiah = (val: number | string | undefined | null) => {
+    const num = typeof val === 'number' ? val : parseFloat(String(val || 0)) || 0;
+    return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
+  };
+
+  const formatTime = (dateStr?: string | Date | null) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      return isNaN(d.getTime())
+        ? '-'
+        : d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '-';
+    }
+  };
+
   // If summaryData is set, render the Summary / Thermal Receipt view
   if (summaryData) {
-    const diff = summaryData.cashDifference;
-    const isMatch = summaryData.differenceStatus === 'MATCH' || diff === 0;
-    const isSurplus = summaryData.differenceStatus === 'SURPLUS' || diff > 0;
-    const isShort = summaryData.differenceStatus === 'SHORT' || diff < 0;
+    const shift = summaryData.shift || (summaryData as unknown as PosShift);
+    const diff = Number(summaryData.cashDifference ?? shift?.cashDifference ?? 0);
+    const diffStatus =
+      summaryData.differenceStatus ||
+      (diff === 0 ? 'MATCH' : diff > 0 ? 'SURPLUS' : 'SHORT');
+    const isMatch = diffStatus === 'MATCH' || diff === 0;
+    const isSurplus = diffStatus === 'SURPLUS' || diff > 0;
+    const isShort = diffStatus === 'SHORT' || diff < 0;
+
+    const openingCashVal = Number(summaryData.openingCash ?? shift?.openingCash ?? 0);
+    const totalCashSalesVal = Number(
+      summaryData.totalCashSales ?? shift?.totalCashSales ?? 0
+    );
+    const totalCashOutVal = Number(
+      summaryData.totalCashOut ?? shift?.totalCashOut ?? 0
+    );
+    const expectedCashVal = Number(
+      summaryData.expectedCash ?? shift?.expectedCash ?? 0
+    );
+    const actualCashVal = Number(
+      summaryData.actualCash ?? shift?.actualCash ?? actualCash ?? 0
+    );
+    const cashierName =
+      summaryData.cashierName || shift?.user?.name || currentShift?.user?.name || 'Kasir';
+    const outletName =
+      summaryData.outletName || shift?.outlet?.name || currentShift?.outlet?.name || 'Cabang';
+    const durationHours = summaryData.durationHours ?? 0;
+    const openedAt = summaryData.openedAt || shift?.openedAt || currentShift?.openedAt;
+    const closedAt = summaryData.closedAt || shift?.closedAt || new Date().toISOString();
+    const pettyCashList = summaryData.pettyCashList || shift?.pettyCashTransactions || [];
 
     return (
       <Modal
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={handleFinishAndExit}
         title="Ringkasan Tutup Shift Kasir"
         subtitle="Rekapitulasi fisik laci dan audit penjualan shift"
         maxWidth="md"
@@ -111,7 +184,7 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
             >
               Cetak Struk Rekap
             </Button>
-            <Button variant="primary" size="sm" onClick={onClose} className="font-bold">
+            <Button variant="primary" size="sm" onClick={handleFinishAndExit} className="font-bold">
               Selesai & Keluar
             </Button>
           </div>
@@ -141,8 +214,8 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
                   {isMatch
                     ? 'Uang Kas Sesuai (Balance)'
                     : isSurplus
-                    ? `Surplus Kas (+Rp ${Math.abs(diff).toLocaleString('id-ID')})`
-                    : `Selisih Kurang (-Rp ${Math.abs(diff).toLocaleString('id-ID')})`}
+                    ? `Surplus Kas (+${formatRupiah(Math.abs(diff))})`
+                    : `Selisih Kurang (-${formatRupiah(Math.abs(diff))})`}
                 </p>
                 <p className="text-[11px] opacity-80">
                   {isMatch
@@ -162,7 +235,7 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
                   : 'bg-rose-200 text-rose-900'
               }`}
             >
-              {summaryData.differenceStatus}
+              {diffStatus}
             </span>
           </div>
 
@@ -174,16 +247,15 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
             {/* Header */}
             <div className="text-center pb-2 border-b border-dashed border-slate-300 space-y-0.5">
               <h4 className="font-extrabold text-sm uppercase text-slate-800">
-                {summaryData.outletName}
+                {outletName}
               </h4>
               <p className="text-[10px] text-slate-500 font-sans">REKAPITULASI SHIFT KASIR</p>
               <div className="text-[10px] text-slate-600 pt-1">
-                <span>Kasir: {summaryData.cashierName}</span> •{' '}
-                <span>Durasi: {summaryData.durationHours} Jam</span>
+                <span>Kasir: {cashierName}</span> •{' '}
+                <span>Durasi: {durationHours} Jam</span>
               </div>
               <div className="text-[10px] text-slate-400">
-                Buka: {new Date(summaryData.openedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} • Tutup:{' '}
-                {new Date(summaryData.closedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                Buka: {formatTime(openedAt)} • Tutup: {formatTime(closedAt)}
               </div>
             </div>
 
@@ -191,23 +263,23 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
             <div className="space-y-1.5 text-slate-700">
               <div className="flex justify-between">
                 <span>Modal Awal (Float)</span>
-                <span>Rp {summaryData.openingCash.toLocaleString('id-ID')}</span>
+                <span>{formatRupiah(openingCashVal)}</span>
               </div>
               <div className="flex justify-between text-teal-700">
                 <span>(+) Penjualan Tunai</span>
-                <span>+Rp {summaryData.totalCashSales.toLocaleString('id-ID')}</span>
+                <span>+{formatRupiah(totalCashSalesVal)}</span>
               </div>
               <div className="flex justify-between text-rose-600">
                 <span>(-) Kas Keluar (Petty Cash)</span>
-                <span>-Rp {summaryData.totalCashOut.toLocaleString('id-ID')}</span>
+                <span>-{formatRupiah(totalCashOutVal)}</span>
               </div>
               <div className="pt-1.5 border-t border-dashed border-slate-300 flex justify-between font-bold text-slate-900">
                 <span>Uang Seharusnya (Sistem)</span>
-                <span>Rp {summaryData.expectedCash.toLocaleString('id-ID')}</span>
+                <span>{formatRupiah(expectedCashVal)}</span>
               </div>
               <div className="flex justify-between font-bold text-slate-900">
                 <span>Uang Fisik Dihitung</span>
-                <span>Rp {summaryData.actualCash.toLocaleString('id-ID')}</span>
+                <span>{formatRupiah(actualCashVal)}</span>
               </div>
               <div
                 className={`pt-1 border-t border-slate-300 flex justify-between font-extrabold ${
@@ -216,22 +288,22 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
               >
                 <span>Selisih Kas</span>
                 <span>
-                  {diff > 0 ? '+' : ''}Rp {diff.toLocaleString('id-ID')}
+                  {diff > 0 ? '+' : ''}{formatRupiah(diff)}
                 </span>
               </div>
             </div>
 
             {/* Petty Cash List if any */}
-            {summaryData.pettyCashList && summaryData.pettyCashList.length > 0 && (
+            {pettyCashList && pettyCashList.length > 0 && (
               <div className="pt-2 border-t border-dashed border-slate-300">
                 <p className="text-[10px] font-bold text-slate-600 uppercase mb-1">
-                  Rincian Kas Keluar ({summaryData.pettyCashList.length}):
+                  Rincian Kas Keluar ({pettyCashList.length}):
                 </p>
                 <div className="space-y-1">
-                  {summaryData.pettyCashList.map((pc, idx) => (
+                  {pettyCashList.map((pc, idx) => (
                     <div key={pc.id || idx} className="flex justify-between text-[11px] text-slate-600">
                       <span className="truncate pr-2">• {pc.category} ({pc.notes || 'Operasional'})</span>
-                      <span className="shrink-0">-Rp {pc.amount.toLocaleString('id-ID')}</span>
+                      <span className="shrink-0">-{formatRupiah(Number(pc.amount || 0))}</span>
                     </div>
                   ))}
                 </div>

@@ -204,15 +204,23 @@ export const PosScreen: React.FC = () => {
   const [isOpenShiftModalOpen, setIsOpenShiftModalOpen] = useState<boolean>(false);
   const [isPettyCashModalOpen, setIsPettyCashModalOpen] = useState<boolean>(false);
   const [isCloseShiftModalOpen, setIsCloseShiftModalOpen] = useState<boolean>(false);
+  const [closingShift, setClosingShift] = useState<PosShift | null>(null);
   const [orderProcessing, setOrderProcessing] = useState<boolean>(false);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState<boolean>(false);
 
+  // Preserve shift object during close shift modal workflow
+  useEffect(() => {
+    if (currentShift && isCloseShiftModalOpen) {
+      setClosingShift(currentShift);
+    }
+  }, [currentShift, isCloseShiftModalOpen]);
+
   // Auto-prompt Open Shift Modal when cashier opens POS and has no active shift
   useEffect(() => {
-    if (!shiftLoading && effectiveOutlet?.id && currentShift === null) {
+    if (!shiftLoading && effectiveOutlet?.id && currentShift === null && !isCloseShiftModalOpen && !closingShift) {
       setIsOpenShiftModalOpen(true);
     }
-  }, [shiftLoading, effectiveOutlet?.id, currentShift]);
+  }, [shiftLoading, effectiveOutlet?.id, currentShift, isCloseShiftModalOpen, closingShift]);
 
   // Filtered Products
   const filteredProducts = products.filter((product) => {
@@ -1523,11 +1531,15 @@ export const PosScreen: React.FC = () => {
       />
 
       {/* MODAL 12: CLOSE SHIFT MODAL */}
-      {currentShift && (
+      {(currentShift || closingShift) && (
         <CloseShiftModal
           isOpen={isCloseShiftModalOpen}
-          onClose={() => setIsCloseShiftModalOpen(false)}
-          currentShift={currentShift}
+          onClose={() => {
+            setIsCloseShiftModalOpen(false);
+            setClosingShift(null);
+            refreshAllData();
+          }}
+          currentShift={currentShift || closingShift!}
           openOrders={openOrders}
           onShiftClosedSuccess={() => {
             refreshAllData();
