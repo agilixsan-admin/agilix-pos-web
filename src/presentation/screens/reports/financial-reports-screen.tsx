@@ -68,6 +68,7 @@ export const FinancialReportsScreen: React.FC = () => {
 
   const { data: balanceData, isLoading: balanceLoading } = useBalanceSheet({
     outletId: effectiveOutletId,
+    asOfDate: endDate ? endDate.slice(0, 10) : undefined,
   });
 
   const { data: cashFlowData, isLoading: cashFlowLoading } = useCashFlowStatement({
