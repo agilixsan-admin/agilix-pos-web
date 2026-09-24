@@ -6,8 +6,6 @@ import {
   useProducts,
   useCategories,
   useOutlets,
-  useCreateProductMutation,
-  useUpdateProductMutation,
   useDeleteProductMutation,
   useUpdateProductOutletAvailabilityMutation,
   useDebounce,
@@ -18,10 +16,6 @@ import {
   Badge,
   Card,
   SearchInput,
-  Modal,
-  FormInput,
-  FormSelect,
-  FormTextarea,
   LoadingState,
   EmptyState,
   CustomSelect,
@@ -44,77 +38,19 @@ export const ProductsScreen: React.FC = () => {
   const loading = productsLoading || categoriesLoading || outletsLoading;
 
   // Mutations
-  const createProductMutation = useCreateProductMutation();
-  const updateProductMutation = useUpdateProductMutation();
   const deleteProductMutation = useDeleteProductMutation();
   const updateOutletAvailabilityMutation = useUpdateProductOutletAvailabilityMutation();
-  const submitting = createProductMutation.isPending || updateProductMutation.isPending;
 
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 200);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-
-  // Modal State for quick edit
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    sku: '',
-    categoryId: '',
-    price: '',
-    costPrice: '',
-    description: '',
-  });
 
   const handleOpenAdd = () => {
     navigate('/products/create');
   };
 
   const handleOpenEdit = (p: Product) => {
-    setEditingProduct(p);
-    setFormData({
-      name: p.name,
-      sku: p.sku || '',
-      categoryId: p.categoryId,
-      price: (p.price ?? p.minPrice ?? p.variants?.[0]?.price ?? 0).toString(),
-      costPrice: p.costPrice?.toString() || '',
-      description: p.description || '',
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (editingProduct) {
-        await updateProductMutation.mutateAsync({
-          id: editingProduct.id,
-          data: {
-            name: formData.name,
-            sku: formData.sku || undefined,
-            categoryId: formData.categoryId || undefined,
-            price: Number(formData.price),
-            description: formData.description || undefined,
-            status: 'ACTIVE',
-          },
-        });
-      } else {
-        await createProductMutation.mutateAsync({
-          name: formData.name,
-          sku: formData.sku || undefined,
-          categoryId: formData.categoryId || undefined,
-          price: Number(formData.price),
-          description: formData.description || undefined,
-          status: 'ACTIVE',
-        });
-      }
-      setIsModalOpen(false);
-    } catch (err: unknown) {
-      alert(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Gagal menyimpan produk.'
-      );
-    }
+    navigate(`/products/${p.id}/edit`);
   };
 
   const handleDelete = async (id: string) => {
@@ -354,82 +290,6 @@ export const ProductsScreen: React.FC = () => {
           </table>
         </div>
       </Card>
-
-      {/* Reusable Quick Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingProduct ? 'Edit Informasi Produk' : 'Tambah Produk'}
-        maxWidth="sm"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormInput
-            label="Nama Menu / Produk"
-            required
-            autoFocus
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Contoh: Caramel Macchiato"
-          />
-
-          <FormInput
-            label="SKU / Barcode"
-            value={formData.sku}
-            onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-            placeholder="Contoh: BEV-MAC-01"
-          />
-
-          <FormSelect
-            label="Kategori Menu"
-            required
-            value={formData.categoryId}
-            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-          >
-            <option value="">Pilih Kategori...</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </FormSelect>
-
-          <FormInput
-            label="Harga Jual (Rp)"
-            type="number"
-            min="0"
-            unit="Rp"
-            required
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-            placeholder="35000"
-          />
-
-          <FormTextarea
-            label="Deskripsi Menu"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Catatan bahan atau rasa..."
-            rows={2}
-          />
-
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsModalOpen(false)}
-            >
-              Batal
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              isLoading={submitting}
-            >
-              Simpan
-            </Button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 };

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { RawMaterial, PackagingItem } from '@model/Inventory';
 import { productService } from '@domain/services/product-service';
 import { useAuthStore } from '@domain/state/auth-store';
@@ -8,6 +8,8 @@ import {
   useRawMaterials,
   usePackagingItems,
   useCreateProductMutation,
+  useProduct,
+  useUpdateProductMutation,
 } from '@domain/hooks';
 import {
   ArrowLeft,
@@ -34,6 +36,7 @@ import {
   FormTextarea,
   LoadingState,
   CustomSelect,
+  toast,
 } from '@presentation/components/ui';
 
 interface VariantFormItem {
@@ -57,16 +60,21 @@ const STEPS = [
 
 export const ProductCreateWizardScreen: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+  const isEditMode = Boolean(id);
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
 
   // Query Hooks
   const { data: categories = [] } = useCategories();
   const { data: availableMaterials = [] } = useRawMaterials({ outletId: currentOutlet?.id });
   const { data: availablePackagings = [] } = usePackagingItems({ outletId: currentOutlet?.id });
+  const { data: existingProduct, isLoading: productLoading } = useProduct(id);
   const createProductMutation = useCreateProductMutation();
+  const updateProductMutation = useUpdateProductMutation();
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   // Step 1: Basic Info
   const [name, setName] = useState('');
@@ -75,27 +83,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
   const [description, setDescription] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Ukuran file maksimal adalah 5MB.');
-        return;
-      }
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-  };
+  const [imageRemoved, setImageRemoved] = useState<boolean>(false);
 
   // Step 2: Has Variants toggle
   const [hasVariants, setHasVariants] = useState<boolean>(false);
@@ -113,8 +101,119 @@ export const ProductCreateWizardScreen: React.FC = () => {
 
   // Active variant tab for Steps 3 & 4
   const [activeVariantId, setActiveVariantId] = useState<string>('default');
+  const activeVariant = variants.find((v) => v.id === activeVariantId) || variants[0];
 
-  // Set default category when categories load
+  // Pre-populate data when in edit mode
+  useEffect(() => {
+    if (isEditMode && existingProduct && !isInitialized) {
+      setName(existingProduct.name || '');
+      setSku(existingProduct.sku || '');
+      setCategoryId(existingProduct.categoryId || '');
+      setDescription(existingProduct.description || '');
+      if (existingProduct.imageUrl || existingProduct.image) {
+        setImagePreview(existingProduct.imageUrl || existingProduct.image || null);
+      }
+
+      const prodVariants = existingProduct.variants || [];
+      if (prodVariants.length > 0) {
+        const isMulti = prodVariants.length > 1;
+        setHasVariants(isMulti);
+
+        const mappedVariants: VariantFormItem[] = prodVariants.map((v) => {
+          const rawRecipes: VariantFormItem['recipes'] = [];
+          const packagings: VariantFormItem['packagings'] = [];
+
+          (v.recipes || []).forEach((r: any) => {
+            const isPackaging =
+              r.inventoryItem?.itemType === 'PACKAGING' ||
+              availablePackagings.some((p) => p.id === (r.inventoryItemId || r.materialId));
+
+            const qty = Number(r.quantity || 1);
+
+            if (isPackaging) {
+              const pkg = availablePackagings.find(
+                (p) => p.id === (r.inventoryItemId || r.materialId)
+              );
+              const unitCost = Number(r.inventoryItem?.unitCost ?? pkg?.costPrice ?? 0);
+              packagings.push({
+                packagingId: r.inventoryItemId || r.materialId,
+                packagingName: r.inventoryItem?.name || pkg?.name || 'Kemasan',
+                quantity: qty,
+                unit: r.unit || pkg?.unit || 'pcs',
+                cost: unitCost * qty,
+              });
+            } else {
+              const mat = availableMaterials.find(
+                (m) => m.id === (r.inventoryItemId || r.materialId)
+              );
+              const unitCost = Number(r.inventoryItem?.unitCost ?? mat?.unitCost ?? mat?.costPrice ?? 0);
+              rawRecipes.push({
+                materialId: r.inventoryItemId || r.materialId,
+                materialName: r.inventoryItem?.name || mat?.name || 'Bahan Baku',
+                quantity: qty,
+                unit: r.unit || mat?.unit || 'gr',
+                cost: unitCost * qty,
+              });
+            }
+          });
+
+          return {
+            id: v.id || `var-${Date.now()}`,
+            name: v.name,
+            sku: v.sku || '',
+            price: Number(v.price || 0),
+            costPrice: Number(v.costPrice || 0),
+            recipes: rawRecipes,
+            packagings,
+          };
+        });
+
+        setVariants(mappedVariants);
+        setActiveVariantId(mappedVariants[0]?.id || 'default');
+      } else {
+        const fallbackId = 'default';
+        setVariants([
+          {
+            id: fallbackId,
+            name: 'Standard / Regular',
+            sku: existingProduct.sku || '',
+            price: Number(existingProduct.price || 0),
+            costPrice: 0,
+            recipes: [],
+            packagings: [],
+          },
+        ]);
+        setActiveVariantId(fallbackId);
+      }
+
+      setIsInitialized(true);
+    }
+  }, [isEditMode, existingProduct, isInitialized, availableMaterials, availablePackagings]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Ukuran file maksimal adalah 5MB.');
+        return;
+      }
+      setImageFile(file);
+      setImageRemoved(false);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setImageRemoved(true);
+  };
+
+  // Set default category when categories load (only for create mode)
   const selectedCatId = categoryId || (categories.length > 0 ? categories[0].id : '');
 
   // Variant Helpers
@@ -148,7 +247,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
   const addRecipeItem = (material: RawMaterial) => {
     const costPerUnit = Number(material.unitCost ?? material.costPrice ?? 0);
     const defaultQty = 1;
-    const current = variants.find((v) => v.id === activeVariantId);
+    const current = variants.find((v) => v.id === activeVariantId) || variants[0];
     if (!current) return;
 
     if (current.recipes.some((r) => r.materialId === material.id)) return;
@@ -161,11 +260,11 @@ export const ProductCreateWizardScreen: React.FC = () => {
       cost: costPerUnit * defaultQty,
     };
 
-    updateVariantField(activeVariantId, 'recipes', [...current.recipes, newItem]);
+    updateVariantField(current.id, 'recipes', [...current.recipes, newItem]);
   };
 
   const updateRecipeQty = (materialId: string, qty: number) => {
-    const current = variants.find((v) => v.id === activeVariantId);
+    const current = variants.find((v) => v.id === activeVariantId) || variants[0];
     if (!current) return;
 
     const mat = availableMaterials.find((m) => m.id === materialId);
@@ -180,14 +279,14 @@ export const ProductCreateWizardScreen: React.FC = () => {
           }
         : r
     );
-    updateVariantField(activeVariantId, 'recipes', updated);
+    updateVariantField(current.id, 'recipes', updated);
   };
 
   const removeRecipeItem = (materialId: string) => {
-    const current = variants.find((v) => v.id === activeVariantId);
+    const current = variants.find((v) => v.id === activeVariantId) || variants[0];
     if (!current) return;
     updateVariantField(
-      activeVariantId,
+      current.id,
       'recipes',
       current.recipes.filter((r) => r.materialId !== materialId)
     );
@@ -196,7 +295,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
   // Packaging Helpers
   const addPackagingItem = (pkg: PackagingItem) => {
     const costPerUnit = Number(pkg.costPrice || 0);
-    const current = variants.find((v) => v.id === activeVariantId);
+    const current = variants.find((v) => v.id === activeVariantId) || variants[0];
     if (!current) return;
 
     if (current.packagings.some((p) => p.packagingId === pkg.id)) return;
@@ -209,11 +308,11 @@ export const ProductCreateWizardScreen: React.FC = () => {
       cost: costPerUnit,
     };
 
-    updateVariantField(activeVariantId, 'packagings', [...current.packagings, newItem]);
+    updateVariantField(current.id, 'packagings', [...current.packagings, newItem]);
   };
 
   const updatePackagingQty = (packagingId: string, qty: number) => {
-    const current = variants.find((v) => v.id === activeVariantId);
+    const current = variants.find((v) => v.id === activeVariantId) || variants[0];
     if (!current) return;
 
     const pkg = availablePackagings.find((p) => p.id === packagingId);
@@ -228,14 +327,14 @@ export const ProductCreateWizardScreen: React.FC = () => {
           }
         : p
     );
-    updateVariantField(activeVariantId, 'packagings', updated);
+    updateVariantField(current.id, 'packagings', updated);
   };
 
   const removePackagingItem = (packagingId: string) => {
-    const current = variants.find((v) => v.id === activeVariantId);
+    const current = variants.find((v) => v.id === activeVariantId) || variants[0];
     if (!current) return;
     updateVariantField(
-      activeVariantId,
+      current.id,
       'packagings',
       current.packagings.filter((p) => p.packagingId !== packagingId)
     );
@@ -261,57 +360,144 @@ export const ProductCreateWizardScreen: React.FC = () => {
     try {
       const primaryVariant = variants[0];
 
-      // Map variants to backend CreateVariantDto schema
-      const formattedVariants = hasVariants
-        ? variants.map((v) => ({
-            name: v.name,
-            sku: v.sku || `${sku}-${v.name}`,
+      if (isEditMode && id) {
+        // Edit Mode
+        const formattedVariants = variants.map((v) => {
+          const isExistingUUID =
+            v.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.id);
+
+          const allRecipes = [
+            ...v.recipes.map((r) => ({
+              inventoryItemId: r.materialId,
+              quantity: r.quantity,
+              unit: r.unit,
+            })),
+            ...v.packagings.map((p) => ({
+              inventoryItemId: p.packagingId,
+              quantity: p.quantity,
+              unit: p.unit,
+            })),
+          ];
+
+          return {
+            id: isExistingUUID ? v.id : undefined,
+            name: hasVariants ? v.name : 'Default',
+            sku: v.sku || `${sku || 'SKU'}-${v.name}`,
             price: v.price,
             status: 'ACTIVE',
-            recipes: v.recipes.length > 0
-              ? v.recipes.map((r) => ({
+            recipes: allRecipes,
+          };
+        });
+
+        const variantsPayload = hasVariants ? formattedVariants : [formattedVariants[0]];
+
+        await updateProductMutation.mutateAsync({
+          id,
+          data: {
+            name,
+            sku: sku || undefined,
+            categoryId: categoryId || undefined,
+            description: description || undefined,
+            price: primaryVariant.price,
+            status: 'ACTIVE',
+            variants: variantsPayload,
+          },
+        });
+
+        if (imageFile) {
+          try {
+            await productService.uploadProductImage(id, imageFile);
+          } catch (uploadErr) {
+            console.error('Image upload failed:', uploadErr);
+          }
+        } else if (imageRemoved && existingProduct?.imageUrl) {
+          try {
+            await productService.deleteProductImage(id);
+          } catch (delErr) {
+            console.error('Image deletion failed:', delErr);
+          }
+        }
+
+        toast.success('Produk berhasil diperbarui');
+        navigate('/products');
+      } else {
+        // Create Mode
+        const formattedVariants = hasVariants
+          ? variants.map((v) => ({
+              name: v.name,
+              sku: v.sku || `${sku}-${v.name}`,
+              price: v.price,
+              status: 'ACTIVE',
+              recipes: [
+                ...v.recipes.map((r) => ({
                   inventoryItemId: r.materialId,
                   quantity: r.quantity,
                   unit: r.unit,
-                }))
-              : undefined,
-          }))
-        : undefined;
+                })),
+                ...v.packagings.map((p) => ({
+                  inventoryItemId: p.packagingId,
+                  quantity: p.quantity,
+                  unit: p.unit,
+                })),
+              ],
+            }))
+          : undefined;
 
-      const formattedRecipes = !hasVariants && primaryVariant.recipes.length > 0
-        ? primaryVariant.recipes.map((r) => ({
+        const allSingleRecipes = [
+          ...primaryVariant.recipes.map((r) => ({
             inventoryItemId: r.materialId,
             quantity: r.quantity,
             unit: r.unit,
-          }))
-        : undefined;
+          })),
+          ...primaryVariant.packagings.map((p) => ({
+            inventoryItemId: p.packagingId,
+            quantity: p.quantity,
+            unit: p.unit,
+          })),
+        ];
 
-      const created = await createProductMutation.mutateAsync({
-        name,
-        sku: sku || undefined,
-        categoryId: categoryId || undefined,
-        description: description || undefined,
-        price: primaryVariant.price,
-        status: 'ACTIVE',
-        recipes: formattedRecipes,
-        variants: formattedVariants,
-      });
+        const formattedRecipes =
+          !hasVariants && allSingleRecipes.length > 0 ? allSingleRecipes : undefined;
 
-      if (imageFile && created?.id) {
-        try {
-          await productService.uploadProductImage(created.id, imageFile);
-        } catch (uploadErr) {
-          console.error('Image upload failed:', uploadErr);
+        const created = await createProductMutation.mutateAsync({
+          name,
+          sku: sku || undefined,
+          categoryId: categoryId || undefined,
+          description: description || undefined,
+          price: primaryVariant.price,
+          status: 'ACTIVE',
+          recipes: formattedRecipes,
+          variants: formattedVariants,
+        });
+
+        if (imageFile && created?.id) {
+          try {
+            await productService.uploadProductImage(created.id, imageFile);
+          } catch (uploadErr) {
+            console.error('Image upload failed:', uploadErr);
+          }
         }
-      }
 
-      navigate('/products');
+        toast.success('Produk baru berhasil diterbitkan');
+        navigate('/products');
+      }
     } catch (err: unknown) {
-      alert((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menerbitkan produk.');
+      alert(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          (isEditMode ? 'Gagal memperbarui produk.' : 'Gagal menerbitkan produk.')
+      );
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (isEditMode && productLoading && !isInitialized) {
+    return (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <LoadingState message="Memuat data produk..." />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12 select-none">
@@ -325,7 +511,9 @@ export const ProductCreateWizardScreen: React.FC = () => {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tambah Produk Baru</h1>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              {isEditMode ? 'Edit Produk' : 'Tambah Produk Baru'}
+            </h1>
           </div>
         </div>
       </div>
@@ -624,49 +812,47 @@ export const ProductCreateWizardScreen: React.FC = () => {
                 <div className="col-span-2 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between">
                   <div>
                     <h5 className="text-xs font-bold text-slate-700 uppercase mb-3">
-                      Komposisi: {variants.find((v) => v.id === activeVariantId)?.name}
+                      Komposisi: {activeVariant?.name || 'Varian'}
                     </h5>
 
-                    {variants.find((v) => v.id === activeVariantId)?.recipes.length === 0 ? (
+                    {(!activeVariant || activeVariant.recipes.length === 0) ? (
                       <div className="py-16 text-center text-slate-400">
                         <Wheat className="w-10 h-10 mx-auto mb-2 opacity-30" />
                         <p className="text-xs">Belum ada bahan baku ditambahkan untuk varian ini.</p>
                       </div>
                     ) : (
                       <div className="space-y-2 max-h-72 overflow-y-auto">
-                        {variants
-                          .find((v) => v.id === activeVariantId)
-                          ?.recipes.map((r) => (
-                            <div
-                              key={r.materialId}
-                              className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                            >
-                              <div>
-                                <p className="font-bold text-slate-800">{r.materialName}</p>
-                                <span className="text-[10px] text-slate-500">
-                                  Biaya: Rp {r.cost.toLocaleString('id-ID')}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="number"
-                                  min="0.1"
-                                  step="0.1"
-                                  value={r.quantity}
-                                  onChange={(e) => updateRecipeQty(r.materialId, Number(e.target.value))}
-                                  className="w-20 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-center font-bold"
-                                />
-                                <span className="text-slate-500 text-xs w-8">{r.unit}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => removeRecipeItem(r.materialId)}
-                                  className="p-1 text-slate-400 hover:text-red-600 rounded"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                        {activeVariant.recipes.map((r) => (
+                          <div
+                            key={r.materialId}
+                            className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                          >
+                            <div>
+                              <p className="font-bold text-slate-800">{r.materialName}</p>
+                              <span className="text-[10px] text-slate-500">
+                                Biaya: Rp {r.cost.toLocaleString('id-ID')}
+                              </span>
                             </div>
-                          ))}
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="0.1"
+                                step="0.1"
+                                value={r.quantity}
+                                onChange={(e) => updateRecipeQty(r.materialId, Number(e.target.value))}
+                                className="w-20 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-center font-bold"
+                              />
+                              <span className="text-slate-500 text-xs w-8">{r.unit}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeRecipeItem(r.materialId)}
+                                className="p-1 text-slate-400 hover:text-red-600 rounded"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -674,10 +860,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
                   <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-medium">Subtotal Biaya Bahan:</span>
                     <span className="font-bold text-[#0D5C53] text-sm">
-                      Rp{' '}
-                      {(
-                        variants.find((v) => v.id === activeVariantId)?.recipes.reduce((s, r) => s + r.cost, 0) || 0
-                      ).toLocaleString('id-ID')}
+                      Rp {(activeVariant?.recipes.reduce((s, r) => s + r.cost, 0) || 0).toLocaleString('id-ID')}
                     </span>
                   </div>
                 </div>
@@ -743,48 +926,46 @@ export const ProductCreateWizardScreen: React.FC = () => {
                 <div className="col-span-2 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between">
                   <div>
                     <h5 className="text-xs font-bold text-slate-700 uppercase mb-3">
-                      Kemasan: {variants.find((v) => v.id === activeVariantId)?.name}
+                      Kemasan: {activeVariant?.name || 'Varian'}
                     </h5>
 
-                    {variants.find((v) => v.id === activeVariantId)?.packagings.length === 0 ? (
+                    {(!activeVariant || activeVariant.packagings.length === 0) ? (
                       <div className="py-16 text-center text-slate-400">
                         <Box className="w-10 h-10 mx-auto mb-2 opacity-30" />
                         <p className="text-xs">Belum ada packaging ditambahkan.</p>
                       </div>
                     ) : (
                       <div className="space-y-2 max-h-72 overflow-y-auto">
-                        {variants
-                          .find((v) => v.id === activeVariantId)
-                          ?.packagings.map((p) => (
-                            <div
-                              key={p.packagingId}
-                              className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                            >
-                              <div>
-                                <p className="font-bold text-slate-800">{p.packagingName}</p>
-                                <span className="text-[10px] text-slate-500">
-                                  Biaya: Rp {p.cost.toLocaleString('id-ID')}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={p.quantity}
-                                  onChange={(e) => updatePackagingQty(p.packagingId, Number(e.target.value))}
-                                  className="w-20 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-center font-bold"
-                                />
-                                <span className="text-slate-500 text-xs w-8">{p.unit}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => removePackagingItem(p.packagingId)}
-                                  className="p-1 text-slate-400 hover:text-red-600 rounded"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                        {activeVariant.packagings.map((p) => (
+                          <div
+                            key={p.packagingId}
+                            className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                          >
+                            <div>
+                              <p className="font-bold text-slate-800">{p.packagingName}</p>
+                              <span className="text-[10px] text-slate-500">
+                                Biaya: Rp {p.cost.toLocaleString('id-ID')}
+                              </span>
                             </div>
-                          ))}
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="1"
+                                value={p.quantity}
+                                onChange={(e) => updatePackagingQty(p.packagingId, Number(e.target.value))}
+                                className="w-20 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-center font-bold"
+                              />
+                              <span className="text-slate-500 text-xs w-8">{p.unit}</span>
+                              <button
+                                type="button"
+                                onClick={() => removePackagingItem(p.packagingId)}
+                                className="p-1 text-slate-400 hover:text-red-600 rounded"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -792,12 +973,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
                   <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-medium">Subtotal Biaya Packaging:</span>
                     <span className="font-bold text-[#0D5C53] text-sm">
-                      Rp{' '}
-                      {(
-                        variants
-                          .find((v) => v.id === activeVariantId)
-                          ?.packagings.reduce((s, p) => s + p.cost, 0) || 0
-                      ).toLocaleString('id-ID')}
+                      Rp {(activeVariant?.packagings.reduce((s, p) => s + p.cost, 0) || 0).toLocaleString('id-ID')}
                     </span>
                   </div>
                 </div>
@@ -878,8 +1054,14 @@ export const ProductCreateWizardScreen: React.FC = () => {
           {currentStep === 6 && (
             <div className="max-w-2xl mx-auto space-y-5">
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Langkah 6: Review & Terbitkan Menu</h3>
-                <p className="text-xs text-slate-500">Periksa ringkasan produk sebelum disimpan dan mulai dijual di kasir POS.</p>
+                <h3 className="font-bold text-slate-900 text-base">
+                  {isEditMode ? 'Langkah 6: Review & Simpan Perubahan Produk' : 'Langkah 6: Review & Terbitkan Menu'}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {isEditMode
+                    ? 'Periksa ringkasan produk sebelum menyimpan perubahan ke kasir POS.'
+                    : 'Periksa ringkasan produk sebelum disimpan dan mulai dijual di kasir POS.'}
+                </p>
               </div>
 
               <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 shadow-xs">
@@ -974,7 +1156,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
               onClick={handlePublish}
               leftIcon={<Check className="w-4 h-4" />}
             >
-              Konfirmasi & Terbitkan Menu ke Kasir
+              {isEditMode ? 'Konfirmasi & Simpan Perubahan' : 'Konfirmasi & Terbitkan Menu ke Kasir'}
             </Button>
           )}
         </div>

@@ -383,6 +383,16 @@ export const AppRoutes: React.FC = () => {
             }
           />
           <Route
+            path="products/:id/edit"
+            element={
+              <ProtectedRoute requiredPermission="product:update">
+                <SuspenseLoader>
+                  <ProductCreateWizardScreen />
+                </SuspenseLoader>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="products/categories"
             element={
               <ProtectedRoute requiredPermission="category:read">
