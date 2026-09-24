@@ -16,7 +16,7 @@ import {
   Lock,
   Banknote,
 } from 'lucide-react';
-import { Button, Badge, LoadingState, EmptyState, CustomOutletSelect } from '@presentation/components/ui';
+import { Button, Badge, LoadingState, EmptyState, CustomOutletSelect, toast } from '@presentation/components/ui';
 import type { PosShift } from '@model/Shift';
 
 interface TableFloorViewProps {
@@ -123,7 +123,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                 onClick={onPettyCashClick}
                 className="text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200"
               >
-                Kas Keluar
+                Kas Keluar / Beli Bahan
               </Button>
               <Button
                 variant="outline"
@@ -151,13 +151,46 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
             variant="primary"
             size="md"
             leftIcon={<Plus className="w-4 h-4" />}
-            onClick={onNewOrderClick}
+            onClick={() => {
+              if (!currentShift) {
+                toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu untuk memulai pesanan.');
+                onOpenShiftClick?.();
+                return;
+              }
+              onNewOrderClick();
+            }}
             className="font-bold shadow-md shadow-teal-900/10"
           >
             + Buat Pesanan Baru
           </Button>
         </div>
       </div>
+
+      {/* Shift Not Open Warning Banner */}
+      {!currentShift && (
+        <div className="bg-amber-500/10 border border-amber-300 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-amber-900">Shift Kasir Belum Dibuka</h4>
+              <p className="text-xs text-amber-700">
+                Semua transaksi kasir (pembuatan pesanan, pemilihan meja, dan pembayaran) dinonaktifkan sampai shift kasir dibuka.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={onOpenShiftClick}
+            leftIcon={<Banknote className="w-4 h-4" />}
+            className="bg-amber-600 hover:bg-amber-700 text-white font-bold shrink-0 shadow-xs w-full sm:w-auto"
+          >
+            Buka Shift Sekarang
+          </Button>
+        </div>
+      )}
 
       {/* Main Split Grid: Active Orders Banner & Table Floor Grid */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
@@ -298,7 +331,14 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                     return (
                       <div
                         key={table.id}
-                        onClick={() => onSelectOpenOrderForAppend(activeOrder)}
+                        onClick={() => {
+                          if (!currentShift) {
+                            toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu.');
+                            onOpenShiftClick?.();
+                            return;
+                          }
+                          onSelectOpenOrderForAppend(activeOrder);
+                        }}
                         className="bg-[#0D5C53] text-white rounded-2xl p-4 flex flex-col justify-between shadow-md hover:shadow-lg transition-all border border-teal-700 cursor-pointer group active:scale-[0.98]"
                       >
                         <div>
@@ -344,6 +384,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                if (!currentShift) {
+                                  toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu.');
+                                  onOpenShiftClick?.();
+                                  return;
+                                }
                                 onSelectOpenOrderForAppend(activeOrder);
                               }}
                               className="text-[10px] bg-teal-800 hover:bg-teal-700 active:bg-teal-900 text-teal-100 px-2 py-1 rounded-lg font-bold transition-colors cursor-pointer border border-teal-600/60"
@@ -354,6 +399,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                if (!currentShift) {
+                                  toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu sebelum melakukan pembayaran.');
+                                  onOpenShiftClick?.();
+                                  return;
+                                }
                                 onSelectOpenOrderForPayment(activeOrder);
                               }}
                               className="text-[10px] bg-white hover:bg-teal-50 text-[#0D5C53] px-2 py-1 rounded-lg font-bold transition-colors cursor-pointer shadow-xs"
@@ -415,6 +465,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                     <div
                       key={table.id}
                       onClick={() => {
+                        if (!currentShift) {
+                          toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu untuk memilih meja.');
+                          onOpenShiftClick?.();
+                          return;
+                        }
                         if (!isReserved) {
                           onSelectTableForOrder(table);
                         }
@@ -543,6 +598,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (!currentShift) {
+                            toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu.');
+                            onOpenShiftClick?.();
+                            return;
+                          }
                           onSelectOpenOrderForAppend(order);
                         }}
                         className="text-[11px] px-2 py-1"
@@ -554,6 +614,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (!currentShift) {
+                            toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu sebelum melakukan pembayaran.');
+                            onOpenShiftClick?.();
+                            return;
+                          }
                           onSelectOpenOrderForPayment(order);
                         }}
                         className="text-[11px] px-2.5 py-1"

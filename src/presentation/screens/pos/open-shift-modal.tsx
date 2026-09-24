@@ -93,6 +93,14 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
           </span>
         </div>
 
+        {/* Mandatory Shift Notice */}
+        <div className="p-3 bg-amber-50/80 border border-amber-200/90 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
+          <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            <strong>Aturan Kasir:</strong> Transaksi pemesanan meja dan pembayaran tidak dapat dilakukan sebelum shift dibuka. Masukkan modal awal laci untuk mengaktifkan POS.
+          </p>
+        </div>
+
         {/* Input Modal Awal */}
         <FormField label="Modal Awal Kasir / Float (Rp)" required>
           <div className="relative">

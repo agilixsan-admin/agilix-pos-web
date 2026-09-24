@@ -225,6 +225,12 @@ export const PosScreen: React.FC = () => {
 
   // Handle Product Click
   const handleProductClick = (product: Product) => {
+    if (!currentShift) {
+      toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu untuk memasukkan pesanan.');
+      setIsOpenShiftModalOpen(true);
+      return;
+    }
+
     if (product.isOutletActive === false) {
       toast.error(`Menu "${product.name}" sedang dinonaktifkan di cabang ini.`);
       return;
@@ -249,6 +255,12 @@ export const PosScreen: React.FC = () => {
   };
 
   const handleSelectVariant = (product: Product, variant: Variant) => {
+    if (!currentShift) {
+      toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu untuk memasukkan pesanan.');
+      setIsOpenShiftModalOpen(true);
+      return;
+    }
+
     if (product.isOutletActive === false) {
       toast.error(`Menu "${product.name}" sedang dinonaktifkan di cabang ini.`);
       return;
@@ -298,6 +310,11 @@ export const PosScreen: React.FC = () => {
 
   // Start New Order Trigger
   const handleInitiateNewOrder = () => {
+    if (!currentShift) {
+      toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu untuk memulai pesanan.');
+      setIsOpenShiftModalOpen(true);
+      return;
+    }
     setActiveAppendOrder(null);
     clearCart();
     setPendingOrderType('DINE_IN');
@@ -318,6 +335,11 @@ export const PosScreen: React.FC = () => {
 
   // Table Floor Plan Table Selection
   const handleSelectTableForOrder = (table: Table) => {
+    if (!currentShift) {
+      toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu untuk memilih meja.');
+      setIsOpenShiftModalOpen(true);
+      return;
+    }
     setActiveAppendOrder(null);
     clearCart();
     setOrderType('DINE_IN');
@@ -327,6 +349,11 @@ export const PosScreen: React.FC = () => {
 
   // Select Open Order for Append Mode (Mode Tambah Menu ke Pesanan Berjalan)
   const handleSelectOpenOrderForAppend = async (order: Order) => {
+    if (!currentShift) {
+      toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu untuk menambah menu.');
+      setIsOpenShiftModalOpen(true);
+      return;
+    }
     // 1. Clear cart first so we start with empty additional items without wiping table/customer
     clearCart();
 
@@ -401,6 +428,12 @@ export const PosScreen: React.FC = () => {
 
   // Direct Instant Checkout
   const handleCheckoutDirect = async () => {
+    if (!currentShift) {
+      toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu sebelum menyelesaikan transaksi.');
+      setIsOpenShiftModalOpen(true);
+      return;
+    }
+
     const activeOutlet = currentOutlet || effectiveOutlet;
     if (!activeOutlet?.id) {
       toast.warning('Silakan pilih cabang/outlet aktif terlebih dahulu.');
@@ -470,6 +503,12 @@ export const PosScreen: React.FC = () => {
 
   // Save as Open Order
   const handleSaveOpenOrder = async () => {
+    if (!currentShift) {
+      toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu sebelum menyimpan transaksi.');
+      setIsOpenShiftModalOpen(true);
+      return;
+    }
+
     const activeOutlet = currentOutlet || effectiveOutlet;
     if (!activeOutlet?.id) {
       toast.warning('Silakan pilih cabang/outlet aktif terlebih dahulu.');
@@ -939,12 +978,33 @@ export const PosScreen: React.FC = () => {
             </div>
           </div>
 
+          {!currentShift && (
+            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-800">
+              <div className="flex items-center gap-1.5 font-medium">
+                <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Shift kasir belum dibuka</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpenShiftModalOpen(true)}
+                className="text-[11px] font-bold text-emerald-800 hover:text-emerald-900 underline cursor-pointer"
+              >
+                Buka Shift
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2 pt-1">
             <Button
               variant="outline"
-              disabled={cartItems.length === 0 || orderProcessing}
+              disabled={cartItems.length === 0 || orderProcessing || !currentShift}
               leftIcon={<Send className="w-3.5 h-3.5 text-teal-700" />}
               onClick={() => {
+                if (!currentShift) {
+                  toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu.');
+                  setIsOpenShiftModalOpen(true);
+                  return;
+                }
                 if (isMobileSheet) setIsMobileCartOpen(false);
                 handleSaveOpenOrder();
               }}
@@ -956,11 +1016,17 @@ export const PosScreen: React.FC = () => {
               variant="primary"
               disabled={
                 orderProcessing ||
-                (!activeAppendOrder && cartItems.length === 0)
+                (!activeAppendOrder && cartItems.length === 0) ||
+                !currentShift
               }
               isLoading={orderProcessing}
               leftIcon={<CreditCard className="w-4 h-4" />}
               onClick={() => {
+                if (!currentShift) {
+                  toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu.');
+                  setIsOpenShiftModalOpen(true);
+                  return;
+                }
                 if (isMobileSheet) setIsMobileCartOpen(false);
                 handleCheckoutDirect();
               }}
@@ -1059,8 +1125,8 @@ export const PosScreen: React.FC = () => {
                         onClick={() => setIsPettyCashModalOpen(true)}
                         className="text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200"
                       >
-                        <span className="hidden sm:inline">Kas Keluar</span>
-                        <span className="sm:hidden">Keluar</span>
+                        <span className="hidden sm:inline">Kas Keluar / Beli Bahan</span>
+                        <span className="sm:hidden">Beli Bahan</span>
                       </Button>
                       <Button
                         variant="outline"
@@ -1086,6 +1152,32 @@ export const PosScreen: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {/* Shift Not Open Warning Banner in Catalog */}
+              {!currentShift && (
+                <div className="bg-amber-500/10 border border-amber-300 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-amber-900">Shift Kasir Belum Dibuka</h4>
+                      <p className="text-[11px] text-amber-700">
+                        Buka shift terlebih dahulu dengan memasukkan modal awal kasir untuk memulai transaksi pesanan.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => setIsOpenShiftModalOpen(true)}
+                    leftIcon={<Banknote className="w-3.5 h-3.5" />}
+                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 shadow-xs"
+                  >
+                    Buka Shift
+                  </Button>
+                </div>
+              )}
 
               {/* Category Filter Pills */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">

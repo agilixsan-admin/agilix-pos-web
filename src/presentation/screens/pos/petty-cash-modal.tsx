@@ -11,9 +11,10 @@ interface PettyCashModalProps {
 }
 
 const CATEGORIES = [
-  'Beli Bahan Darurat',
-  'Parkir & Operasional',
-  'Kebersihan',
+  'Beli Bahan Baku Darurat',
+  'Es Batu / Gas / Galon',
+  'Operasional & Kebersihan',
+  'Parkir & Transportasi',
   'Lainnya',
 ];
 
@@ -104,8 +105,8 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Catat Kas Keluar (Petty Cash)"
-      subtitle="Pengeluaran operasional darurat langsung dari laci kasir"
+      title="Catat Kas Keluar / Pembelian Darurat"
+      subtitle="Pengambilan uang laci kasir untuk pembelian bahan darurat atau biaya operasional"
       maxWidth="md"
       footer={
         <div className="flex items-center justify-end gap-2 w-full">
