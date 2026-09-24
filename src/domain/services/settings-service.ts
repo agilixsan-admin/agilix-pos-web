@@ -39,6 +39,18 @@ export const settingsService = {
     return res.data?.data || res.data || [];
   },
 
+  getOutletQuota: async (): Promise<{ max: number; used: number; remaining: number }> => {
+    const res = await httpClient.get('/outlets');
+    const outlets = res.data?.data || [];
+    return (
+      res.data?.meta?.quota || {
+        max: 1,
+        used: Array.isArray(outlets) ? outlets.length : 0,
+        remaining: 0,
+      }
+    );
+  },
+
   createOutlet: async (outletData: Partial<Outlet>): Promise<Outlet> => {
     const res = await httpClient.post('/outlets', outletData);
     return res.data?.data || res.data;

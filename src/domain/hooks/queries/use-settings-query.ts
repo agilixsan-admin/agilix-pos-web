@@ -41,6 +41,14 @@ export function useOutlets() {
   });
 }
 
+export function useOutletQuota() {
+  return useQuery({
+    queryKey: ['settings', 'outlets', 'quota'],
+    queryFn: () => settingsService.getOutletQuota(),
+    staleTime: 60 * 1000,
+  });
+}
+
 export function useSettingsTables(outletId?: string) {
   return useQuery({
     queryKey: settingsKeys.tables(outletId),

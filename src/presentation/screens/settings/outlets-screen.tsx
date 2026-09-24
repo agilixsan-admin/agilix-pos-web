@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Outlet } from '@model/Auth';
 import {
   useOutlets,
+  useOutletQuota,
   useUpdateOutletMutation,
   useCreateOutletMutation,
 } from '@domain/hooks';
@@ -30,8 +31,13 @@ export const OutletsScreen: React.FC = () => {
 
   // Queries & Mutations
   const { data: outlets = [], isLoading: loading, refetch } = useOutlets();
+  const { data: quota, refetch: refetchQuota } = useOutletQuota();
   const updateOutletMutation = useUpdateOutletMutation();
   const createOutletMutation = useCreateOutletMutation();
+
+  const maxQuota = quota?.max ?? Math.max(1, outlets.length);
+  const usedQuota = quota?.used ?? outlets.length;
+  const isQuotaReached = usedQuota >= maxQuota;
 
   // Selected Outlet for editing
   const [selectedOutletId, setSelectedOutletId] = useState<string>('');
@@ -138,7 +144,6 @@ export const OutletsScreen: React.FC = () => {
         name: newOutletData.name.trim(),
         address: newOutletData.address.trim() || undefined,
         phone: newOutletData.phone.trim() || undefined,
-        isActive: true,
       });
 
       setIsAddModalOpen(false);
@@ -147,6 +152,7 @@ export const OutletsScreen: React.FC = () => {
       setSuccessToast(`New branch "${created.name}" created successfully.`);
       setTimeout(() => setSuccessToast(null), 4000);
       refetch();
+      refetchQuota();
     } catch (err: unknown) {
       alert(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -174,21 +180,50 @@ export const OutletsScreen: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Outlet Identity</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Outlet Identity</h1>
+            <span
+              className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold border ${
+                isQuotaReached
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : 'bg-teal-50 text-teal-700 border-teal-200'
+              }`}
+            >
+              Kuota: {usedQuota} / {maxQuota} Cabang
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">
             Manage your business contact details and location.
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsAddModalOpen(true)}
-          leftIcon={<Plus className="w-4 h-4" />}
-          className="self-start sm:self-auto rounded-xl"
-        >
-          Add New Branch
-        </Button>
+        <div className="flex items-center gap-2">
+          {isQuotaReached ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                alert(
+                  `Batas kuota cabang telah tercapai (${usedQuota}/${maxQuota}). Silakan upgrade kuota cabang melalui Agilix Console.`
+                )
+              }
+              leftIcon={<Plus className="w-4 h-4" />}
+              className="self-start sm:self-auto rounded-xl border-amber-300 text-amber-700 hover:bg-amber-50"
+            >
+              Add New Branch
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAddModalOpen(true)}
+              leftIcon={<Plus className="w-4 h-4" />}
+              className="self-start sm:self-auto rounded-xl"
+            >
+              Add New Branch
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Multi-Branch Selector Tabs (if multiple outlets exist) */}
@@ -225,8 +260,29 @@ export const OutletsScreen: React.FC = () => {
       )}
 
       {/* Outlet Identity Main Card (Matching Figma Mockup) */}
-      <Card padding="lg" className="border-slate-200 shadow-xs">
-        <form onSubmit={handleSave} className="space-y-6">
+      {outlets.length === 0 ? (
+        <Card padding="lg" className="border-slate-200 shadow-xs text-center py-12 space-y-4">
+          <div className="w-14 h-14 bg-teal-50 text-[#0D5C53] rounded-2xl flex items-center justify-center mx-auto border border-teal-100">
+            <Building2 className="w-7 h-7" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-slate-900">Belum Ada Cabang Terdaftar</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Anda memiliki kuota <strong>{maxQuota} cabang</strong> dari paket Console. Daftarkan cabang pertama Anda untuk mulai operasional POS.
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            leftIcon={<Plus className="w-4 h-4" />}
+            className="rounded-xl px-5 py-2 mx-auto bg-[#0D5C53] hover:bg-[#09423C] text-white"
+          >
+            Buat Cabang Pertama
+          </Button>
+        </Card>
+      ) : (
+        <Card padding="lg" className="border-slate-200 shadow-xs">
+          <form onSubmit={handleSave} className="space-y-6">
           {/* Outlet Name Field */}
           <div className="space-y-1.5">
             <FormInput
@@ -307,6 +363,7 @@ export const OutletsScreen: React.FC = () => {
           </div>
         </form>
       </Card>
+      )}
 
       {/* Modal Add New Branch */}
       <Modal
