@@ -234,6 +234,10 @@ export interface CashFlowData {
     netInvestingCash: number;
   };
   financingActivities: {
+    cashFromCapitalInjections?: number;
+    cashFromLoans?: number;
+    cashPaidForDrawings?: number;
+    cashPaidForLoanRepayments?: number;
     netFinancingCash: number;
   };
   netCashChange: number;

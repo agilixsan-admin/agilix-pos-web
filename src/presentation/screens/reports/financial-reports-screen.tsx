@@ -517,9 +517,44 @@ export const FinancialReportsScreen: React.FC = () => {
                 {/* 3. Arus Kas Pendanaan */}
                 <div className="space-y-1.5 pt-2">
                   <h4 className="font-sans font-bold text-slate-900 text-sm uppercase">3. ARUS KAS DARI AKTIVITAS PENDANAAN</h4>
+                  <div className="pl-4 space-y-1 text-slate-700">
+                    <div className="flex justify-between text-teal-700">
+                      <span>Penerimaan Modal Pemilik / Investor (+)</span>
+                      <span>
+                        +Rp {(cashFlowData.financingActivities.cashFromCapitalInjections || 0).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-teal-700">
+                      <span>Pencairan Pinjaman Bank / Modal Usaha (+)</span>
+                      <span>
+                        +Rp {(cashFlowData.financingActivities.cashFromLoans || 0).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-rose-600">
+                      <span>Penarikan Prive / Dividen Pemilik (-)</span>
+                      <span>
+                        -Rp {(cashFlowData.financingActivities.cashPaidForDrawings || 0).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-rose-600">
+                      <span>Pembayaran Pokok Pinjaman Bank (-)</span>
+                      <span>
+                        -Rp {(cashFlowData.financingActivities.cashPaidForLoanRepayments || 0).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                  </div>
                   <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-200">
                     <span className="font-sans">ARUS KAS BERSIH DARI PENDANAAN</span>
-                    <span>Rp {cashFlowData.financingActivities.netFinancingCash.toLocaleString('id-ID')}</span>
+                    <span
+                      className={
+                        cashFlowData.financingActivities.netFinancingCash >= 0
+                          ? 'text-emerald-700'
+                          : 'text-rose-600'
+                      }
+                    >
+                      {cashFlowData.financingActivities.netFinancingCash > 0 ? '+' : ''}Rp{' '}
+                      {cashFlowData.financingActivities.netFinancingCash.toLocaleString('id-ID')}
+                    </span>
                   </div>
                 </div>
 

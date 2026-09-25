@@ -81,6 +81,7 @@ export const financeKeys = {
   assets: (filters?: Record<string, unknown>) => [...financeKeys.all, 'assets', filters || {}] as const,
   coa: () => [...financeKeys.all, 'coa'] as const,
   journals: (filters?: Record<string, unknown>) => [...financeKeys.all, 'journals', filters || {}] as const,
+  capitalTransactions: (filters?: Record<string, unknown>) => [...financeKeys.all, 'capitalTransactions', filters || {}] as const,
 };
 
 export const reportKeys = {

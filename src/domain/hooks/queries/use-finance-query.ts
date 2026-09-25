@@ -8,6 +8,8 @@ import type {
   CreateAssetPayload,
   DisposeAssetPayload,
   CreateManualJournalPayload,
+  CreateCapitalTransactionPayload,
+  QueryCapitalTransactionParams,
 } from '@model/Finance';
 
 // ─── Accounts (Kas & Bank) ──────────────────────────────────────────────────
@@ -171,6 +173,37 @@ export function useCreateManualJournalMutation() {
   return useMutation({
     mutationFn: (payload: CreateManualJournalPayload) =>
       financeService.createManualJournal(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: financeKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+}
+
+// ─── Capital & Financing Transactions (Modal & Pendanaan) ───────────────────
+export function useCapitalTransactions(params?: QueryCapitalTransactionParams) {
+  return useQuery({
+    queryKey: financeKeys.capitalTransactions(params as Record<string, unknown>),
+    queryFn: () => financeService.getCapitalTransactions(params),
+  });
+}
+
+export function useCreateCapitalTransactionMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateCapitalTransactionPayload) =>
+      financeService.createCapitalTransaction(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: financeKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+}
+
+export function useDeleteCapitalTransactionMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => financeService.deleteCapitalTransaction(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: financeKeys.all });
       queryClient.invalidateQueries({ queryKey: ['reports'] });

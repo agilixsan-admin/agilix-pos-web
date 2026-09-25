@@ -191,3 +191,53 @@ export interface CreateManualJournalPayload {
   }>;
 }
 
+export type CapitalTransactionType =
+  | 'CAPITAL_INJECTION'
+  | 'OWNER_WITHDRAWAL'
+  | 'LOAN_RECEIPT'
+  | 'LOAN_REPAYMENT';
+
+export interface CapitalTransaction {
+  id: string;
+  tenantId: string;
+  outletId?: string | null;
+  financialAccountId: string;
+  type: CapitalTransactionType;
+  amount: number;
+  transactionDate: string;
+  partyName?: string | null;
+  referenceNumber?: string | null;
+  notes?: string | null;
+  createdBy: string;
+  financialAccount?: FinancialAccount;
+  outlet?: {
+    id: string;
+    name: string;
+  };
+  creator?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  createdAt: string;
+}
+
+export interface CreateCapitalTransactionPayload {
+  outletId?: string;
+  financialAccountId: string;
+  type: CapitalTransactionType;
+  amount: number;
+  transactionDate?: string;
+  partyName?: string;
+  referenceNumber?: string;
+  notes?: string;
+}
+
+export interface QueryCapitalTransactionParams {
+  outletId?: string;
+  type?: CapitalTransactionType;
+  startDate?: string;
+  endDate?: string;
+}
+
+

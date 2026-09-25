@@ -13,6 +13,9 @@ import type {
   CreateAssetPayload,
   DisposeAssetPayload,
   CreateManualJournalPayload,
+  CapitalTransaction,
+  CreateCapitalTransactionPayload,
+  QueryCapitalTransactionParams,
 } from '@model/Finance';
 
 export const financeService = {
@@ -128,6 +131,21 @@ export const financeService = {
   createManualJournal: async (payload: CreateManualJournalPayload): Promise<JournalEntry> => {
     const res = await httpClient.post<{ data: JournalEntry }>('/finance/journals/manual', payload);
     return res.data?.data ?? (res.data as unknown as JournalEntry);
+  },
+
+  // ─── Capital & Financing Transactions (Modal & Pendanaan) ──────────────────
+  getCapitalTransactions: async (params?: QueryCapitalTransactionParams): Promise<CapitalTransaction[]> => {
+    const res = await httpClient.get<{ data: CapitalTransaction[] }>('/finance/capital-transactions', { params });
+    return res.data?.data ?? (res.data as unknown as CapitalTransaction[]) ?? [];
+  },
+
+  createCapitalTransaction: async (payload: CreateCapitalTransactionPayload): Promise<CapitalTransaction> => {
+    const res = await httpClient.post<{ data: CapitalTransaction }>('/finance/capital-transactions', payload);
+    return res.data?.data ?? (res.data as unknown as CapitalTransaction);
+  },
+
+  deleteCapitalTransaction: async (id: string): Promise<void> => {
+    await httpClient.delete(`/finance/capital-transactions/${id}`);
   },
 };
 
