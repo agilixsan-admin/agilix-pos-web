@@ -18,6 +18,8 @@ import {
   LoadingState,
   EmptyState,
   CustomSelect,
+  toast,
+  confirmDialog,
 } from '@presentation/components/ui';
 
 export const TablesScreen: React.FC = () => {
@@ -37,7 +39,7 @@ export const TablesScreen: React.FC = () => {
   const effectiveOutletId = selectedOutletId || currentOutlet?.id || (outlets.length > 0 ? outlets[0].id : '');
   const activeOutlet = outlets.find((o) => o.id === effectiveOutletId) || currentOutlet;
 
-  const { data: tables = [], isLoading: tablesLoading } = useSettingsTables(effectiveOutletId || undefined);
+  const { data: tables = [], isLoading: tablesLoading, refetch: refetchTables } = useSettingsTables(effectiveOutletId || undefined);
   const createTableMutation = useCreateTableMutation();
   const updateTableMutation = useUpdateTableMutation();
   const deleteTableMutation = useDeleteTableMutation();
@@ -86,7 +88,7 @@ export const TablesScreen: React.FC = () => {
 
     const targetOutlet = formData.targetOutletId || effectiveOutletId;
     if (!targetOutlet) {
-      alert('Silakan pilih outlet terlebih dahulu sebelum menyimpan meja.');
+      toast.warning('Silakan pilih outlet terlebih dahulu sebelum menyimpan meja.');
       return;
     }
 
@@ -113,24 +115,34 @@ export const TablesScreen: React.FC = () => {
           status: 'AVAILABLE',
         });
       }
+      toast.success(editingTable ? 'Meja berhasil diperbarui.' : 'Meja berhasil ditambahkan.');
       setIsModalOpen(false);
+      refetchTables();
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         (err instanceof Error ? err.message : 'Gagal menyimpan meja.');
-      alert(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus meja ini?')) return;
+    const ok = await confirmDialog({
+      title: 'Hapus Meja',
+      message: 'Apakah Anda yakin ingin menghapus meja ini?',
+      confirmText: 'Hapus',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await deleteTableMutation.mutateAsync(id);
+      toast.success('Meja berhasil dihapus.');
+      refetchTables();
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         (err instanceof Error ? err.message : 'Gagal menghapus meja.');
-      alert(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

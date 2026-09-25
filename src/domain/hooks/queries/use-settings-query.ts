@@ -31,7 +31,7 @@ import type {
   PosSettings,
   UpdatePosSettingsPayload,
 } from '@model/Settings';
-import { settingsKeys } from './query-keys';
+import { settingsKeys, posKeys } from './query-keys';
 
 export function useOutlets() {
   return useQuery({
@@ -138,7 +138,8 @@ export function useCreateTableMutation() {
   return useMutation({
     mutationFn: (data: Partial<Table>) => settingsService.createTable(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: settingsKeys.tables() });
+      queryClient.invalidateQueries({ queryKey: [...settingsKeys.all, 'tables'] });
+      queryClient.invalidateQueries({ queryKey: [...posKeys.all, 'tables'] });
     },
   });
 }
@@ -149,7 +150,8 @@ export function useUpdateTableMutation() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Table> }) =>
       settingsService.updateTable(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: settingsKeys.tables() });
+      queryClient.invalidateQueries({ queryKey: [...settingsKeys.all, 'tables'] });
+      queryClient.invalidateQueries({ queryKey: [...posKeys.all, 'tables'] });
     },
   });
 }
@@ -159,7 +161,8 @@ export function useDeleteTableMutation() {
   return useMutation({
     mutationFn: (id: string) => settingsService.deleteTable(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: settingsKeys.tables() });
+      queryClient.invalidateQueries({ queryKey: [...settingsKeys.all, 'tables'] });
+      queryClient.invalidateQueries({ queryKey: [...posKeys.all, 'tables'] });
     },
   });
 }
