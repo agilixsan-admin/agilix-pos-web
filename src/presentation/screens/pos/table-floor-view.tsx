@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Table } from '@model/Settings';
 import type { Order } from '@model/Order';
 import { useAuthStore } from '@domain/state/auth-store';
-import { useOutlets } from '@domain/hooks';
+import { useOutlets, usePosSettings } from '@domain/hooks';
 import {
   Plus,
   Utensils,
@@ -52,6 +52,13 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
     ? rawOutlets
     : useAuthStore.getState().outlets || [];
   const effectiveOutlet = currentOutlet || (outlets.length > 0 ? outlets[0] : null);
+  const { data: posSettings } = usePosSettings(effectiveOutlet?.id);
+  const [logoError, setLogoError] = useState<boolean>(false);
+
+  useEffect(() => {
+    setLogoError(false);
+  }, [posSettings?.billLogoUrl]);
+
   const [selectedFloor, setSelectedFloor] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'RESERVED'>('ALL');
   const [searchTable, setSearchTable] = useState<string>('');
@@ -81,9 +88,20 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
       {/* Top POS Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#0D5C53] text-white flex items-center justify-center font-bold text-base shadow-xs">
-            {effectiveOutlet?.name?.charAt(0) || 'A'}
-          </div>
+          {posSettings?.billLogoUrl && !logoError ? (
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0 p-1">
+              <img
+                src={posSettings.billLogoUrl}
+                alt={effectiveOutlet?.name || 'Logo Outlet'}
+                className="w-full h-full object-contain"
+                onError={() => setLogoError(true)}
+              />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-[#0D5C53] text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0">
+              {effectiveOutlet?.name?.charAt(0) || 'A'}
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-bold text-slate-900">{effectiveOutlet?.name || 'Agilix Outlet'}</h2>
