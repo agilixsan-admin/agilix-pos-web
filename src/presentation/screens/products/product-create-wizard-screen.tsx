@@ -194,7 +194,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert('Ukuran file maksimal adalah 5MB.');
+        toast.warning('Ukuran file maksimal adalah 5MB.');
         return;
       }
       setImageFile(file);
@@ -482,7 +482,7 @@ export const ProductCreateWizardScreen: React.FC = () => {
         navigate('/products');
       }
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           (isEditMode ? 'Gagal memperbarui produk.' : 'Gagal menerbitkan produk.')
       );

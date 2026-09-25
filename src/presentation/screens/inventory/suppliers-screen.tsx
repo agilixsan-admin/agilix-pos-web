@@ -26,6 +26,8 @@ import {
   FormSelect,
   LoadingState,
   EmptyState,
+  toast,
+  confirmDialog,
 } from '@presentation/components/ui';
 
 export const SuppliersScreen: React.FC = () => {
@@ -99,11 +101,18 @@ export const SuppliersScreen: React.FC = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus supplier "${name}"?`)) return;
+    const ok = await confirmDialog({
+      title: 'Hapus Supplier',
+      message: `Apakah Anda yakin ingin menghapus supplier "${name}"?`,
+      confirmText: 'Hapus',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await deleteSupplierMutation.mutateAsync(id);
+      toast.success(`Supplier "${name}" berhasil dihapus.`);
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menghapus supplier.'
       );

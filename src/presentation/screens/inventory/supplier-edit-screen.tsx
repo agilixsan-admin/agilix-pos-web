@@ -13,6 +13,7 @@ import {
   FormTextarea,
   LoadingState,
   EmptyState,
+  toast,
 } from '@presentation/components/ui';
 
 export const SupplierEditScreen: React.FC = () => {
@@ -63,7 +64,7 @@ export const SupplierEditScreen: React.FC = () => {
     e.preventDefault();
     if (!id) return;
     if (!name.trim()) {
-      alert('Nama supplier wajib diisi.');
+      toast.warning('Nama supplier wajib diisi.');
       return;
     }
 
@@ -85,9 +86,10 @@ export const SupplierEditScreen: React.FC = () => {
         },
       });
 
+      toast.success('Supplier berhasil diperbarui.');
       navigate(`/inventory/suppliers/${id}`);
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal memperbarui data supplier.'
       );

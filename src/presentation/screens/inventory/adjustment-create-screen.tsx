@@ -40,6 +40,8 @@ import {
   FormTextarea,
   Modal,
   CustomSelect,
+  toast,
+  confirmDialog,
 } from '@presentation/components/ui';
 
 export const AdjustmentCreateScreen: React.FC = () => {
@@ -206,16 +208,17 @@ export const AdjustmentCreateScreen: React.FC = () => {
         name: newReasonName.trim(),
         type: newReasonType,
       });
+      toast.success('Kategori alasan berhasil ditambahkan.');
       setIsAddReasonModalOpen(false);
       setNewReasonName('');
       setReasonCategoryId(newReason.id);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menambahkan kategori alasan');
+      toast.error(err?.response?.data?.message || 'Gagal menambahkan kategori alasan');
     }
   };
 
   // Validate & Proceed to Review Step
-  const handleProceedToReview = (e: React.FormEvent) => {
+  const handleProceedToReview = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
@@ -231,11 +234,13 @@ export const AdjustmentCreateScreen: React.FC = () => {
 
     if (adjustmentType === 'OUT' && adjQty > systemStock) {
       // Warning for negative stock
-      if (
-        !window.confirm(
-          `Pengurangan stok (${adjQty} ${selectedItem.unit}) melebihi stok sistem saat ini (${systemStock} ${selectedItem.unit}). Lanjutkan?`
-        )
-      ) {
+      const proceed = await confirmDialog({
+        title: 'Peringatan Stok Negatif',
+        message: `Pengurangan stok (${adjQty} ${selectedItem.unit}) melebihi stok sistem saat ini (${systemStock} ${selectedItem.unit}). Lanjutkan?`,
+        confirmText: 'Lanjutkan',
+        variant: 'danger',
+      });
+      if (!proceed) {
         return;
       }
     }

@@ -20,6 +20,7 @@ import {
   FormTextarea,
   Modal,
   LoadingState,
+  toast,
 } from '@presentation/components/ui';
 
 export const RawMaterialEditScreen: React.FC = () => {
@@ -79,8 +80,9 @@ export const RawMaterialEditScreen: React.FC = () => {
       if (created?.id) {
         setCategoryId(created.id);
       }
+      toast.success('Kategori baru berhasil dibuat.');
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal membuat kategori.'
       );
@@ -91,7 +93,7 @@ export const RawMaterialEditScreen: React.FC = () => {
     e.preventDefault();
     if (!id) return;
     if (!name.trim()) {
-      alert('Nama bahan baku wajib diisi.');
+      toast.warning('Nama bahan baku wajib diisi.');
       return;
     }
 
@@ -108,9 +110,10 @@ export const RawMaterialEditScreen: React.FC = () => {
         },
       });
 
+      toast.success('Bahan baku berhasil diperbarui.');
       navigate('/inventory/raw-materials');
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal memperbarui bahan baku.'
       );

@@ -20,6 +20,7 @@ import {
   FormSelect,
   FormTextarea,
   Modal,
+  toast,
 } from '@presentation/components/ui';
 
 export const PackagingCreateScreen: React.FC = () => {
@@ -75,8 +76,9 @@ export const PackagingCreateScreen: React.FC = () => {
       if (created?.id) {
         setCategoryId(created.id);
       }
+      toast.success('Kategori packaging baru berhasil dibuat.');
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal membuat kategori packaging.'
       );
@@ -86,7 +88,7 @@ export const PackagingCreateScreen: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      alert('Nama packaging wajib diisi.');
+      toast.warning('Nama packaging wajib diisi.');
       return;
     }
 
@@ -102,9 +104,10 @@ export const PackagingCreateScreen: React.FC = () => {
         minimumStock: parseFloat(minimumStock) || 0,
       });
 
+      toast.success('Packaging baru berhasil disimpan.');
       navigate('/inventory/packaging');
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menyimpan data packaging.'
       );

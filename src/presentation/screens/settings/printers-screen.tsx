@@ -58,6 +58,8 @@ import {
   LoadingState,
   EmptyState,
   Tabs,
+  toast,
+  confirmDialog,
 } from '@presentation/components/ui';
 
 export const PrintersScreen: React.FC = () => {
@@ -169,7 +171,7 @@ export const PrintersScreen: React.FC = () => {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert('Ukuran file logo maksimal 2MB.');
+      toast.warning('Ukuran file logo maksimal 2MB.');
       return;
     }
 
@@ -179,7 +181,7 @@ export const PrintersScreen: React.FC = () => {
       setBillLogoUrl(res.url);
       showToast('Logo berhasil diunggah! Klik "Simpan Format Struk" untuk menerapkan.');
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal mengunggah logo toko.'
       );
@@ -206,7 +208,7 @@ export const PrintersScreen: React.FC = () => {
       });
       showToast('Format struk & logo toko berhasil disimpan secara global!');
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menyimpan format struk.'
       );
@@ -300,7 +302,7 @@ export const PrintersScreen: React.FC = () => {
       setIsPrinterModalOpen(false);
       refetch();
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menyimpan konfigurasi printer.'
       );
@@ -317,19 +319,25 @@ export const PrintersScreen: React.FC = () => {
       showToast(`Printer "${printer.name}" kini ${nextStatus === 'ACTIVE' ? 'Aktif' : 'Nonaktif'}.`);
       refetch();
     } catch (err: unknown) {
-      alert('Gagal mengubah status printer.');
+      toast.error('Gagal mengubah status printer.');
     }
   };
 
   const handleDeletePrinter = async (id: string, name: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus printer "${name}"?`)) return;
+    const ok = await confirmDialog({
+      title: 'Hapus Printer',
+      message: `Apakah Anda yakin ingin menghapus printer "${name}"?`,
+      confirmText: 'Hapus',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await deletePrinterMutation.mutateAsync(id);
       setIsPrinterModalOpen(false);
       showToast(`Printer "${name}" berhasil dihapus.`);
       refetch();
     } catch (err: unknown) {
-      alert('Gagal menghapus printer.');
+      toast.error('Gagal menghapus printer.');
     }
   };
 
@@ -339,7 +347,7 @@ export const PrintersScreen: React.FC = () => {
       await testPrintMutation.mutateAsync(printer.id);
       showToast(`Test print berhasil dikirim ke "${printer.name}".`);
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           `Gagal menjalankan test print pada "${printer.name}". Periksa koneksi perangkat.`
       );
@@ -379,7 +387,7 @@ export const PrintersScreen: React.FC = () => {
       showToast(`Aturan routing printer cabang ${activeOutlet?.name || ''} berhasil disimpan.`);
       refetchRouting();
     } catch (err: unknown) {
-      alert('Gagal memperbarui aturan routing printer.');
+      toast.error('Gagal memperbarui aturan routing printer.');
     }
   };
 

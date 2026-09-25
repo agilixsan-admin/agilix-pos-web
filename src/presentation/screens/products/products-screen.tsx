@@ -20,6 +20,7 @@ import {
   EmptyState,
   CustomSelect,
   toast,
+  confirmDialog,
 } from '@presentation/components/ui';
 
 export const ProductsScreen: React.FC = () => {
@@ -54,11 +55,18 @@ export const ProductsScreen: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
+    const ok = await confirmDialog({
+      title: 'Hapus Produk',
+      message: 'Apakah Anda yakin ingin menghapus produk ini?',
+      confirmText: 'Hapus',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await deleteProductMutation.mutateAsync(id);
+      toast.success('Produk berhasil dihapus.');
     } catch (err: unknown) {
-      alert('Gagal menghapus produk.');
+      toast.error('Gagal menghapus produk.');
     }
   };
 

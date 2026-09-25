@@ -22,6 +22,7 @@ import {
   FormInput,
   Modal,
   LoadingState,
+  toast,
 } from '@presentation/components/ui';
 
 export const OutletsScreen: React.FC = () => {
@@ -128,7 +129,7 @@ export const OutletsScreen: React.FC = () => {
       setTimeout(() => setSuccessToast(null), 4000);
       refetch();
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Failed to update outlet details.'
       );
@@ -154,7 +155,7 @@ export const OutletsScreen: React.FC = () => {
       refetch();
       refetchQuota();
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Failed to create new outlet.'
       );
@@ -203,7 +204,7 @@ export const OutletsScreen: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() =>
-                alert(
+                toast.warning(
                   `Batas kuota cabang telah tercapai (${usedQuota}/${maxQuota}). Silakan upgrade kuota cabang melalui Agilix Console.`
                 )
               }

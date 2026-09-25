@@ -29,6 +29,7 @@ import {
   Badge,
   CustomSelect,
   FormDatePicker,
+  toast,
 } from '@presentation/components/ui';
 
 interface PurchaseFormItem {
@@ -246,7 +247,7 @@ export const PurchaseCreateScreen: React.FC = () => {
     if (!validateForm()) return;
 
     if (!effectiveOutletId) {
-      alert('Cabang outlet penerima belum dipilih.');
+      toast.warning('Cabang outlet penerima belum dipilih.');
       return;
     }
 
@@ -272,11 +273,12 @@ export const PurchaseCreateScreen: React.FC = () => {
       };
 
       const result = await createPurchaseMutation.mutateAsync(payload);
+      toast.success('Purchase order berhasil dibuat.');
       navigate(`/inventory/purchases/${result.id}?outletId=${effectiveOutletId}`);
     } catch (err: any) {
       const errorMsg =
         err?.response?.data?.message || err?.message || 'Gagal membuat purchase order';
-      alert(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

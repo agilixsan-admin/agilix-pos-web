@@ -20,6 +20,7 @@ import {
   FormSelect,
   LoadingState,
   EmptyState,
+  toast,
 } from '@presentation/components/ui';
 
 export const UserEditScreen: React.FC = () => {
@@ -94,9 +95,10 @@ export const UserEditScreen: React.FC = () => {
         },
       });
 
+      toast.success('Profil pengguna berhasil diperbarui.');
       navigate(`/settings/users/${id}`);
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal memperbarui profil pengguna.'
       );

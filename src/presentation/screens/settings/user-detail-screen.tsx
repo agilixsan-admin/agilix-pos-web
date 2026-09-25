@@ -27,6 +27,7 @@ import {
   Modal,
   LoadingState,
   EmptyState,
+  toast,
 } from '@presentation/components/ui';
 
 export const UserDetailScreen: React.FC = () => {
@@ -51,7 +52,7 @@ export const UserDetailScreen: React.FC = () => {
       setSuccessToast(`Tautan undangan berhasil dikirim ulang ke ${user.email}`);
       setTimeout(() => setSuccessToast(null), 4000);
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal mengirim ulang undangan.'
       );
@@ -67,7 +68,7 @@ export const UserDetailScreen: React.FC = () => {
       setTimeout(() => setSuccessToast(null), 4000);
       refetch();
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menonaktifkan pengguna.'
       );

@@ -34,6 +34,7 @@ import {
   LoadingState,
   EmptyState,
   CustomSelect,
+  toast,
 } from '@presentation/components/ui';
 
 export const TransactionsScreen: React.FC = () => {
@@ -122,7 +123,7 @@ export const TransactionsScreen: React.FC = () => {
   // CSV Export Handler
   const handleExportCSV = () => {
     if (orders.length === 0) {
-      alert('Tidak ada data transaksi untuk diekspor.');
+      toast.warning('Tidak ada data transaksi untuk diekspor.');
       return;
     }
 

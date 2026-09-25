@@ -34,6 +34,7 @@ import {
   LoadingState,
   EmptyState,
   CustomSelect,
+  toast,
 } from '@presentation/components/ui';
 
 export const UsersScreen: React.FC = () => {
@@ -98,7 +99,7 @@ export const UsersScreen: React.FC = () => {
       setTimeout(() => setSuccessToast(null), 4000);
       setActiveActionMenuId(null);
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal mengirim ulang undangan.'
       );
@@ -114,7 +115,7 @@ export const UsersScreen: React.FC = () => {
       setTimeout(() => setSuccessToast(null), 4000);
       refetch();
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menonaktifkan pengguna.'
       );

@@ -27,6 +27,7 @@ import {
   LoadingState,
   EmptyState,
   CustomSelect,
+  FormDatePicker,
   toast,
 } from '@presentation/components/ui';
 import type { ChartOfAccount, JournalEntry } from '@model/Finance';
@@ -452,14 +453,12 @@ export const GeneralLedgerScreen: React.FC = () => {
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Tanggal Jurnal" required>
-              <input
-                type="date"
-                value={entryDate}
-                onChange={(e) => setEntryDate(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              />
-            </FormField>
+            <FormDatePicker
+              label="Tanggal Jurnal"
+              required
+              value={entryDate}
+              onChange={(val) => setEntryDate(val)}
+            />
 
             <FormField label="Keterangan / Transaksi" required>
               <input
@@ -489,18 +488,18 @@ export const GeneralLedgerScreen: React.FC = () => {
               {manualLines.map((line, idx) => (
                 <div key={idx} className="p-3 bg-slate-50/50 flex items-center gap-2.5 text-xs">
                   <div className="w-56 shrink-0">
-                    <select
+                    <CustomSelect
                       value={line.accountId}
-                      onChange={(e) => handleLineChange(idx, 'accountId', e.target.value)}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
-                    >
-                      <option value="">-- Pilih Akun --</option>
-                      {coaList.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.accountCode} - {c.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => handleLineChange(idx, 'accountId', val)}
+                      placeholder="-- Pilih Akun --"
+                      options={[
+                        { value: '', label: '-- Pilih Akun --' },
+                        ...coaList.map((c) => ({
+                          value: c.id,
+                          label: `${c.accountCode} - ${c.name}`,
+                        })),
+                      ]}
+                    />
                   </div>
 
                   <div className="flex-1">

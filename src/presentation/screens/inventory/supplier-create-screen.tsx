@@ -16,6 +16,7 @@ import {
   Card,
   FormInput,
   FormTextarea,
+  toast,
 } from '@presentation/components/ui';
 
 export const SupplierCreateScreen: React.FC = () => {
@@ -45,7 +46,7 @@ export const SupplierCreateScreen: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      alert('Nama supplier wajib diisi.');
+      toast.warning('Nama supplier wajib diisi.');
       return;
     }
 
@@ -64,9 +65,10 @@ export const SupplierCreateScreen: React.FC = () => {
         status,
       });
 
+      toast.success('Supplier baru berhasil disimpan.');
       navigate('/inventory/suppliers');
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menyimpan data supplier.'
       );

@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppRoutes } from '@routes/app-routes';
 import { ToastContainer } from '@presentation/components/ui/toast';
+import { ConfirmDialogContainer } from '@presentation/components/ui/confirm-dialog';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -78,6 +79,7 @@ export const App: React.FC = () => {
         <BrowserRouter basename={import.meta.env.BASE_URL}>
           <AppRoutes />
           <ToastContainer />
+          <ConfirmDialogContainer />
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>

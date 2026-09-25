@@ -40,6 +40,8 @@ import {
   FormTextarea,
   EmptyState,
   LoadingState,
+  CustomSelect,
+  FormDatePicker,
 } from '@presentation/components/ui';
 import { toast } from '@presentation/components/ui/toast';
 
@@ -200,7 +202,7 @@ export const PurchaseDetailScreen: React.FC = () => {
       setIsReceiveModalOpen(false);
       refetch();
     } catch (err: any) {
-      alert(err?.response?.data?.message || err?.message || 'Gagal menerima pesanan');
+      toast.error(err?.response?.data?.message || err?.message || 'Gagal menerima pesanan');
     }
   };
 
@@ -247,7 +249,7 @@ export const PurchaseDetailScreen: React.FC = () => {
       setIsCancelConfirmOpen(false);
       navigate('/inventory/purchases');
     } catch (err: any) {
-      alert(err?.response?.data?.message || err?.message || 'Gagal membatalkan pembelian');
+      toast.error(err?.response?.data?.message || err?.message || 'Gagal membatalkan pembelian');
     }
   };
 
@@ -811,18 +813,18 @@ export const PurchaseDetailScreen: React.FC = () => {
                     </span>
                   </div>
 
-                  <select
+                  <CustomSelect
                     value={selectedAccountId}
-                    onChange={(e) => setSelectedAccountId(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
-                  >
-                    <option value="">Hutang Usaha / Supplier (Tempo / Belum Lunas)</option>
-                    {accounts.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.accountName} ({acc.accountType === 'CASH' ? 'Kas Laci' : 'Bank'}) - Saldo: {formatRupiah(Number(acc.currentBalance))}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setSelectedAccountId(val)}
+                    placeholder="Hutang Usaha / Supplier (Tempo / Belum Lunas)"
+                    options={[
+                      { value: '', label: 'Hutang Usaha / Supplier (Tempo / Belum Lunas)' },
+                      ...accounts.map((acc) => ({
+                        value: acc.id,
+                        label: `${acc.accountName} (${acc.accountType === 'CASH' ? 'Kas Laci' : 'Bank'}) - Saldo: ${formatRupiah(Number(acc.currentBalance))}`,
+                      })),
+                    ]}
+                  />
 
                   {/* Ringkasan Jurnal Akuntansi Otomatis */}
                   <div className="text-[11px] leading-relaxed rounded-lg p-2.5 bg-white border border-slate-200/60 text-slate-600">
@@ -961,33 +963,28 @@ export const PurchaseDetailScreen: React.FC = () => {
 
           {/* Form Pembayaran */}
           <div className="space-y-3.5">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Tanggal Pembayaran
-              </label>
-              <FormInput
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-              />
-            </div>
+            <FormDatePicker
+              label="Tanggal Pembayaran"
+              value={paymentDate}
+              onChange={(val) => setPaymentDate(val)}
+            />
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Sumber Dana (Akun Kas / Bank) <span className="text-rose-500">*</span>
               </label>
-              <select
+              <CustomSelect
                 value={paymentAccountId}
-                onChange={(e) => setPaymentAccountId(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
-              >
-                <option value="">-- Pilih Akun Pembayaran --</option>
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.accountName} ({acc.accountType === 'CASH' ? 'Kas Laci' : 'Bank'}) - Saldo: {formatRupiah(Number(acc.currentBalance))}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setPaymentAccountId(val)}
+                placeholder="-- Pilih Akun Pembayaran --"
+                options={[
+                  { value: '', label: '-- Pilih Akun Pembayaran --' },
+                  ...accounts.map((acc) => ({
+                    value: acc.id,
+                    label: `${acc.accountName} (${acc.accountType === 'CASH' ? 'Kas Laci' : 'Bank'}) - Saldo: ${formatRupiah(Number(acc.currentBalance))}`,
+                  })),
+                ]}
+              />
             </div>
 
             <div>

@@ -12,6 +12,8 @@ import {
   ArrowDownLeft,
   Calendar,
   CheckCircle2,
+  PiggyBank,
+  Trash2,
 } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
 import { useOutlets } from '@domain/hooks';
@@ -20,6 +22,9 @@ import {
   useCreateAccountMutation,
   useFinancialTransfers,
   useCreateTransferMutation,
+  useCapitalTransactions,
+  useCreateCapitalTransactionMutation,
+  useDeleteCapitalTransactionMutation,
 } from '@domain/hooks/queries';
 import {
   KpiCard,
@@ -30,9 +35,11 @@ import {
   LoadingState,
   EmptyState,
   CustomSelect,
+  FormDatePicker,
   toast,
+  confirmDialog,
 } from '@presentation/components/ui';
-import type { FinancialAccount, FinancialAccountType } from '@model/Finance';
+import type { FinancialAccount, FinancialAccountType, CapitalTransactionType } from '@model/Finance';
 
 export const AccountsScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
@@ -43,10 +50,17 @@ export const AccountsScreen: React.FC = () => {
 
   const { data: accounts = [], isLoading: accountsLoading } = useFinancialAccounts(effectiveOutletId);
   const { data: transfers = [], isLoading: transfersLoading } = useFinancialTransfers();
+  const { data: capitalTransactions = [], isLoading: capitalLoading } = useCapitalTransactions({
+    outletId: effectiveOutletId,
+  });
+
+  // History Tab state
+  const [activeHistoryTab, setActiveHistoryTab] = useState<'TRANSFERS' | 'CAPITAL'>('TRANSFERS');
 
   // Modals state
   const [isAddAccountOpen, setIsAddAccountOpen] = useState<boolean>(false);
   const [isTransferOpen, setIsTransferOpen] = useState<boolean>(false);
+  const [isCapitalModalOpen, setIsCapitalModalOpen] = useState<boolean>(false);
 
   // Add Account form state
   const [newCode, setNewCode] = useState<string>('');
@@ -64,8 +78,20 @@ export const AccountsScreen: React.FC = () => {
   const [transferDate, setTransferDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [transferNotes, setTransferNotes] = useState<string>('');
 
+  // Capital Transaction form state
+  const [capitalType, setCapitalType] = useState<CapitalTransactionType>('CAPITAL_INJECTION');
+  const [capitalAccountId, setCapitalAccountId] = useState<string>('');
+  const [capitalAmount, setCapitalAmount] = useState<number>(0);
+  const [capitalDate, setCapitalDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [capitalPartyName, setCapitalPartyName] = useState<string>('');
+  const [capitalRefNo, setCapitalRefNo] = useState<string>('');
+  const [capitalNotes, setCapitalNotes] = useState<string>('');
+  const [capitalOutletId, setCapitalOutletId] = useState<string>('');
+
   const createAccountMutation = useCreateAccountMutation();
   const createTransferMutation = useCreateTransferMutation();
+  const createCapitalMutation = useCreateCapitalTransactionMutation();
+  const deleteCapitalMutation = useDeleteCapitalTransactionMutation();
 
   // Calculate totals
   const totalBalance = accounts.reduce((sum, a) => sum + Number(a.currentBalance || 0), 0);
@@ -158,6 +184,93 @@ export const AccountsScreen: React.FC = () => {
     }
   };
 
+  const handleCreateCapital = async () => {
+    if (!capitalAccountId) {
+      toast.error('Pilih akun kas atau rekening bank penampung.');
+      return;
+    }
+    if (!capitalAmount || capitalAmount <= 0) {
+      toast.error('Nominal transaksi harus lebih besar dari 0.');
+      return;
+    }
+
+    const selectedAcc = accounts.find((a) => a.id === capitalAccountId);
+    const isOutflow = capitalType === 'OWNER_WITHDRAWAL' || capitalType === 'LOAN_REPAYMENT';
+    if (isOutflow && selectedAcc && Number(selectedAcc.currentBalance) < capitalAmount) {
+      toast.error(
+        `Saldo ${selectedAcc.accountName} tidak mencukupi untuk penarikan/pembayaran ini (Tersedia: Rp ${Number(
+          selectedAcc.currentBalance,
+        ).toLocaleString('id-ID')}).`,
+      );
+      return;
+    }
+
+    try {
+      await createCapitalMutation.mutateAsync({
+        financialAccountId: capitalAccountId,
+        type: capitalType,
+        amount: capitalAmount,
+        transactionDate: capitalDate || new Date().toISOString().slice(0, 10),
+        partyName: capitalPartyName.trim() || undefined,
+        referenceNumber: capitalRefNo.trim() || undefined,
+        notes: capitalNotes.trim() || undefined,
+        outletId: capitalOutletId || undefined,
+      });
+
+      toast.success('Transaksi modal & pendanaan berhasil dicatat.');
+      setIsCapitalModalOpen(false);
+      setCapitalAccountId('');
+      setCapitalAmount(0);
+      setCapitalDate(new Date().toISOString().slice(0, 10));
+      setCapitalPartyName('');
+      setCapitalRefNo('');
+      setCapitalNotes('');
+      setCapitalOutletId('');
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Gagal mencatat transaksi pendanaan.';
+      toast.error(msg);
+    }
+  };
+
+  const handleDeleteCapital = async (id: string) => {
+    const confirmed = await confirmDialog({
+      title: 'Hapus Transaksi Modal / Pendanaan',
+      message:
+        'Yakin ingin membatalkan & menghapus transaksi ini? Saldo kas/bank akan dikembalikan otomatis.',
+      confirmText: 'Hapus Transaksi',
+      variant: 'danger',
+    });
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await deleteCapitalMutation.mutateAsync(id);
+      toast.success('Transaksi modal/pendanaan berhasil dihapus.');
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Gagal menghapus transaksi pendanaan.';
+      toast.error(msg);
+    }
+  };
+
+  const getCapitalTypeBadge = (type: CapitalTransactionType) => {
+    switch (type) {
+      case 'CAPITAL_INJECTION':
+        return <Badge variant="success" size="sm">+ Suntik Modal</Badge>;
+      case 'LOAN_RECEIPT':
+        return <Badge variant="info" size="sm">+ Pinjaman Bank</Badge>;
+      case 'OWNER_WITHDRAWAL':
+        return <Badge variant="danger" size="sm">- Prive Pemilik</Badge>;
+      case 'LOAN_REPAYMENT':
+        return <Badge variant="warning" size="sm">- Bayar Pinjaman</Badge>;
+      default:
+        return <Badge size="sm">{type}</Badge>;
+    }
+  };
+
   const getAccountTypeIcon = (type: FinancialAccountType) => {
     switch (type) {
       case 'CASH':
@@ -213,6 +326,16 @@ export const AccountsScreen: React.FC = () => {
             className="font-semibold"
           >
             Transfer Antar Kas
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<PiggyBank className="w-4 h-4 text-emerald-700" />}
+            onClick={() => setIsCapitalModalOpen(true)}
+            className="font-semibold text-slate-800 hover:text-emerald-700"
+          >
+            + Modal & Pendanaan
           </Button>
 
           <Button
@@ -340,71 +463,177 @@ export const AccountsScreen: React.FC = () => {
         )}
       </div>
 
-      {/* Riwayat Transfer Antar Kas */}
+      {/* Riwayat Mutasi & Transaksi Kas */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div>
-            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-              <ArrowRightLeft className="w-4 h-4 text-[#0D5C53]" />
-              Riwayat Mutasi Transfer Antar Kas / Bank
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Catatan pemindahan dana antar laci kasir, setoran ke bank, atau pengisian saldo
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveHistoryTab('TRANSFERS')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeHistoryTab === 'TRANSFERS'
+                  ? 'bg-[#0D5C53] text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5" />
+              Transfer Antar Kas ({transfers.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveHistoryTab('CAPITAL')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeHistoryTab === 'CAPITAL'
+                  ? 'bg-[#0D5C53] text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              <PiggyBank className="w-3.5 h-3.5" />
+              Modal & Pendanaan ({capitalTransactions.length})
+            </button>
           </div>
+
+          <p className="text-xs text-slate-500">
+            {activeHistoryTab === 'TRANSFERS'
+              ? 'Catatan pemindahan dana antar kas laci kasir & rekening bank'
+              : 'Pencatatan suntik modal, prive, pinjaman modal, & cicilan utang'}
+          </p>
         </div>
 
-        {transfersLoading ? (
-          <LoadingState message="Memuat mutasi transfer..." />
-        ) : transfers.length === 0 ? (
-          <div className="py-8 text-center text-slate-400 text-xs">
-            Belum ada mutasi transfer antar kas yang tercatat.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-400 font-semibold uppercase text-[10px]">
-                  <th className="pb-3 font-semibold">Tanggal</th>
-                  <th className="pb-3 font-semibold">Dari Akun (Sumber)</th>
-                  <th className="pb-3 font-semibold">Ke Akun (Tujuan)</th>
-                  <th className="pb-3 font-semibold">Catatan</th>
-                  <th className="pb-3 font-semibold text-right">Nominal Transfer</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {transfers.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3 text-slate-600 font-medium">
-                      {new Date(tx.transferDate || tx.createdAt).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })}
-                    </td>
-                    <td className="py-3">
-                      <span className="font-semibold text-rose-700 flex items-center gap-1.5">
-                        <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
-                        {tx.fromAccount?.accountName || 'Akun Sumber'}
-                      </span>
-                    </td>
-                    <td className="py-3">
-                      <span className="font-semibold text-emerald-700 flex items-center gap-1.5">
-                        <ArrowDownLeft className="w-3.5 h-3.5 shrink-0" />
-                        {tx.toAccount?.accountName || 'Akun Tujuan'}
-                      </span>
-                    </td>
-                    <td className="py-3 text-slate-500 max-w-xs truncate">
-                      {tx.notes || '-'}
-                    </td>
-                    <td className="py-3 text-right font-mono font-bold text-slate-900">
-                      Rp {Number(tx.amount || 0).toLocaleString('id-ID')}
-                    </td>
+        {activeHistoryTab === 'TRANSFERS' && (
+          transfersLoading ? (
+            <LoadingState message="Memuat mutasi transfer..." />
+          ) : transfers.length === 0 ? (
+            <div className="py-8 text-center text-slate-400 text-xs">
+              Belum ada mutasi transfer antar kas yang tercatat.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-400 font-semibold uppercase text-[10px]">
+                    <th className="pb-3 font-semibold">Tanggal</th>
+                    <th className="pb-3 font-semibold">Dari Akun (Sumber)</th>
+                    <th className="pb-3 font-semibold">Ke Akun (Tujuan)</th>
+                    <th className="pb-3 font-semibold">Catatan</th>
+                    <th className="pb-3 font-semibold text-right">Nominal Transfer</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {transfers.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3 text-slate-600 font-medium">
+                        {new Date(tx.transferDate || tx.createdAt).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </td>
+                      <td className="py-3">
+                        <span className="font-semibold text-rose-700 flex items-center gap-1.5">
+                          <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
+                          {tx.fromAccount?.accountName || 'Akun Sumber'}
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        <span className="font-semibold text-emerald-700 flex items-center gap-1.5">
+                          <ArrowDownLeft className="w-3.5 h-3.5 shrink-0" />
+                          {tx.toAccount?.accountName || 'Akun Tujuan'}
+                        </span>
+                      </td>
+                      <td className="py-3 text-slate-500 max-w-xs truncate">
+                        {tx.notes || '-'}
+                      </td>
+                      <td className="py-3 text-right font-mono font-bold text-slate-900">
+                        Rp {Number(tx.amount || 0).toLocaleString('id-ID')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        )}
+
+        {activeHistoryTab === 'CAPITAL' && (
+          capitalLoading ? (
+            <LoadingState message="Memuat mutasi modal & pendanaan..." />
+          ) : capitalTransactions.length === 0 ? (
+            <div className="py-8 text-center text-slate-400 text-xs">
+              Belum ada mutasi modal atau pendanaan yang tercatat. Klik tombol <span className="font-bold text-slate-700">+ Modal & Pendanaan</span> di atas untuk mencatat.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-400 font-semibold uppercase text-[10px]">
+                    <th className="pb-3 font-semibold">Tanggal</th>
+                    <th className="pb-3 font-semibold">Tipe Transaksi</th>
+                    <th className="pb-3 font-semibold">Rekening Kas / Bank</th>
+                    <th className="pb-3 font-semibold">Pihak / No. Ref</th>
+                    <th className="pb-3 font-semibold">Catatan</th>
+                    <th className="pb-3 font-semibold text-right">Nominal</th>
+                    <th className="pb-3 font-semibold text-center w-12">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {capitalTransactions.map((ctx) => {
+                    const isInflow =
+                      ctx.type === 'CAPITAL_INJECTION' || ctx.type === 'LOAN_RECEIPT';
+                    return (
+                      <tr key={ctx.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3 text-slate-600 font-medium whitespace-nowrap">
+                          {new Date(ctx.transactionDate || ctx.createdAt).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td className="py-3 whitespace-nowrap">
+                          {getCapitalTypeBadge(ctx.type)}
+                        </td>
+                        <td className="py-3">
+                          <span className="font-semibold text-slate-800">
+                            {ctx.financialAccount?.accountName || 'Kas/Bank'}
+                          </span>
+                        </td>
+                        <td className="py-3 text-slate-700">
+                          <div className="font-medium text-slate-800">
+                            {ctx.partyName || '-'}
+                          </div>
+                          {ctx.referenceNumber && (
+                            <span className="text-[10px] font-mono text-slate-400 block">
+                              Ref: {ctx.referenceNumber}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 text-slate-500 max-w-xs truncate">
+                          {ctx.notes || '-'}
+                        </td>
+                        <td
+                          className={`py-3 text-right font-mono font-bold whitespace-nowrap ${
+                            isInflow ? 'text-emerald-700' : 'text-rose-600'
+                          }`}
+                        >
+                          {isInflow ? '+' : '-'}Rp {Number(ctx.amount || 0).toLocaleString('id-ID')}
+                        </td>
+                        <td className="py-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCapital(ctx.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 transition-colors"
+                            title="Hapus transaksi"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
         )}
       </div>
 
@@ -445,16 +674,17 @@ export const AccountsScreen: React.FC = () => {
             </FormField>
 
             <FormField label="Tipe Dompet" required>
-              <select
+              <CustomSelect
+                options={[
+                  { value: 'CASH', label: 'CASH (Kas Laci Tunai)' },
+                  { value: 'BANK', label: 'BANK (Rekening Bank)' },
+                  { value: 'EWALLET', label: 'EWALLET (GoPay/OVO/ShopeePay)' },
+                  { value: 'PAYMENT_GATEWAY', label: 'PAYMENT GATEWAY (Midtrans/Xendit)' },
+                ]}
                 value={newType}
-                onChange={(e) => setNewType(e.target.value as FinancialAccountType)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                <option value="CASH">CASH (Kas Laci Tunai)</option>
-                <option value="BANK">BANK (Rekening Bank)</option>
-                <option value="EWALLET">EWALLET (GoPay/OVO/ShopeePay)</option>
-                <option value="PAYMENT_GATEWAY">PAYMENT GATEWAY (Midtrans/Xendit)</option>
-              </select>
+                onChange={(val) => setNewType(val as FinancialAccountType)}
+                className="w-full"
+              />
             </FormField>
           </div>
 
@@ -505,18 +735,15 @@ export const AccountsScreen: React.FC = () => {
             </FormField>
 
             <FormField label="Cabang / Outlet (Opsional)">
-              <select
+              <CustomSelect
+                options={[
+                  { value: '', label: 'Semua Cabang (Global Tenant)' },
+                  ...outlets.map((o) => ({ value: o.id, label: o.name })),
+                ]}
                 value={newAccountOutletId}
-                onChange={(e) => setNewAccountOutletId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                <option value="">Semua Cabang (Global Tenant)</option>
-                {outlets.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setNewAccountOutletId}
+                className="w-full"
+              />
             </FormField>
           </div>
         </div>
@@ -549,33 +776,29 @@ export const AccountsScreen: React.FC = () => {
         <div className="space-y-3.5">
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Akun Asal (Sumber Dana)" required>
-              <select
+              <CustomSelect
+                placeholder="-- Pilih Akun Sumber --"
+                options={accounts.map((a) => ({
+                  value: a.id,
+                  label: `${a.accountName} (Rp ${Number(a.currentBalance || 0).toLocaleString('id-ID')})`,
+                }))}
                 value={fromAccountId}
-                onChange={(e) => setFromAccountId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                <option value="">-- Pilih Akun Sumber --</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.accountName} (Rp {Number(a.currentBalance || 0).toLocaleString('id-ID')})
-                  </option>
-                ))}
-              </select>
+                onChange={setFromAccountId}
+                className="w-full"
+              />
             </FormField>
 
             <FormField label="Akun Tujuan" required>
-              <select
+              <CustomSelect
+                placeholder="-- Pilih Akun Tujuan --"
+                options={accounts.map((a) => ({
+                  value: a.id,
+                  label: a.accountName,
+                }))}
                 value={toAccountId}
-                onChange={(e) => setToAccountId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                <option value="">-- Pilih Akun Tujuan --</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.accountName}
-                  </option>
-                ))}
-              </select>
+                onChange={setToAccountId}
+                className="w-full"
+              />
             </FormField>
           </div>
 
@@ -597,14 +820,12 @@ export const AccountsScreen: React.FC = () => {
               </div>
             </FormField>
 
-            <FormField label="Tanggal Transfer" required>
-              <input
-                type="date"
-                value={transferDate}
-                onChange={(e) => setTransferDate(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              />
-            </FormField>
+            <FormDatePicker
+              label="Tanggal Transfer"
+              required
+              value={transferDate}
+              onChange={(val) => setTransferDate(val)}
+            />
           </div>
 
           <FormField label="Catatan / Keperluan">
@@ -613,6 +834,154 @@ export const AccountsScreen: React.FC = () => {
               value={transferNotes}
               onChange={(e) => setTransferNotes(e.target.value)}
               placeholder="Contoh: Setoran hasil penjualan tunai harian ke rekening BCA"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+            />
+          </FormField>
+        </div>
+      </Modal>
+
+      {/* MODAL 3: TRANSAKSI MODAL & PENDANAAN */}
+      <Modal
+        isOpen={isCapitalModalOpen}
+        onClose={() => setIsCapitalModalOpen(false)}
+        title="Catat Transaksi Modal & Pendanaan"
+        subtitle="Suntikan modal pemilik, penarikan prive, pinjaman bank, atau pelunasan pinjaman"
+        maxWidth="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <Button variant="outline" size="sm" onClick={() => setIsCapitalModalOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleCreateCapital}
+              isLoading={createCapitalMutation.isPending}
+              className="font-bold"
+            >
+              Simpan Transaksi
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3.5">
+          <FormField label="Tipe Aktivitas Pendanaan" required>
+            <CustomSelect
+              options={[
+                {
+                  value: 'CAPITAL_INJECTION',
+                  label: '[+] Suntik Modal Pemilik / Investor (Kas Masuk)',
+                },
+                {
+                  value: 'OWNER_WITHDRAWAL',
+                  label: '[-] Tarik Prive / Dividen Pemilik (Kas Keluar)',
+                },
+                {
+                  value: 'LOAN_RECEIPT',
+                  label: '[+] Pencairan Pinjaman Bank / KUR / Modal Kerja (Kas Masuk)',
+                },
+                {
+                  value: 'LOAN_REPAYMENT',
+                  label: '[-] Pembayaran Pokok Pinjaman / Cicilan Bank (Kas Keluar)',
+                },
+              ]}
+              value={capitalType}
+              onChange={(val) => setCapitalType(val as CapitalTransactionType)}
+              className="w-full"
+            />
+          </FormField>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Rekening Kas / Bank" required>
+              <CustomSelect
+                placeholder="-- Pilih Akun Kas/Bank --"
+                options={accounts.map((a) => ({
+                  value: a.id,
+                  label: `${a.accountName} (Rp ${Number(a.currentBalance || 0).toLocaleString('id-ID')})`,
+                }))}
+                value={capitalAccountId}
+                onChange={setCapitalAccountId}
+                className="w-full"
+              />
+            </FormField>
+
+            <FormField label="Nominal Transaksi (Rp)" required>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
+                  Rp
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={capitalAmount === 0 ? '' : capitalAmount}
+                  onChange={(e) => setCapitalAmount(Number(e.target.value) || 0)}
+                  placeholder="0"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                />
+              </div>
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormDatePicker
+              label="Tanggal Transaksi"
+              required
+              value={capitalDate}
+              onChange={(val) => setCapitalDate(val)}
+            />
+
+            <FormField
+              label={
+                capitalType === 'CAPITAL_INJECTION' || capitalType === 'OWNER_WITHDRAWAL'
+                  ? 'Nama Pemilik / Investor'
+                  : 'Nama Bank / Lembaga'
+              }
+            >
+              <input
+                type="text"
+                placeholder={
+                  capitalType === 'CAPITAL_INJECTION' || capitalType === 'OWNER_WITHDRAWAL'
+                    ? 'Contoh: Bapak Mubarok'
+                    : 'Contoh: Bank Mandiri / BRI'
+                }
+                value={capitalPartyName}
+                onChange={(e) => setCapitalPartyName(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+              />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="No. Referensi / Kontrak (Opsional)">
+              <input
+                type="text"
+                placeholder="Contoh: REF-PINJAMAN-01"
+                value={capitalRefNo}
+                onChange={(e) => setCapitalRefNo(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+              />
+            </FormField>
+
+            <FormField label="Cabang / Outlet (Opsional)">
+              <CustomSelect
+                options={[
+                  { value: '', label: 'Semua Cabang (Global)' },
+                  ...outlets.map((o) => ({ value: o.id, label: o.name })),
+                ]}
+                value={capitalOutletId}
+                onChange={setCapitalOutletId}
+                className="w-full"
+              />
+            </FormField>
+          </div>
+
+          <FormField label="Catatan / Keterangan (Opsional)">
+            <textarea
+              rows={2}
+              value={capitalNotes}
+              onChange={(e) => setCapitalNotes(e.target.value)}
+              placeholder="Keterangan tambahan transaksi..."
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
             />
           </FormField>

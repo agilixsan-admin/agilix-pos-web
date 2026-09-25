@@ -15,6 +15,8 @@ import {
   FormInput,
   LoadingState,
   EmptyState,
+  toast,
+  confirmDialog,
 } from '@presentation/components/ui';
 
 export const CategoriesScreen: React.FC = () => {
@@ -57,18 +59,26 @@ export const CategoriesScreen: React.FC = () => {
           status: 'ACTIVE',
         });
       }
+      toast.success(editingCategory ? 'Kategori berhasil diperbarui.' : 'Kategori berhasil dibuat.');
       setIsModalOpen(false);
     } catch (err: unknown) {
-      alert('Gagal menyimpan kategori.');
+      toast.error('Gagal menyimpan kategori.');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus kategori ini?')) return;
+    const ok = await confirmDialog({
+      title: 'Hapus Kategori',
+      message: 'Apakah Anda yakin ingin menghapus kategori ini?',
+      confirmText: 'Hapus',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await deleteCategoryMutation.mutateAsync(id);
+      toast.success('Kategori berhasil dihapus.');
     } catch (err: unknown) {
-      alert('Gagal menghapus kategori.');
+      toast.error('Gagal menghapus kategori.');
     }
   };
 

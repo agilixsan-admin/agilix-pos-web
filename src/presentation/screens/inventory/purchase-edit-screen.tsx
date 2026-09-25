@@ -27,6 +27,7 @@ import {
   EmptyState,
   CustomSelect,
   FormDatePicker,
+  toast,
 } from '@presentation/components/ui';
 
 interface PurchaseFormItem {
@@ -286,12 +287,13 @@ export const PurchaseEditScreen: React.FC = () => {
       };
 
       await updatePurchaseMutation.mutateAsync({ id, data: payload });
+      toast.success('Purchase order berhasil diperbarui.');
       const returnUrl = `/inventory/purchases/${id}${targetOutletId ? `?outletId=${targetOutletId}` : ''}`;
       navigate(returnUrl);
     } catch (err: any) {
       const errorMsg =
         err?.response?.data?.message || err?.message || 'Gagal memperbarui purchase order';
-      alert(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

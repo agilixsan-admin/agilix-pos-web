@@ -23,6 +23,7 @@ import {
   Modal,
   LoadingState,
   EmptyState,
+  toast,
 } from '@presentation/components/ui';
 
 export const PackagingEditScreen: React.FC = () => {
@@ -93,8 +94,9 @@ export const PackagingEditScreen: React.FC = () => {
       if (created?.id) {
         setCategoryId(created.id);
       }
+      toast.success('Kategori packaging baru berhasil dibuat.');
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal membuat kategori packaging.'
       );
@@ -105,7 +107,7 @@ export const PackagingEditScreen: React.FC = () => {
     e.preventDefault();
     if (!id) return;
     if (!name.trim()) {
-      alert('Nama packaging wajib diisi.');
+      toast.warning('Nama packaging wajib diisi.');
       return;
     }
 
@@ -123,9 +125,10 @@ export const PackagingEditScreen: React.FC = () => {
         },
       });
 
+      toast.success('Packaging berhasil diperbarui.');
       navigate(`/inventory/packaging/${id}`);
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal memperbarui data packaging.'
       );

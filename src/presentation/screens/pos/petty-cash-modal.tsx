@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { ArrowUpRight, Camera, Upload, Trash2, ShieldAlert, Image as ImageIcon } from 'lucide-react';
-import { Modal, Button, FormField, toast } from '@presentation/components/ui';
+import { Modal, Button, FormField, toast, CustomSelect } from '@presentation/components/ui';
 import { usePettyCashMutation } from '@domain/hooks/queries';
 import { shiftService } from '@domain/services/shift-service';
 
@@ -203,17 +203,11 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
 
         {/* Kategori Pengeluaran */}
         <FormField label="Kategori Pengeluaran" required>
-          <select
+          <CustomSelect
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-          >
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setCategory(val)}
+            options={CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
+          />
         </FormField>
 
         {/* Keperluan / Catatan */}

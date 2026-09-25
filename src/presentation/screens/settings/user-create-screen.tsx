@@ -15,6 +15,7 @@ import {
   FormInput,
   FormSelect,
   Modal,
+  toast,
 } from '@presentation/components/ui';
 
 export const UserCreateScreen: React.FC = () => {
@@ -74,7 +75,7 @@ export const UserCreateScreen: React.FC = () => {
       // Show invitation success modal
       setCreatedEmail(formData.email.trim().toLowerCase());
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal mendaftarkan pengguna baru.'
       );

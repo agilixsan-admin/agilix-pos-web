@@ -28,6 +28,7 @@ import {
   LoadingState,
   EmptyState,
   CustomSelect,
+  FormDatePicker,
   toast,
 } from '@presentation/components/ui';
 import type { FixedAsset } from '@model/Finance';
@@ -376,17 +377,11 @@ export const AssetsScreen: React.FC = () => {
         <div className="space-y-3.5">
           {outlets.length > 0 && (
             <FormField label="Cabang / Outlet Penempatan Aset" required>
-              <select
-                value={assetOutletId || effectiveOutletId || currentOutlet?.id || outlets[0]?.id}
-                onChange={(e) => setAssetOutletId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                {outlets.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
+              <CustomSelect
+                value={assetOutletId || effectiveOutletId || currentOutlet?.id || outlets[0]?.id || ''}
+                onChange={(val) => setAssetOutletId(val)}
+                options={outlets.map((o) => ({ value: o.id, label: o.name }))}
+              />
             </FormField>
           )}
 
@@ -402,27 +397,19 @@ export const AssetsScreen: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Kategori Aset" required>
-              <select
+              <CustomSelect
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                {ASSET_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-
-            <FormField label="Tanggal Perolehan" required>
-              <input
-                type="date"
-                value={purchaseDate}
-                onChange={(e) => setPurchaseDate(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                onChange={(val) => setCategory(val as any)}
+                options={ASSET_CATEGORIES.map((c) => ({ value: c, label: c }))}
               />
             </FormField>
+
+            <FormDatePicker
+              label="Tanggal Perolehan"
+              required
+              value={purchaseDate}
+              onChange={(val) => setPurchaseDate(val)}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -439,18 +426,18 @@ export const AssetsScreen: React.FC = () => {
             </FormField>
 
             <FormField label="Sumber Dana Kas / Bank">
-              <select
+              <CustomSelect
                 value={financialAccountId}
-                onChange={(e) => setFinancialAccountId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                <option value="">-- Tanpa Potong Kas (Saldo Awal) --</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.accountName} (Rp {Number(a.currentBalance || 0).toLocaleString('id-ID')})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFinancialAccountId(val)}
+                placeholder="-- Tanpa Potong Kas (Saldo Awal) --"
+                options={[
+                  { value: '', label: '-- Tanpa Potong Kas (Saldo Awal) --' },
+                  ...accounts.map((a) => ({
+                    value: a.id,
+                    label: `${a.accountName} (Rp ${Number(a.currentBalance || 0).toLocaleString('id-ID')})`,
+                  })),
+                ]}
+              />
             </FormField>
           </div>
 
@@ -533,14 +520,12 @@ export const AssetsScreen: React.FC = () => {
               </div>
             </div>
 
-            <FormField label="Tanggal Pelepasan" required>
-              <input
-                type="date"
-                value={disposalDate}
-                onChange={(e) => setDisposalDate(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              />
-            </FormField>
+            <FormDatePicker
+              label="Tanggal Pelepasan"
+              required
+              value={disposalDate}
+              onChange={(val) => setDisposalDate(val)}
+            />
 
             <FormField label="Harga Jual / Nilai Diterima (Rp)">
               <input

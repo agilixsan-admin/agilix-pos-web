@@ -34,6 +34,8 @@ import {
   FormInput,
   FormSelect,
   FormTextarea,
+  toast,
+  confirmDialog,
 } from '@presentation/components/ui';
 
 export const PackagingScreen: React.FC = () => {
@@ -150,11 +152,18 @@ export const PackagingScreen: React.FC = () => {
 
   // Actions
   const handleDeletePackaging = async (id: string, name: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus packaging "${name}"?`)) return;
+    const ok = await confirmDialog({
+      title: 'Hapus Packaging',
+      message: `Apakah Anda yakin ingin menghapus packaging "${name}"?`,
+      confirmText: 'Hapus',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await deletePackagingMutation.mutateAsync(id);
+      toast.success(`Packaging "${name}" berhasil dihapus.`);
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menghapus packaging.'
       );
@@ -198,9 +207,10 @@ export const PackagingScreen: React.FC = () => {
           status: catStatus,
         });
       }
+      toast.success(editingCategory ? 'Kategori packaging berhasil diperbarui.' : 'Kategori packaging berhasil dibuat.');
       setIsCatModalOpen(false);
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menyimpan kategori packaging.'
       );
@@ -208,11 +218,18 @@ export const PackagingScreen: React.FC = () => {
   };
 
   const handleDeleteCategory = async (id: string, name: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus kategori "${name}"?`)) return;
+    const ok = await confirmDialog({
+      title: 'Hapus Kategori Packaging',
+      message: `Apakah Anda yakin ingin menghapus kategori "${name}"?`,
+      confirmText: 'Hapus',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await deleteCategoryMutation.mutateAsync(id);
+      toast.success(`Kategori "${name}" berhasil dihapus.`);
     } catch (err: unknown) {
-      alert(
+      toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menghapus kategori packaging.'
       );

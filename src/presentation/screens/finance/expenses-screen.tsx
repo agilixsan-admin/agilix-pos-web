@@ -33,7 +33,9 @@ import {
   LoadingState,
   EmptyState,
   CustomSelect,
+  FormDatePicker,
   toast,
+  confirmDialog,
 } from '@presentation/components/ui';
 import type { Expense, ExpenseCategory } from '@model/Finance';
 
@@ -196,7 +198,14 @@ export const ExpensesScreen: React.FC = () => {
   };
 
   const handleDeleteExpense = async (id: string) => {
-    if (!confirm('Yakin ingin menghapus transaksi biaya ini?')) return;
+    const confirmed = await confirmDialog({
+      title: 'Hapus Biaya Operasional',
+      message:
+        'Yakin ingin menghapus transaksi biaya operasional ini? Saldo kas/bank akan dikembalikan otomatis.',
+      confirmText: 'Hapus Biaya',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await deleteExpenseMutation.mutateAsync(id);
       toast.success('Biaya operasional berhasil dihapus.');
@@ -433,58 +442,44 @@ export const ExpensesScreen: React.FC = () => {
         <div className="space-y-3.5">
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Cabang Outlet" required>
-              <select
-                value={formOutletId || effectiveOutletId || ''}
-                onChange={(e) => setFormOutletId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                {outlets.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-
-            <FormField label="Tanggal Biaya" required>
-              <input
-                type="date"
-                value={formDate}
-                onChange={(e) => setFormDate(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+              <CustomSelect
+                options={outlets.map((o) => ({ value: o.id, label: o.name }))}
+                value={formOutletId || effectiveOutletId || (outlets[0]?.id ?? '')}
+                onChange={setFormOutletId}
+                className="w-full"
               />
             </FormField>
+
+            <FormDatePicker
+              label="Tanggal Biaya"
+              required
+              value={formDate}
+              onChange={(val) => setFormDate(val)}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Kategori Biaya" required>
-              <select
+              <CustomSelect
+                placeholder="-- Pilih Kategori --"
+                options={categories.map((c) => ({ value: c.id, label: c.name }))}
                 value={formCategoryId}
-                onChange={(e) => setFormCategoryId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                <option value="">-- Pilih Kategori --</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setFormCategoryId}
+                className="w-full"
+              />
             </FormField>
 
             <FormField label="Sumber Kas / Bank" required>
-              <select
+              <CustomSelect
+                placeholder="-- Pilih Akun Sumber --"
+                options={accounts.map((a) => ({
+                  value: a.id,
+                  label: `${a.accountName} (Rp ${Number(a.currentBalance || 0).toLocaleString('id-ID')})`,
+                }))}
                 value={formAccountId}
-                onChange={(e) => setFormAccountId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              >
-                <option value="">-- Pilih Akun Sumber --</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.accountName} (Rp {Number(a.currentBalance || 0).toLocaleString('id-ID')})
-                  </option>
-                ))}
-              </select>
+                onChange={setFormAccountId}
+                className="w-full"
+              />
             </FormField>
           </div>
 
