@@ -64,7 +64,20 @@ import {
   CustomOutletSelect,
 } from '@presentation/components/ui';
 
+const getProductInitials = (name?: string): string => {
+  if (!name) return '??';
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+  return '??';
+};
+
 export const PosScreen: React.FC = () => {
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const { currentOutlet, setCurrentOutlet } = useAuthStore();
   const { data: rawOutlets = [] } = useOutlets();
   const outlets = Array.isArray(rawOutlets) && rawOutlets.length > 0
@@ -1234,6 +1247,7 @@ export const PosScreen: React.FC = () => {
                     const imageUrl = rawImageUrl?.startsWith('htts://')
                       ? rawImageUrl.replace(/^htts:\/\//, 'https://')
                       : rawImageUrl;
+                    const hasValidImage = Boolean(imageUrl) && !failedImages[product.id];
                     const hasVariants = product.variants && product.variants.length > 1;
                     const isInactiveInOutlet = product.isOutletActive === false;
                     const isOutOfStock = !isInactiveInOutlet && (product.isOutOfStock || product.isAvailable === false);
@@ -1250,30 +1264,39 @@ export const PosScreen: React.FC = () => {
                         }`}
                       >
                         <div>
-                          {/* Product Thumbnail with Image Fallback */}
+                          {/* Product Thumbnail with 2-letter Initials Fallback */}
                           <div className="w-full h-28 bg-slate-100 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden relative">
-                            {imageUrl ? (
+                            {hasValidImage ? (
                               <img
                                 src={imageUrl}
                                 alt={product.name}
                                 className={`w-full h-full object-cover transition-transform duration-300 ${
                                   isUnavailable ? 'grayscale' : 'group-hover:scale-105'
                                 }`}
-                                onError={(e) => {
-                                  // Hide broken image and fallback to icon
-                                  (e.target as HTMLElement).style.display = 'none';
-                                  const parent = (e.target as HTMLElement).parentElement;
-                                  if (parent) {
-                                    parent.classList.add('bg-teal-50/50');
-                                  }
+                                onError={() => {
+                                  setFailedImages((prev) => ({ ...prev, [product.id]: true }));
                                 }}
                               />
                             ) : (
-                              <Coffee
-                                className={`w-8 h-8 text-slate-300 transition-colors ${
-                                  isUnavailable ? 'text-slate-400' : 'group-hover:text-[#0D5C53]'
+                              <div
+                                className={`w-full h-full flex items-center justify-center relative select-none ${
+                                  isUnavailable
+                                    ? 'bg-slate-100'
+                                    : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-slate-100'
                                 }`}
-                              />
+                              >
+                                <div
+                                  className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-300 ${
+                                    isUnavailable
+                                      ? 'bg-slate-200 border border-slate-300 text-slate-500'
+                                      : 'bg-white/95 border border-teal-200/80 text-[#0D5C53] group-hover:scale-110 group-hover:bg-[#0D5C53] group-hover:text-white'
+                                  }`}
+                                >
+                                  <span className="font-mono font-black text-xl tracking-wider">
+                                    {getProductInitials(product.name)}
+                                  </span>
+                                </div>
+                              </div>
                             )}
 
                             {/* Nonaktif di Cabang vs Habis Overlay Badge on Image */}
