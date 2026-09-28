@@ -43,6 +43,7 @@ interface SubMenuItem {
   path: string;
   icon: LucideIcon;
   permission?: string;
+  badge?: string;
 }
 
 interface MenuGroup {
@@ -101,7 +102,7 @@ const MENU_GROUPS: MenuGroup[] = [
     items: [
       { title: 'Outlet', path: '/settings/outlets', icon: Building2, permission: 'outlet:read' },
       { title: 'Meja', path: '/settings/tables', icon: LayoutGrid, permission: 'table:read' },
-      { title: 'Order Type', path: '/settings/order-types', icon: ConciergeBell, permission: 'order_type:read' },
+      { title: 'Order Type', path: '/settings/order-types', icon: ConciergeBell, permission: 'order_type:read', badge: 'Soon' },
       { title: 'Pajak & Biaya', path: '/settings/taxes', icon: Receipt, permission: 'tax:read' },
       { title: 'Diskon & Promo', path: '/settings/discounts', icon: BadgePercent, permission: 'discount:read' },
       { title: 'Printer Struk', path: '/settings/printers', icon: Printer, permission: 'printer:read' },
@@ -218,11 +219,21 @@ export const Sidebar: React.FC = () => {
                     {!isIconOnly && (
                       <span className="truncate">{item.title}</span>
                     )}
+                    {!isIconOnly && item.badge && (
+                      <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                        {item.badge}
+                      </span>
+                    )}
 
                     {/* Tooltip on hover when desktop is in collapsed icon mode */}
                     {isIconOnly && (
-                      <span className="hidden lg:group-hover:flex absolute left-full ml-3 px-2.5 py-1 bg-slate-900 text-white text-xs font-semibold rounded-md whitespace-nowrap shadow-lg z-50 pointer-events-none items-center">
+                      <span className="hidden lg:group-hover:flex absolute left-full ml-3 px-2.5 py-1 bg-slate-900 text-white text-xs font-semibold rounded-md whitespace-nowrap shadow-lg z-50 pointer-events-none items-center gap-1.5">
                         {item.title}
+                        {item.badge && (
+                          <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-500 text-white uppercase">
+                            {item.badge}
+                          </span>
+                        )}
                       </span>
                     )}
                   </NavLink>
