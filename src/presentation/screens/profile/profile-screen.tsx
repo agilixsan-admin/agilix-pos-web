@@ -34,7 +34,7 @@ export const ProfileScreen: React.FC = () => {
   const userEmail = user?.email || '-';
   const roleName = user?.role?.name || user?.roleName || (user?.isSuperAdmin ? 'Super Admin' : 'Staff');
   const outletName = currentOutlet?.name || 'Semua Cabang';
-  const tenantName = tenant?.name || 'Agilix POS';
+  const tenantName = tenant?.name || 'SAJI Store';
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-16">

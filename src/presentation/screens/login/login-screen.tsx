@@ -165,15 +165,18 @@ export const LoginScreen: React.FC = () => {
         <div className="bg-white border border-slate-200/90 rounded-2xl shadow-[0_12px_40px_rgba(15,23,42,0.06)] p-7 sm:p-9 transition-all">
           {/* Brand Header */}
           <div className="flex flex-col items-center text-center mb-7">
-            <div className="w-12 h-12 rounded-2xl bg-[#0D5C53] text-white flex items-center justify-center shadow-md shadow-[#0D5C53]/15 mb-3.5 ring-4 ring-[#0D5C53]/10">
-              <Store className="w-6 h-6 text-teal-100" />
+            <div className="w-12 h-12 rounded-2xl bg-[#0D5C53] text-white flex items-center justify-center shadow-md shadow-[#0D5C53]/15 mb-3.5 ring-4 ring-[#0D5C53]/10 font-black text-2xl tracking-wider">
+              S
             </div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900">
-              Masuk ke Agilix POS
+              Masuk ke SAJI
             </h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Sistem Kasir & Operasional Multi-Outlet
+            <p className="text-xs text-slate-500 mt-1 font-medium">
+              Kasir Lancar, Stok Teratur, Keuangan Terukur
             </p>
+            <span className="text-[10px] text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full font-semibold mt-2 border border-teal-100">
+              by Agilix Tech Solution
+            </span>
           </div>
 
           {/* Banner Error */}
@@ -275,8 +278,9 @@ export const LoginScreen: React.FC = () => {
       </main>
 
       {/* Footer Bawah */}
-      <footer className="relative z-10 w-full max-w-[420px] text-center text-[11px] text-slate-400 py-3">
-        Lupa kata sandi? Hubungi Supervisor atau Administrator Toko.
+      <footer className="relative z-10 w-full max-w-[420px] text-center text-[11px] text-slate-400 py-3 space-y-1">
+        <div>Lupa kata sandi? Hubungi Supervisor atau Administrator Toko.</div>
+        <div className="text-[10px] text-slate-400 font-medium">SAJI &bull; Powered by Agilix Tech Solution</div>
       </footer>
     </div>
   );

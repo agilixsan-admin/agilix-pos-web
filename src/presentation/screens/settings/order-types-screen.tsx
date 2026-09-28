@@ -102,7 +102,7 @@ export const OrderTypesScreen: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-amber-900/80 leading-relaxed">
-              Saat ini kasir Agilix POS secara otomatis beroperasi menggunakan 2 kanal standar:{' '}
+              Saat ini kasir SAJI secara otomatis beroperasi menggunakan 2 kanal standar:{' '}
               <strong className="font-semibold text-slate-900">Dine In (Makan di Tempat)</strong> dan{' '}
               <strong className="font-semibold text-slate-900">Take Away (Bawa Pulang)</strong>.
               Pengaturan kustomisasi tipe pesanan, penambahan biaya layanan per channel (surcharge/take away fee),

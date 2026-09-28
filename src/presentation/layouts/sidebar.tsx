@@ -149,15 +149,15 @@ export const Sidebar: React.FC = () => {
       >
         <div className="flex items-center gap-3 overflow-hidden">
           <div className="w-9 h-9 rounded-xl bg-[#0D5C53] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
-            A
+            S
           </div>
           {(!isSidebarCollapsed || isMobileMenuOpen) && (
             <div className="overflow-hidden">
               <h1 className="font-bold text-slate-800 text-base leading-tight tracking-tight truncate">
-                Agilix POS
+                SAJI
               </h1>
-              <p className="text-[11px] text-slate-500 font-medium truncate">
-                Point of Sale System
+              <p className="text-[10px] text-slate-500 font-medium truncate">
+                by Agilix Tech Solution
               </p>
             </div>
           )}

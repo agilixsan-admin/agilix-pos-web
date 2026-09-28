@@ -1196,11 +1196,11 @@ export const PrintersScreen: React.FC = () => {
                   {isFooterEnabled && billFooterText && billFooterText.trim() ? (
                     <div className="text-center pt-3 text-[9px] text-slate-600 space-y-0.5">
                       <p className="whitespace-pre-line">{billFooterText.trim()}</p>
-                      <p className="text-[8px] text-slate-400 pt-1">Powered by Agilix POS</p>
+                      <p className="text-[8px] text-slate-400 pt-1">Powered by SAJI • Agilix Tech Solution</p>
                     </div>
                   ) : (
                     <div className="text-center pt-2 text-[8px] text-slate-400">
-                      <p>Powered by Agilix POS</p>
+                      <p>Powered by SAJI • Agilix Tech Solution</p>
                     </div>
                   )}
 

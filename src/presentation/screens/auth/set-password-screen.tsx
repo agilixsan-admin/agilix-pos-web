@@ -124,11 +124,12 @@ export const SetPasswordScreen: React.FC = () => {
       <div className="max-w-md w-full space-y-6">
         {/* Brand Header */}
         <div className="text-center">
-          <div className="w-14 h-14 bg-[#0D5C53] rounded-2xl flex items-center justify-center text-white mx-auto shadow-md mb-4">
-            <Store className="w-7 h-7" />
+          <div className="w-14 h-14 bg-[#0D5C53] rounded-2xl flex items-center justify-center text-white mx-auto shadow-md mb-4 font-black text-2xl tracking-wider">
+            S
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Agilix POS</h1>
-          <p className="text-sm text-slate-500 mt-1">Aktivasi Akun & Pembuatan Kata Sandi</p>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">SAJI</h1>
+          <p className="text-xs text-teal-700 font-medium mt-0.5">by Agilix Tech Solution</p>
+          <p className="text-xs text-slate-500 mt-1">Aktivasi Akun & Pembuatan Kata Sandi</p>
         </div>
 
         {/* Loading State */}
@@ -206,7 +207,7 @@ export const SetPasswordScreen: React.FC = () => {
             <div>
               <h2 className="text-base font-bold text-slate-800">Buat Kata Sandi Baru</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Atur kata sandi untuk masuk ke terminal kasir dan dashboard Agilix.
+                Atur kata sandi untuk masuk ke terminal kasir dan dashboard SAJI.
               </p>
             </div>
 
@@ -284,6 +285,9 @@ export const SetPasswordScreen: React.FC = () => {
             </form>
           </Card>
         )}
+        <div className="text-center text-[11px] text-slate-400 pt-1">
+          SAJI &bull; Powered by Agilix Tech Solution
+        </div>
       </div>
     </div>
   );
