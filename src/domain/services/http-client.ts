@@ -56,6 +56,10 @@ httpClient.interceptors.response.use(
   async (error: AxiosError<{ message?: string; code?: string }>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
     // Handle Tenant Lock (403 TENANT_LOCKED)
     if (
       error.response?.status === 403 &&
@@ -66,8 +70,16 @@ httpClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Handle 401 Unauthorized (Token Expiration)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Bypass 401 refresh token logic for public auth endpoints (e.g. wrong password on login)
+    const requestUrl = originalRequest.url || '';
+    const isAuthEndpoint =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/refresh') ||
+      requestUrl.includes('/auth/set-password') ||
+      requestUrl.includes('/auth/verify-invitation');
+
+    // Handle 401 Unauthorized (Token Expiration for authenticated requests)
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -87,6 +99,8 @@ httpClient.interceptors.response.use(
       const refreshToken = useAuthStore.getState().refreshToken;
 
       if (!refreshToken) {
+        isRefreshing = false;
+        processQueue(error, null);
         useAuthStore.getState().logout();
         return Promise.reject(error);
       }
