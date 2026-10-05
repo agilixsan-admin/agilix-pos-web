@@ -29,6 +29,7 @@ import {
   CustomSelect,
   FormDatePicker,
   toast,
+  RupiahInput,
 } from '@presentation/components/ui';
 import type { ChartOfAccount, JournalEntry } from '@model/Finance';
 
@@ -513,26 +514,22 @@ export const GeneralLedgerScreen: React.FC = () => {
                   </div>
 
                   <div className="w-32 shrink-0">
-                    <input
-                      type="number"
-                      min="0"
-                      step="1000"
+                    <RupiahInput
+                      showPrefix={false}
                       placeholder="Debit (Rp)"
-                      value={line.debit === 0 ? '' : line.debit}
-                      onChange={(e) => handleLineChange(idx, 'debit', Number(e.target.value) || 0)}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
+                      value={line.debit}
+                      onValueChange={(val) => handleLineChange(idx, 'debit', val)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold text-slate-900"
                     />
                   </div>
 
                   <div className="w-32 shrink-0">
-                    <input
-                      type="number"
-                      min="0"
-                      step="1000"
+                    <RupiahInput
+                      showPrefix={false}
                       placeholder="Kredit (Rp)"
-                      value={line.credit === 0 ? '' : line.credit}
-                      onChange={(e) => handleLineChange(idx, 'credit', Number(e.target.value) || 0)}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
+                      value={line.credit}
+                      onValueChange={(val) => handleLineChange(idx, 'credit', val)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold text-slate-900"
                     />
                   </div>
 

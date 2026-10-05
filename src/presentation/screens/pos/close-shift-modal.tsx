@@ -14,7 +14,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
 } from 'lucide-react';
-import { Modal, Button, FormField, Badge, toast } from '@presentation/components/ui';
+import { Modal, Button, FormField, Badge, toast, RupiahInput } from '@presentation/components/ui';
 import { useCloseShiftMutation } from '@domain/hooks/queries';
 import { shiftService } from '@domain/services/shift-service';
 import type { PosShift, ShiftSummaryData } from '@model/Shift';
@@ -369,22 +369,14 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
         </div>
 
         {/* Input Uang Fisik Di Laci */}
-        <FormField label="Total Uang Fisik di Laci Kasir (Rp)" required>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#0D5C53] font-bold text-xs">
-              Rp
-            </div>
-            <input
-              type="number"
-              min="0"
-              step="1000"
-              value={actualCash === 0 ? '' : actualCash}
-              onChange={(e) => setActualCash(Number(e.target.value) || 0)}
-              placeholder="0"
-              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-            />
-          </div>
-        </FormField>
+        <RupiahInput
+          label="Total Uang Fisik di Laci Kasir (Rp)"
+          required
+          value={actualCash}
+          onValueChange={setActualCash}
+          placeholder="0"
+          className="text-base font-bold"
+        />
 
         {/* Catatan Penutupan */}
         <FormField label="Catatan Penutupan Shift (Opsional)">

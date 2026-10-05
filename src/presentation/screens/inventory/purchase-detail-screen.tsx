@@ -42,6 +42,7 @@ import {
   LoadingState,
   CustomSelect,
   FormDatePicker,
+  RupiahInput,
 } from '@presentation/components/ui';
 import { toast } from '@presentation/components/ui/toast';
 
@@ -1000,13 +1001,9 @@ export const PurchaseDetailScreen: React.FC = () => {
                   Bayar Lunas ({formatRupiah(remainingDebt)})
                 </button>
               </div>
-              <FormInput
-                type="number"
-                min="1"
-                max={remainingDebt}
-                step="any"
+              <RupiahInput
                 value={paymentAmount || ''}
-                onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                onValueChange={setPaymentAmount}
                 placeholder="Masukkan nominal bayar..."
               />
             </div>

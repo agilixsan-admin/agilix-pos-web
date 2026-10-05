@@ -36,6 +36,7 @@ import {
   FormDatePicker,
   toast,
   confirmDialog,
+  RupiahInput,
 } from '@presentation/components/ui';
 import type { Expense, ExpenseCategory } from '@model/Finance';
 
@@ -483,22 +484,14 @@ export const ExpensesScreen: React.FC = () => {
             </FormField>
           </div>
 
-          <FormField label="Nominal Pengeluaran (Rp)" required>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-rose-500 font-bold text-xs">
-                Rp
-              </div>
-              <input
-                type="number"
-                min="0"
-                step="1000"
-                value={formAmount === 0 ? '' : formAmount}
-                onChange={(e) => setFormAmount(Number(e.target.value) || 0)}
-                placeholder="0"
-                className="w-full pl-11 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-              />
-            </div>
-          </FormField>
+          <RupiahInput
+            label="Nominal Pengeluaran (Rp)"
+            required
+            value={formAmount}
+            onValueChange={setFormAmount}
+            placeholder="0"
+            className="text-sm font-bold text-rose-600 focus:ring-rose-500/20 focus:border-rose-500"
+          />
 
           <FormField label="Penerima Dana / Vendor (Opsional)">
             <input

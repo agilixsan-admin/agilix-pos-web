@@ -30,6 +30,7 @@ import {
   CustomSelect,
   FormDatePicker,
   toast,
+  RupiahInput,
 } from '@presentation/components/ui';
 
 interface PurchaseFormItem {
@@ -530,24 +531,15 @@ export const PurchaseCreateScreen: React.FC = () => {
 
                           {/* Total Harga (Rp) Input */}
                           <td className="py-3 px-3 align-top">
-                            <input
-                              type="number"
-                              min="0"
-                              step="any"
+                            <RupiahInput
+                              showPrefix={false}
                               value={item.totalPrice || ''}
-                              onChange={(e) =>
-                                handleItemFieldChange(
-                                  item.tempId,
-                                  'totalPrice',
-                                  parseFloat(e.target.value) || 0
-                                )
+                              onValueChange={(val) =>
+                                handleItemFieldChange(item.tempId, 'totalPrice', val)
                               }
                               placeholder="0"
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-bold text-right focus:outline-none focus:ring-1 focus:ring-[#0D5C53]"
+                              className="w-full rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-bold text-right"
                             />
-                            <span className="text-[10px] text-slate-400 text-right block mt-0.5 font-mono">
-                              {formatRupiah(item.totalPrice || 0)}
-                            </span>
                           </td>
 
                           {/* Action Delete */}

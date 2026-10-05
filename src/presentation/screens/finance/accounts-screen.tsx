@@ -38,6 +38,7 @@ import {
   FormDatePicker,
   toast,
   confirmDialog,
+  RupiahInput,
 } from '@presentation/components/ui';
 import type { FinancialAccount, FinancialAccountType, CapitalTransactionType } from '@model/Finance';
 
@@ -722,17 +723,13 @@ export const AccountsScreen: React.FC = () => {
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Saldo Awal (Rp)">
-              <input
-                type="number"
-                min="0"
-                step="1000"
-                value={newInitialBalance === 0 ? '' : newInitialBalance}
-                onChange={(e) => setNewInitialBalance(Number(e.target.value) || 0)}
-                placeholder="0"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              />
-            </FormField>
+            <RupiahInput
+              label="Saldo Awal (Rp)"
+              value={newInitialBalance}
+              onValueChange={setNewInitialBalance}
+              placeholder="0"
+              className="font-mono font-semibold"
+            />
 
             <FormField label="Cabang / Outlet (Opsional)">
               <CustomSelect
@@ -803,22 +800,14 @@ export const AccountsScreen: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Nominal Transfer (Rp)" required>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
-                  Rp
-                </div>
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  value={transferAmount === 0 ? '' : transferAmount}
-                  onChange={(e) => setTransferAmount(Number(e.target.value) || 0)}
-                  placeholder="0"
-                  className="w-full pl-11 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-                />
-              </div>
-            </FormField>
+            <RupiahInput
+              label="Nominal Transfer (Rp)"
+              required
+              value={transferAmount}
+              onValueChange={setTransferAmount}
+              placeholder="0"
+              className="text-sm font-bold"
+            />
 
             <FormDatePicker
               label="Tanggal Transfer"
@@ -905,22 +894,14 @@ export const AccountsScreen: React.FC = () => {
               />
             </FormField>
 
-            <FormField label="Nominal Transaksi (Rp)" required>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
-                  Rp
-                </div>
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  value={capitalAmount === 0 ? '' : capitalAmount}
-                  onChange={(e) => setCapitalAmount(Number(e.target.value) || 0)}
-                  placeholder="0"
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-                />
-              </div>
-            </FormField>
+            <RupiahInput
+              label="Nominal Transaksi (Rp)"
+              required
+              value={capitalAmount}
+              onValueChange={setCapitalAmount}
+              placeholder="0"
+              className="text-xs font-bold"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

@@ -30,6 +30,7 @@ import {
   CustomSelect,
   FormDatePicker,
   toast,
+  RupiahInput,
 } from '@presentation/components/ui';
 import type { FixedAsset } from '@model/Finance';
 
@@ -413,17 +414,14 @@ export const AssetsScreen: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Harga Beli / Perolehan (Rp)" required>
-              <input
-                type="number"
-                min="0"
-                step="100000"
-                value={purchaseCost === 0 ? '' : purchaseCost}
-                onChange={(e) => setPurchaseCost(Number(e.target.value) || 0)}
-                placeholder="0"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              />
-            </FormField>
+            <RupiahInput
+              label="Harga Beli / Perolehan (Rp)"
+              required
+              value={purchaseCost}
+              onValueChange={setPurchaseCost}
+              placeholder="0"
+              className="font-mono font-bold"
+            />
 
             <FormField label="Sumber Dana Kas / Bank">
               <CustomSelect
@@ -453,17 +451,13 @@ export const AssetsScreen: React.FC = () => {
               />
             </FormField>
 
-            <FormField label="Nilai Residu / Sisa (Rp)">
-              <input
-                type="number"
-                min="0"
-                step="100000"
-                value={salvageValue === 0 ? '' : salvageValue}
-                onChange={(e) => setSalvageValue(Number(e.target.value) || 0)}
-                placeholder="0"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              />
-            </FormField>
+            <RupiahInput
+              label="Nilai Residu / Sisa (Rp)"
+              value={salvageValue}
+              onValueChange={setSalvageValue}
+              placeholder="0"
+              className="font-mono"
+            />
           </div>
 
           <div className="p-3 bg-teal-50 rounded-xl border border-teal-200/80 flex items-start gap-2 text-xs text-teal-800">
@@ -527,17 +521,13 @@ export const AssetsScreen: React.FC = () => {
               onChange={(val) => setDisposalDate(val)}
             />
 
-            <FormField label="Harga Jual / Nilai Diterima (Rp)">
-              <input
-                type="number"
-                min="0"
-                step="50000"
-                value={disposalPrice === 0 ? '' : disposalPrice}
-                onChange={(e) => setDisposalPrice(Number(e.target.value) || 0)}
-                placeholder="0 (Jika rusak/dibuang)"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-              />
-            </FormField>
+            <RupiahInput
+              label="Harga Jual / Nilai Diterima (Rp)"
+              value={disposalPrice}
+              onValueChange={setDisposalPrice}
+              placeholder="0 (Jika rusak/dibuang)"
+              className="font-mono font-bold"
+            />
 
             <FormField label="Catatan / Alasan Pelepasan">
               <textarea

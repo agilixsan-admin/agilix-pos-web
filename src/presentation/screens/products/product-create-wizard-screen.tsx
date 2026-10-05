@@ -37,6 +37,7 @@ import {
   LoadingState,
   CustomSelect,
   toast,
+  RupiahInput,
 } from '@presentation/components/ui';
 
 interface VariantFormItem {
@@ -1027,11 +1028,10 @@ export const ProductCreateWizardScreen: React.FC = () => {
                         <div>
                           <span className="text-[10px] text-slate-400 font-bold uppercase">Harga Jual Kasir (Rp)</span>
                           <div className="mt-1">
-                            <input
-                              type="number"
+                            <RupiahInput
                               value={v.price}
-                              onChange={(e) => updateVariantField(v.id, 'price', Number(e.target.value))}
-                              className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]"
+                              onValueChange={(val) => updateVariantField(v.id, 'price', val)}
+                              className="w-full text-sm font-bold text-slate-900 py-1.5 px-3 rounded-lg border-slate-300"
                             />
                           </div>
                         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { ArrowUpRight, Camera, Upload, Trash2, ShieldAlert, Image as ImageIcon } from 'lucide-react';
-import { Modal, Button, FormField, toast, CustomSelect } from '@presentation/components/ui';
+import { Modal, Button, FormField, toast, CustomSelect, RupiahInput } from '@presentation/components/ui';
 import { usePettyCashMutation } from '@domain/hooks/queries';
 import { shiftService } from '@domain/services/shift-service';
 
@@ -175,31 +175,19 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
         )}
 
         {/* Nominal Pengeluaran */}
-        <FormField label="Nominal Kas Keluar (Rp)" required>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-rose-500 font-bold text-xs">
-              Rp
-            </div>
-            <input
-              type="number"
-              min="0"
-              step="1000"
-              value={amount === 0 ? '' : amount}
-              onChange={(e) => setAmount(Number(e.target.value) || 0)}
-              placeholder="0"
-              className={`w-full pl-11 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 ${
-                isExceedingCash
-                  ? 'border-rose-300 text-rose-600 focus:ring-rose-500/20 focus:border-rose-500'
-                  : 'border-slate-200 text-rose-600 focus:ring-rose-500/20 focus:border-rose-500'
-              }`}
-            />
-          </div>
-          {isExceedingCash && (
-            <p className="text-[11px] text-rose-600 font-medium mt-1">
-              Nominal melebihi saldo uang laci saat ini (Rp {currentExpectedCash.toLocaleString('id-ID')}).
-            </p>
-          )}
-        </FormField>
+        <RupiahInput
+          label="Nominal Kas Keluar (Rp)"
+          required
+          value={amount}
+          onValueChange={setAmount}
+          placeholder="0"
+          error={
+            isExceedingCash
+              ? `Nominal melebihi saldo uang laci saat ini (Rp ${(currentExpectedCash ?? 0).toLocaleString('id-ID')}).`
+              : undefined
+          }
+          className="text-sm font-semibold text-rose-600 focus:ring-rose-500/20 focus:border-rose-500"
+        />
 
         {/* Kategori Pengeluaran */}
         <FormField label="Kategori Pengeluaran" required>

@@ -40,6 +40,7 @@ import {
   EmptyState,
   CustomSelect,
   FormDatePicker,
+  RupiahInput,
 } from '@presentation/components/ui';
 
 const DAYS_OF_WEEK = [
@@ -790,50 +791,59 @@ export const DiscountsScreen: React.FC = () => {
 
           {/* Value & Maximum Discount */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FormInput
-              label={`Nilai Diskon (${formData.type === 'PERCENTAGE' ? '%' : 'Rp'})`}
-              type="number"
-              min="0"
-              step="any"
-              unit={formData.type === 'PERCENTAGE' ? '%' : 'Rp'}
-              required
-              value={formData.value}
-              onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-              placeholder={formData.type === 'PERCENTAGE' ? '10' : '10000'}
-              error={formErrors.value}
-            />
-
             {formData.type === 'PERCENTAGE' ? (
               <FormInput
-                label="Batas Maksimal Diskon (Rp - Opsional)"
+                label="Nilai Diskon (%)"
                 type="number"
                 min="0"
-                unit="Rp"
-                value={formData.maxDiscountAmount}
-                onChange={(e) => setFormData({ ...formData, maxDiscountAmount: e.target.value })}
-                placeholder="Contoh: 50000 (Kosongkan jika tanpa batas)"
+                max="100"
+                step="any"
+                unit="%"
+                required
+                value={formData.value}
+                onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                placeholder="10"
+                error={formErrors.value}
               />
             ) : (
-              <FormInput
+              <RupiahInput
+                label="Nilai Diskon (Rp)"
+                required
+                value={formData.value}
+                onValueChange={(val) => setFormData({ ...formData, value: val ? String(val) : '' })}
+                placeholder="10.000"
+                error={formErrors.value}
+              />
+            )}
+
+            {formData.type === 'PERCENTAGE' ? (
+              <RupiahInput
+                label="Batas Maksimal Diskon (Rp - Opsional)"
+                value={formData.maxDiscountAmount}
+                onValueChange={(val) =>
+                  setFormData({ ...formData, maxDiscountAmount: val ? String(val) : '' })
+                }
+                placeholder="Contoh: 50.000 (Kosongkan jika tanpa batas)"
+              />
+            ) : (
+              <RupiahInput
                 label="Minimal Belanja Order (Rp)"
-                type="number"
-                min="0"
-                unit="Rp"
                 value={formData.minOrderAmount}
-                onChange={(e) => setFormData({ ...formData, minOrderAmount: e.target.value })}
+                onValueChange={(val) =>
+                  setFormData({ ...formData, minOrderAmount: val ? String(val) : '' })
+                }
                 placeholder="0"
               />
             )}
           </div>
 
           {formData.type === 'PERCENTAGE' && (
-            <FormInput
+            <RupiahInput
               label="Minimal Belanja Order (Rp)"
-              type="number"
-              min="0"
-              unit="Rp"
               value={formData.minOrderAmount}
-              onChange={(e) => setFormData({ ...formData, minOrderAmount: e.target.value })}
+              onValueChange={(val) =>
+                setFormData({ ...formData, minOrderAmount: val ? String(val) : '' })
+              }
               placeholder="0"
             />
           )}

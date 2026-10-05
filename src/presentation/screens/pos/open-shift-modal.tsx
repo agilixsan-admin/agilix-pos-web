@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Store, Banknote, ShieldAlert } from 'lucide-react';
-import { Modal, Button, FormField, toast } from '@presentation/components/ui';
+import { Modal, Button, FormField, toast, RupiahInput } from '@presentation/components/ui';
 import { useOpenShiftMutation, useFinancialAccounts } from '@domain/hooks/queries';
 import { useAuthStore } from '@domain/state/auth-store';
 
@@ -142,25 +142,17 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
         </div>
 
         {/* Input Modal Awal */}
-        <FormField label="Modal Awal Kasir / Float (Rp)" required>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
-              Rp
-            </div>
-            <input
-              type="number"
-              min="0"
-              step="1000"
-              value={openingCash === 0 ? '' : openingCash}
-              onChange={(e) => {
-                setOpeningCash(Number(e.target.value) || 0);
-                setIsManualEdit(true);
-              }}
-              placeholder="0"
-              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-            />
-          </div>
-        </FormField>
+        <RupiahInput
+          label="Modal Awal Kasir / Float (Rp)"
+          required
+          value={openingCash}
+          onValueChange={(val) => {
+            setOpeningCash(val);
+            setIsManualEdit(true);
+          }}
+          placeholder="0"
+          className="text-sm font-semibold"
+        />
 
         {/* Quick Amount Suggestion Chips */}
         <div>

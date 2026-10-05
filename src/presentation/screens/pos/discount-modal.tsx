@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { DiscountItem } from '@model/Settings';
-import { Modal, Button, Badge } from '@presentation/components/ui';
+import { Modal, Button, Badge, RupiahInput } from '@presentation/components/ui';
 import { Tag, Check, Percent, DollarSign } from 'lucide-react';
 import { useDiscounts } from '@domain/hooks/queries/use-settings-query';
 import { useAuthStore } from '@domain/state/auth-store';
@@ -206,13 +206,25 @@ export const DiscountModal: React.FC<DiscountModalProps> = ({
               </button>
             </div>
 
-            <input
-              type="number"
-              placeholder={customType === 'PERCENT' ? 'Persen (%)' : 'Nominal (Rp)'}
-              value={customValue}
-              onChange={(e) => setCustomValue(e.target.value)}
-              className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
-            />
+            {customType === 'FIXED' ? (
+              <RupiahInput
+                showPrefix={false}
+                placeholder="Nominal (Rp)"
+                value={customValue}
+                onValueChange={(val) => setCustomValue(val ? String(val) : '')}
+                className="flex-1 py-1.5 px-3 rounded-lg"
+              />
+            ) : (
+              <input
+                type="number"
+                min="0"
+                max="100"
+                placeholder="Persen (%)"
+                value={customValue}
+                onChange={(e) => setCustomValue(e.target.value)}
+                className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+              />
+            )}
 
             <Button
               variant="primary"
