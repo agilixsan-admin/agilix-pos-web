@@ -259,13 +259,13 @@ export const AccountsScreen: React.FC = () => {
   const getCapitalTypeBadge = (type: CapitalTransactionType) => {
     switch (type) {
       case 'CAPITAL_INJECTION':
-        return <Badge variant="success" size="sm">+ Suntik Modal</Badge>;
+        return <Badge variant="success" size="sm">[D] Suntik Modal</Badge>;
       case 'LOAN_RECEIPT':
-        return <Badge variant="info" size="sm">+ Pinjaman Bank</Badge>;
+        return <Badge variant="info" size="sm">[D] Pinjaman Bank</Badge>;
       case 'OWNER_WITHDRAWAL':
-        return <Badge variant="danger" size="sm">- Prive Pemilik</Badge>;
+        return <Badge variant="danger" size="sm">[C] Prive Pemilik</Badge>;
       case 'LOAN_REPAYMENT':
-        return <Badge variant="warning" size="sm">- Bayar Pinjaman</Badge>;
+        return <Badge variant="warning" size="sm">[C] Bayar Pinjaman</Badge>;
       default:
         return <Badge size="sm">{type}</Badge>;
     }
@@ -870,19 +870,19 @@ export const AccountsScreen: React.FC = () => {
               options={[
                 {
                   value: 'CAPITAL_INJECTION',
-                  label: '[+] Suntik Modal Pemilik / Investor (Kas Masuk)',
+                  label: '[D] Suntik Modal Pemilik / Investor (Kas Masuk)',
                 },
                 {
                   value: 'OWNER_WITHDRAWAL',
-                  label: '[-] Tarik Prive / Dividen Pemilik (Kas Keluar)',
+                  label: '[C] Tarik Prive / Dividen Pemilik (Kas Keluar)',
                 },
                 {
                   value: 'LOAN_RECEIPT',
-                  label: '[+] Pencairan Pinjaman Bank / KUR / Modal Kerja (Kas Masuk)',
+                  label: '[D] Pencairan Pinjaman Bank / KUR / Modal Kerja (Kas Masuk)',
                 },
                 {
                   value: 'LOAN_REPAYMENT',
-                  label: '[-] Pembayaran Pokok Pinjaman / Cicilan Bank (Kas Keluar)',
+                  label: '[C] Pembayaran Pokok Pinjaman / Cicilan Bank (Kas Keluar)',
                 },
               ]}
               value={capitalType}
