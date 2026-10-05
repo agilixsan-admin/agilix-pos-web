@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Store, Banknote, ShieldAlert } from 'lucide-react';
 import { Modal, Button, FormField, toast } from '@presentation/components/ui';
-import { useOpenShiftMutation } from '@domain/hooks/queries';
+import { useOpenShiftMutation, useFinancialAccounts } from '@domain/hooks/queries';
 import { useAuthStore } from '@domain/state/auth-store';
 
 interface OpenShiftModalProps {
@@ -20,9 +20,22 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
   outletName,
 }) => {
   const user = useAuthStore((state) => state.user);
-  const [openingCash, setOpeningCash] = useState<number>(200000);
+  const [openingCash, setOpeningCash] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
+  const [isManualEdit, setIsManualEdit] = useState<boolean>(false);
   const openShiftMutation = useOpenShiftMutation();
+
+  const { data: financialAccounts } = useFinancialAccounts(outletId);
+  const cashDrawerAccount = financialAccounts?.find(
+    (acc) => acc.accountType === 'CASH' && (acc.outletId === outletId || !acc.outletId)
+  );
+  const systemDrawerBalance = Number(cashDrawerAccount?.currentBalance ?? 0);
+
+  useEffect(() => {
+    if (isOpen && cashDrawerAccount && !isManualEdit) {
+      setOpeningCash(systemDrawerBalance);
+    }
+  }, [isOpen, cashDrawerAccount, systemDrawerBalance, isManualEdit]);
 
   const handleOpen = async () => {
     if (openingCash < 0) {
@@ -101,6 +114,33 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
           </p>
         </div>
 
+        {/* Info Saldo Kas Laci di Sistem */}
+        <div className="p-3 bg-emerald-50/80 border border-emerald-200/90 rounded-xl flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+              <Banknote className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-500 font-medium">Saldo Kas Laci di Sistem (Kas & Bank)</p>
+              <p className="text-sm font-bold text-emerald-800">
+                Rp {systemDrawerBalance.toLocaleString('id-ID')}
+              </p>
+            </div>
+          </div>
+          {openingCash !== systemDrawerBalance && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpeningCash(systemDrawerBalance);
+                setIsManualEdit(false);
+              }}
+              className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+            >
+              Samakan
+            </button>
+          )}
+        </div>
+
         {/* Input Modal Awal */}
         <FormField label="Modal Awal Kasir / Float (Rp)" required>
           <div className="relative">
@@ -112,7 +152,10 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
               min="0"
               step="1000"
               value={openingCash === 0 ? '' : openingCash}
-              onChange={(e) => setOpeningCash(Number(e.target.value) || 0)}
+              onChange={(e) => {
+                setOpeningCash(Number(e.target.value) || 0);
+                setIsManualEdit(true);
+              }}
               placeholder="0"
               className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
             />
@@ -129,7 +172,10 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
               <button
                 key={amt}
                 type="button"
-                onClick={() => setOpeningCash(amt)}
+                onClick={() => {
+                  setOpeningCash(amt);
+                  setIsManualEdit(true);
+                }}
                 className={`py-1.5 px-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
                   openingCash === amt
                     ? 'bg-[#0D5C53] text-white border-[#0D5C53] shadow-xs'
