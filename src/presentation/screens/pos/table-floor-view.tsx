@@ -328,7 +328,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                 className="h-full"
               />
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3.5">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3.5">
                 {filteredTables.map((table) => {
                   const clean = (s?: string | null) =>
                     (s || '').toLowerCase().replace(/^(meja\s*)/i, '').trim();
@@ -344,6 +344,9 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                   });
                   const isOccupied = table.status === 'OCCUPIED' || Boolean(activeOrder);
 
+                  const rawName = table.name || table.tableNumber || '';
+                  const displayName = /^meja\s+/i.test(rawName) ? rawName : `Meja ${rawName}`;
+
                   if (isOccupied && activeOrder) {
                     // Occupied Table Card with Active Order
                     return (
@@ -357,47 +360,56 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                           }
                           onSelectOpenOrderForAppend(activeOrder);
                         }}
-                        className="bg-[#0D5C53] text-white rounded-2xl p-4 flex flex-col justify-between shadow-md hover:shadow-lg transition-all border border-teal-700 cursor-pointer group active:scale-[0.98]"
+                        className="bg-[#0D5C53] text-white rounded-2xl p-3.5 flex flex-col justify-between shadow-md hover:shadow-lg transition-all border border-teal-700 cursor-pointer group active:scale-[0.98] min-h-[175px]"
                       >
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="font-bold text-sm text-teal-100">
-                              Meja {table.name || table.tableNumber}
+                        <div className="space-y-1.5">
+                          {/* Header: Title & Capacity */}
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="font-extrabold text-sm text-teal-100 truncate whitespace-nowrap">
+                              {displayName}
                             </span>
-                            <span className="text-[10px] bg-teal-800/80 text-teal-200 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                            <span className="text-[10px] bg-teal-800/80 text-teal-200 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 shrink-0 whitespace-nowrap">
                               <Users className="w-2.5 h-2.5" />
                               {table.capacity} Kursi
                             </span>
                           </div>
 
-                          <div className="mb-2">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-teal-200/80 bg-teal-900/40 px-2 py-0.5 rounded-md">
-                              <Layers className="w-2.5 h-2.5" />
+                          {/* Section Badge */}
+                          <div>
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-teal-200/90 bg-teal-900/50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                              <Layers className="w-2.5 h-2.5 shrink-0" />
                               {table.section || 'Main Area'}
                             </span>
                           </div>
 
-                          <div className="text-xs text-teal-100/90 font-medium truncate mb-1">
-                            {activeOrder.customerName || 'Tamu Dine-In'}
-                          </div>
-
-                          <div className="text-[10px] text-teal-200/70 flex items-center gap-1">
-                            <Clock className="w-2.5 h-2.5" />
-                            <span>
-                              {activeOrder.items?.length || 0} Menu •{' '}
-                              {new Date(activeOrder.createdAt || Date.now()).toLocaleTimeString('id-ID', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </span>
+                          {/* Order Details */}
+                          <div className="pt-0.5">
+                            <div className="text-xs text-white font-semibold truncate">
+                              {activeOrder.customerName || 'Tamu Dine-In'}
+                            </div>
+                            <div className="text-[11px] text-teal-200/80 flex items-center gap-1 mt-0.5 whitespace-nowrap">
+                              <Clock className="w-3 h-3 shrink-0" />
+                              <span>
+                                {activeOrder.items?.length || 0} Menu •{' '}
+                                {new Date(activeOrder.createdAt || Date.now()).toLocaleTimeString('id-ID', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="mt-4 pt-2.5 border-t border-teal-700/60 flex items-center justify-between gap-1">
-                          <span className="text-xs font-extrabold text-white truncate">
-                            Rp {Number(activeOrder.totalAmount || 0).toLocaleString('id-ID')}
-                          </span>
-                          <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Footer: Bill Amount & Action Buttons */}
+                        <div className="mt-3 pt-2.5 border-t border-teal-700/70 space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-[10px] text-teal-200/70 uppercase font-semibold">Total Tagihan</span>
+                            <span className="font-extrabold text-white text-xs font-mono">
+                              Rp {Number(activeOrder.totalAmount || 0).toLocaleString('id-ID')}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-1.5">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -409,9 +421,10 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                                 }
                                 onSelectOpenOrderForAppend(activeOrder);
                               }}
-                              className="text-[10px] bg-teal-800 hover:bg-teal-700 active:bg-teal-900 text-teal-100 px-2 py-1 rounded-lg font-bold transition-colors cursor-pointer border border-teal-600/60"
+                              className="w-full py-1.5 px-2 bg-teal-800 hover:bg-teal-700 active:bg-teal-900 text-teal-100 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-teal-600/60 text-center flex items-center justify-center gap-1"
                             >
-                              + Menu
+                              <Plus className="w-3 h-3" />
+                              Menu
                             </button>
                             <button
                               type="button"
@@ -424,7 +437,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                                 }
                                 onSelectOpenOrderForPayment(activeOrder);
                               }}
-                              className="text-[10px] bg-white hover:bg-teal-50 text-[#0D5C53] px-2 py-1 rounded-lg font-bold transition-colors cursor-pointer shadow-xs"
+                              className="w-full py-1.5 px-2 bg-white hover:bg-teal-50 active:bg-slate-100 text-[#0D5C53] rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-xs text-center flex items-center justify-center gap-1"
                             >
                               Bayar →
                             </button>
@@ -439,37 +452,36 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                     return (
                       <div
                         key={table.id}
-                        className="bg-amber-50 text-slate-800 rounded-2xl p-4 flex flex-col justify-between border-2 border-amber-300 shadow-xs"
+                        className="bg-amber-50 text-slate-800 rounded-2xl p-3.5 flex flex-col justify-between border-2 border-amber-300 shadow-xs min-h-[175px]"
                       >
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="font-bold text-sm text-slate-800">
-                              Meja {table.name || table.tableNumber}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="font-extrabold text-sm text-slate-800 truncate whitespace-nowrap">
+                              {displayName}
                             </span>
-                            <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold">
+                            <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
                               Terisi
                             </span>
                           </div>
 
-                          <div className="mb-2">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-amber-100 px-2 py-0.5 rounded-md">
-                              <Layers className="w-2.5 h-2.5 text-slate-400" />
+                          <div>
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 bg-amber-100 px-2 py-0.5 rounded-md whitespace-nowrap">
+                              <Layers className="w-2.5 h-2.5 text-slate-400 shrink-0" />
                               {table.section || 'Main Area'}
                             </span>
                           </div>
 
-                          <div className="text-xs text-amber-800 font-medium mb-1">
-                            Status: Terisi
-                          </div>
-                          <div className="text-[10px] text-amber-700/80">
-                            Meja sedang terisi
+                          <div className="text-xs text-amber-800 font-medium pt-0.5">
+                            Sedang Digunakan
                           </div>
                         </div>
 
-                        <div className="mt-4 pt-2.5 border-t border-amber-200/80 flex items-center justify-between">
-                          <span className="text-[10px] text-amber-800 font-semibold">Terkunci</span>
-                          <span className="text-[10px] text-slate-400 italic">
-                            Sedang Digunakan
+                        <div className="mt-3 pt-2.5 border-t border-amber-200/80 flex items-center justify-between">
+                          <span className="text-[10px] text-amber-800 font-bold flex items-center gap-1">
+                            <Lock className="w-3 h-3" /> Terkunci
+                          </span>
+                          <span className="text-[10px] text-slate-500 italic">
+                            Tanpa Pesanan Aktif
                           </span>
                         </div>
                       </div>
@@ -492,43 +504,58 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                           onSelectTableForOrder(table);
                         }
                       }}
-                      className={`rounded-2xl p-4 flex flex-col justify-between transition-all border-2 ${
+                      className={`rounded-2xl p-3.5 flex flex-col justify-between transition-all border-2 min-h-[175px] ${
                         isReserved
                           ? 'bg-amber-50/50 border-amber-200 cursor-not-allowed opacity-80'
                           : 'bg-white border-slate-200 hover:border-[#0D5C53] hover:shadow-md cursor-pointer group active:scale-[0.98]'
                       }`}
                     >
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="font-bold text-sm text-slate-800">
-                            Meja {table.name || table.tableNumber}
+                      <div className="space-y-1.5">
+                        {/* Header: Title & Capacity */}
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="font-extrabold text-sm text-slate-800 truncate whitespace-nowrap">
+                            {displayName}
                           </span>
-                          <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 shrink-0 whitespace-nowrap">
                             <Users className="w-2.5 h-2.5" />
                             {table.capacity} Kursi
                           </span>
                         </div>
 
-                        <div className="mb-2">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                            <Layers className="w-2.5 h-2.5 text-slate-400" />
+                        {/* Section Badge */}
+                        <div>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md whitespace-nowrap">
+                            <Layers className="w-2.5 h-2.5 text-slate-400 shrink-0" />
                             {table.section || 'Main Area'}
                           </span>
                         </div>
 
-                        <div className="text-xs text-slate-400">
+                        {/* Subtitle */}
+                        <div className="text-xs text-slate-400 pt-0.5">
                           {isReserved ? 'Meja Dipesan' : 'Siap Digunakan'}
                         </div>
                       </div>
 
-                      <div className="mt-4 pt-2 border-t border-slate-100 flex items-center justify-between">
-                        <Badge variant={isReserved ? 'warning' : 'success'} size="sm">
+                      {/* Footer: Status & Tap Action */}
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            isReserved
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-emerald-50 text-emerald-700'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isReserved ? 'bg-amber-500' : 'bg-emerald-500'
+                            }`}
+                          />
                           {isReserved ? 'Reservasi' : 'Tersedia'}
-                        </Badge>
+                        </span>
 
                         {!isReserved && (
-                          <span className="text-[11px] text-[#0D5C53] font-bold group-hover:underline flex items-center gap-0.5">
-                            Pilih Meja +
+                          <span className="text-xs text-[#0D5C53] font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-1 whitespace-nowrap">
+                            Pilih Meja <Plus className="w-3 h-3 stroke-[2.5]" />
                           </span>
                         )}
                       </div>
