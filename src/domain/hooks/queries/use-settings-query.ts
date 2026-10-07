@@ -118,6 +118,7 @@ export function useCreateOutletMutation() {
     mutationFn: (data: Partial<Outlet>) => settingsService.createOutlet(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.outlets() });
+      queryClient.invalidateQueries({ queryKey: ['settings', 'outlets', 'quota'] });
     },
   });
 }
@@ -129,6 +130,18 @@ export function useUpdateOutletMutation() {
       settingsService.updateOutlet(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.outlets() });
+      queryClient.invalidateQueries({ queryKey: ['settings', 'outlets', 'quota'] });
+    },
+  });
+}
+
+export function useDeleteOutletMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => settingsService.deleteOutlet(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: settingsKeys.outlets() });
+      queryClient.invalidateQueries({ queryKey: ['settings', 'outlets', 'quota'] });
     },
   });
 }

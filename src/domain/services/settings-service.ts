@@ -61,6 +61,10 @@ export const settingsService = {
     return res.data?.data || res.data;
   },
 
+  deleteOutlet: async (id: string): Promise<void> => {
+    await httpClient.delete(`/outlets/${id}`);
+  },
+
   getTables: async (outletId?: string): Promise<Table[]> => {
     const res = await httpClient.get('/tables', { params: { outletId } });
     const items = (res.data?.data || res.data || []) as Array<{

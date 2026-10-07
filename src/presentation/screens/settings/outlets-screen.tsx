@@ -5,6 +5,8 @@ import {
   useOutletQuota,
   useUpdateOutletMutation,
   useCreateOutletMutation,
+  useDeleteOutletMutation,
+  useAccess,
 } from '@domain/hooks';
 import { useAuthStore } from '@domain/state/auth-store';
 import {
@@ -15,6 +17,7 @@ import {
   Phone,
   Mail,
   MapPin,
+  Trash2,
 } from 'lucide-react';
 import {
   Button,
@@ -23,6 +26,7 @@ import {
   Modal,
   LoadingState,
   toast,
+  confirmDialog,
 } from '@presentation/components/ui';
 
 export const OutletsScreen: React.FC = () => {
@@ -35,6 +39,9 @@ export const OutletsScreen: React.FC = () => {
   const { data: quota, refetch: refetchQuota } = useOutletQuota();
   const updateOutletMutation = useUpdateOutletMutation();
   const createOutletMutation = useCreateOutletMutation();
+  const deleteOutletMutation = useDeleteOutletMutation();
+  const { hasAccess } = useAccess();
+  const canDeleteOutlet = hasAccess('outlet.delete');
 
   const maxQuota = quota?.max ?? Math.max(1, outlets.length);
   const usedQuota = quota?.used ?? outlets.length;
@@ -158,6 +165,65 @@ export const OutletsScreen: React.FC = () => {
       toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Failed to create new outlet.'
+      );
+    }
+  };
+
+  const handleDeleteOutlet = async () => {
+    if (!selectedOutletId) return;
+
+    const targetOutlet = outlets.find((o) => o.id === selectedOutletId);
+    if (!targetOutlet) return;
+
+    if (outlets.length <= 1) {
+      toast.warning('Tidak dapat menghapus cabang terakhir.');
+      return;
+    }
+
+    const isCurrent = currentOutlet?.id === targetOutlet.id;
+    const confirmMessage = isCurrent
+      ? `Apakah Anda yakin ingin menghapus cabang "${targetOutlet.name}"? Cabang ini sedang aktif digunakan pada sesi Anda saat ini. Sesi operasional akan otomatis dialihkan ke cabang lain.`
+      : `Apakah Anda yakin ingin menghapus cabang "${targetOutlet.name}"? Cabang ini akan dinonaktifkan dan kuota cabang Anda akan dibebaskan.`;
+
+    const confirmed = await confirmDialog({
+      title: 'Hapus Cabang',
+      message: confirmMessage,
+      confirmText: 'Ya, Hapus Cabang',
+      cancelText: 'Batal',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await deleteOutletMutation.mutateAsync(targetOutlet.id);
+
+      // Find the next available outlet to switch to
+      const remainingOutlets = outlets.filter((o) => o.id !== targetOutlet.id);
+      const nextOutlet = remainingOutlets[0];
+
+      if (isCurrent && nextOutlet) {
+        setCurrentOutlet(nextOutlet);
+      }
+
+      if (nextOutlet) {
+        setSelectedOutletId(nextOutlet.id);
+        setFormData({
+          name: nextOutlet.name || '',
+          address: nextOutlet.address || '',
+          phone: nextOutlet.phone || '',
+          email: nextOutlet.email || '',
+        });
+      }
+
+      setSuccessToast(`Cabang "${targetOutlet.name}" berhasil dihapus.`);
+      setTimeout(() => setSuccessToast(null), 4000);
+      refetch();
+      refetchQuota();
+    } catch (err: unknown) {
+      toast.error(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Gagal menghapus cabang.'
       );
     }
   };
@@ -351,7 +417,27 @@ export const OutletsScreen: React.FC = () => {
           </div>
 
           {/* Bottom Divider & Action Button */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+            {canDeleteOutlet ? (
+              outlets.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDeleteOutlet}
+                  isLoading={deleteOutletMutation.isPending}
+                  leftIcon={<Trash2 className="w-4 h-4 text-rose-500" />}
+                  className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 transition-colors"
+                >
+                  Delete Branch
+                </Button>
+              ) : (
+                <span className="text-[11px] text-slate-400 italic">
+                  Cabang utama tidak dapat dihapus
+                </span>
+              )
+            ) : <div />}
+
             <Button
               type="submit"
               variant="primary"
