@@ -296,8 +296,12 @@ export const StockDetailScreen: React.FC = () => {
 
         <KpiCard
           title="UNIT COST"
-          value={formatRupiah(item.unitCost)}
-          subtitle="Moving Average Unit Cost"
+          value={item.unitCost > 0 ? formatRupiah(item.unitCost) : '-'}
+          subtitle={
+            item.unitCost > 0
+              ? 'Moving Average Unit Cost'
+              : 'Belum ada riwayat pembelian'
+          }
           icon={<Coins className="w-5 h-5" />}
           theme="slate"
         />
@@ -305,7 +309,11 @@ export const StockDetailScreen: React.FC = () => {
         <KpiCard
           title="STOCK VALUE"
           value={formatRupiah(item.stockValue)}
-          subtitle={`${Number(item.currentStock).toLocaleString('id-ID')} ${item.unit} × ${formatRupiah(item.unitCost)}`}
+          subtitle={
+            item.unitCost > 0
+              ? `${Number(item.currentStock).toLocaleString('id-ID')} ${item.unit} × ${formatRupiah(item.unitCost)}`
+              : 'Nilai persediaan saat ini'
+          }
           icon={<Coins className="w-5 h-5" />}
           theme="emerald"
         />

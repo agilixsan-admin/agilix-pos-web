@@ -353,7 +353,11 @@ export const StockScreen: React.FC = () => {
                         {Number(item.minimumStock).toLocaleString('id-ID')}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono text-slate-700">
-                        {formatRupiah(item.unitCost)}/{item.unit}
+                        {item.unitCost > 0 ? (
+                          `${formatRupiah(item.unitCost)}/${item.unit}`
+                        ) : (
+                          <span className="text-slate-400 font-sans font-normal">-</span>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 text-right font-bold font-mono text-slate-900">
                         {formatRupiah(item.stockValue)}
