@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   CircleDollarSign,
   TrendingUp,
@@ -20,16 +20,45 @@ import {
 } from '@presentation/components/ui';
 
 export const ProfitReportScreen: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
+  const userOutlets = useAuthStore((state) => state.outlets);
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const { data: outlets = [] } = useOutlets();
+  const { data: allTenantOutlets = [] } = useOutlets();
 
-  // Multi-Outlet Filter State
-  const [selectedOutletId, setSelectedOutletId] = useState<string>('ALL');
-  const isAllBranches = selectedOutletId === 'ALL';
-  const effectiveOutletId = isAllBranches ? undefined : selectedOutletId;
+  const isSuperAdmin = Boolean(user?.isSuperAdmin);
+  const accessibleOutlets = isSuperAdmin ? allTenantOutlets : userOutlets;
+
+  // Super Admin defaults to 'ALL'; restricted user defaults to current outlet or primary assigned outlet
+  const defaultOutletId = isSuperAdmin
+    ? 'ALL'
+    : currentOutlet?.id || accessibleOutlets[0]?.id || '';
+
+  const [selectedOutletId, setSelectedOutletId] = useState<string>(defaultOutletId);
+
+  useEffect(() => {
+    if (!isSuperAdmin) {
+      if (selectedOutletId === 'ALL' || !accessibleOutlets.some((o) => o.id === selectedOutletId)) {
+        setSelectedOutletId(currentOutlet?.id || accessibleOutlets[0]?.id || '');
+      }
+    }
+  }, [isSuperAdmin, currentOutlet, accessibleOutlets, selectedOutletId]);
+
+  const isAllBranches = isSuperAdmin && selectedOutletId === 'ALL';
+  const effectiveOutletId = isAllBranches ? undefined : selectedOutletId || undefined;
   const activeBranchName = isAllBranches
     ? 'Semua Cabang'
-    : outlets.find((o) => o.id === selectedOutletId)?.name || currentOutlet?.name || 'Cabang Terpilih';
+    : accessibleOutlets.find((o) => o.id === selectedOutletId)?.name || currentOutlet?.name || 'Cabang Terpilih';
+
+  const outletOptions = useMemo(() => {
+    const list: { value: string; label: string }[] = [];
+    if (isSuperAdmin) {
+      list.push({ value: 'ALL', label: 'Semua Cabang' });
+    }
+    accessibleOutlets.forEach((o) => {
+      list.push({ value: o.id, label: o.name });
+    });
+    return list;
+  }, [isSuperAdmin, accessibleOutlets]);
 
   // Date Range State
   const [datePreset, setDatePreset] = useState<string>('THIS_MONTH');
@@ -74,8 +103,14 @@ export const ProfitReportScreen: React.FC = () => {
               <CircleDollarSign className="w-5 h-5 text-[#0D5C53]" />
               Laporan Profit & Margin Penjualan
             </h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              Multi-Outlet
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                isAllBranches
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-teal-50 text-[#0D5C53] border-teal-200'
+              }`}
+            >
+              {isAllBranches ? 'Semua Cabang' : activeBranchName}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -93,15 +128,19 @@ export const ProfitReportScreen: React.FC = () => {
 
         <div className="flex items-center flex-wrap gap-2.5">
           {/* Outlet Switcher Dropdown */}
-          <CustomSelect
-            icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
-            value={selectedOutletId}
-            onChange={(val) => setSelectedOutletId(val)}
-            options={[
-              { value: 'ALL', label: 'Semua Cabang' },
-              ...outlets.map((o) => ({ value: o.id, label: o.name })),
-            ]}
-          />
+          {accessibleOutlets.length > 1 || isSuperAdmin ? (
+            <CustomSelect
+              icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
+              value={selectedOutletId}
+              onChange={(val) => setSelectedOutletId(val)}
+              options={outletOptions}
+            />
+          ) : (
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
+              <Store className="w-4 h-4 text-[#0D5C53]" />
+              <span>{activeBranchName}</span>
+            </div>
+          )}
 
           {/* Date Preset Filter */}
           <CustomSelect
@@ -144,7 +183,7 @@ export const ProfitReportScreen: React.FC = () => {
               value={activeBranchName}
               icon={<Store className="w-5 h-5 text-indigo-600" />}
               theme="indigo"
-              subtitle={isAllBranches ? `${outlets.length} outlet terdaftar` : 'Cabang terisolasi'}
+              subtitle={isAllBranches ? `${accessibleOutlets.length} outlet terdaftar` : 'Cabang terisolasi'}
             />
           </div>
 

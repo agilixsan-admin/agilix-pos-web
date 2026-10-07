@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   FileSpreadsheet,
   TrendingUp,
@@ -27,12 +27,46 @@ import {
 } from '@presentation/components/ui';
 
 export const FinancialReportsScreen: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
+  const userOutlets = useAuthStore((state) => state.outlets);
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
-  const { data: outlets = [] } = useOutlets();
-  const [selectedOutletId, setSelectedOutletId] = useState<string>('ALL');
+  const { data: allTenantOutlets = [] } = useOutlets();
+
+  const isSuperAdmin = Boolean(user?.isSuperAdmin);
+  const accessibleOutlets = isSuperAdmin ? allTenantOutlets : userOutlets;
+
+  // Super Admin defaults to 'ALL'; restricted user defaults to current outlet or primary assigned outlet
+  const defaultOutletId = isSuperAdmin
+    ? 'ALL'
+    : currentOutlet?.id || accessibleOutlets[0]?.id || '';
+
+  const [selectedOutletId, setSelectedOutletId] = useState<string>(defaultOutletId);
   const [activeTab, setActiveTab] = useState<'INCOME' | 'BALANCE' | 'CASH_FLOW'>('INCOME');
 
-  const effectiveOutletId = selectedOutletId === 'ALL' ? undefined : selectedOutletId;
+  useEffect(() => {
+    if (!isSuperAdmin) {
+      if (selectedOutletId === 'ALL' || !accessibleOutlets.some((o) => o.id === selectedOutletId)) {
+        setSelectedOutletId(currentOutlet?.id || accessibleOutlets[0]?.id || '');
+      }
+    }
+  }, [isSuperAdmin, currentOutlet, accessibleOutlets, selectedOutletId]);
+
+  const isAllBranches = isSuperAdmin && selectedOutletId === 'ALL';
+  const effectiveOutletId = isAllBranches ? undefined : selectedOutletId || undefined;
+  const activeBranchName = isAllBranches
+    ? 'Semua Cabang'
+    : accessibleOutlets.find((o) => o.id === selectedOutletId)?.name || currentOutlet?.name || 'Cabang Terpilih';
+
+  const outletOptions = useMemo(() => {
+    const list: { value: string; label: string }[] = [];
+    if (isSuperAdmin) {
+      list.push({ value: 'ALL', label: 'Semua Cabang' });
+    }
+    accessibleOutlets.forEach((o) => {
+      list.push({ value: o.id, label: o.name });
+    });
+    return list;
+  }, [isSuperAdmin, accessibleOutlets]);
 
   // Date Range
   const [datePreset, setDatePreset] = useState<string>('THIS_MONTH');
@@ -102,16 +136,20 @@ export const FinancialReportsScreen: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Outlet Filter */}
-          <div className="w-44">
-            <CustomSelect
-              options={[
-                { value: 'ALL', label: 'Semua Cabang' },
-                ...outlets.map((o) => ({ value: o.id, label: o.name })),
-              ]}
-              value={selectedOutletId}
-              onChange={setSelectedOutletId}
-            />
-          </div>
+          {accessibleOutlets.length > 1 || isSuperAdmin ? (
+            <div className="w-44">
+              <CustomSelect
+                options={outletOptions}
+                value={selectedOutletId}
+                onChange={setSelectedOutletId}
+              />
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
+              <Building2 className="w-4 h-4 text-[#0D5C53]" />
+              <span>{activeBranchName}</span>
+            </div>
+          )}
 
           {/* Date Filter */}
           <div className="w-40">
