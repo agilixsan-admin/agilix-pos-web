@@ -4,7 +4,6 @@ import {
   ShieldCheck,
   Plus,
   Search,
-  Building,
   Users,
   Eye,
   Edit2,
@@ -15,10 +14,8 @@ import {
   Shield,
   Lock,
 } from 'lucide-react';
-import { useAuthStore } from '@domain/state/auth-store';
 import {
   useRoles,
-  useOutlets,
   useUsers,
   useDeleteRoleMutation,
 } from '@domain/hooks';
@@ -28,7 +25,6 @@ import {
   Badge,
   Button,
   SearchInput,
-  FormSelect,
   LoadingState,
   EmptyState,
   Modal,
@@ -36,18 +32,12 @@ import {
 
 export const RolesScreen: React.FC = () => {
   const navigate = useNavigate();
-  const currentOutlet = useAuthStore((state) => state.currentOutlet);
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedOutletFilter, setSelectedOutletFilter] = useState<string>('ALL');
 
   // Queries
-  const { data: outlets = [] } = useOutlets();
-  const effectiveOutletId = selectedOutletFilter !== 'ALL' ? selectedOutletFilter : undefined;
-  const { data: roles = [], isLoading } = useRoles(
-    effectiveOutletId ? { outletId: effectiveOutletId } : undefined
-  );
+  const { data: roles = [], isLoading } = useRoles();
   const { data: usersResponse } = useUsers();
   const allUsers = usersResponse?.data || [];
 
@@ -74,17 +64,13 @@ export const RolesScreen: React.FC = () => {
   // Filtered Roles
   const filteredRoles = useMemo(() => {
     return roles.filter((r) => {
-      const matchesSearch =
+      return (
         !searchTerm ||
         r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.description && r.description.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      const matchesOutlet =
-        selectedOutletFilter === 'ALL' || r.outletId === selectedOutletFilter;
-
-      return matchesSearch && matchesOutlet;
+        (r.description && r.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
     });
-  }, [roles, searchTerm, selectedOutletFilter]);
+  }, [roles, searchTerm]);
 
   // Handle Delete Click
   const handleDeleteClick = (role: Role) => {
@@ -145,29 +131,13 @@ export const RolesScreen: React.FC = () => {
 
       {/* Filter Bar */}
       <Card padding="sm" className="bg-white">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
-          <div className="lg:col-span-3">
-            <SearchInput
-              value={searchTerm}
-              onChange={setSearchTerm}
-              onClear={() => setSearchTerm('')}
-              placeholder="Cari nama role, deskripsi wewenang..."
-            />
-          </div>
-
-          <div>
-            <FormSelect
-              value={selectedOutletFilter}
-              onChange={(e) => setSelectedOutletFilter(e.target.value)}
-            >
-              <option value="ALL">Semua Outlet Cabang</option>
-              {outlets.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.name}
-                </option>
-              ))}
-            </FormSelect>
-          </div>
+        <div className="max-w-md">
+          <SearchInput
+            value={searchTerm}
+            onChange={setSearchTerm}
+            onClear={() => setSearchTerm('')}
+            placeholder="Cari nama role, deskripsi wewenang..."
+          />
         </div>
       </Card>
 
@@ -177,33 +147,32 @@ export const RolesScreen: React.FC = () => {
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="py-3.5 px-4 w-[32%]">Nama Role</th>
-                <th className="py-3.5 px-4 w-[22%]">Outlet</th>
-                <th className="py-3.5 px-4 w-[16%] text-center">Pengguna</th>
-                <th className="py-3.5 px-4 w-[14%] text-center">Status</th>
-                <th className="py-3.5 px-4 w-[16%] text-right">Aksi</th>
+                <th className="py-3.5 px-4">Nama Role</th>
+                <th className="py-3.5 px-4 text-center">Pengguna</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={4}>
                     <LoadingState message="Memuat daftar role & hak akses..." />
                   </td>
                 </tr>
               ) : filteredRoles.length === 0 ? (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={4}>
                     <EmptyState
                       icon={<ShieldCheck className="w-8 h-8 opacity-30 mx-auto text-[#0D5C53]" />}
                       title="Belum ada role terdaftar"
                       description={
-                        searchTerm || selectedOutletFilter !== 'ALL'
+                        searchTerm
                           ? 'Tidak ada role yang cocok dengan filter pencarian.'
                           : 'Buat role baru untuk membatasi hak akses modul staf kasir & manajer.'
                       }
                       action={
-                        !searchTerm && selectedOutletFilter === 'ALL' ? (
+                        !searchTerm ? (
                           <Button
                             variant="primary"
                             size="sm"
@@ -243,16 +212,6 @@ export const RolesScreen: React.FC = () => {
                               {role.description || `${permissionsCount} modul izin akses`}
                             </p>
                           </div>
-                        </div>
-                      </td>
-
-                      {/* Outlet */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5 text-slate-700">
-                          <Building className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="font-medium text-xs">
-                            {role.outlet?.name || 'Semua Cabang'}
-                          </span>
                         </div>
                       </td>
 
