@@ -357,13 +357,13 @@ export const AccountsScreen: React.FC = () => {
           title="Total Saldo Likuid"
           value={`Rp ${totalBalance.toLocaleString('id-ID')}`}
           icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
-          subtitle="Konsolidasi seluruh dompet"
+          subtitle={selectedOutletId === 'ALL' ? 'Konsolidasi seluruh dompet' : 'Saldo likuid cabang ini'}
         />
         <KpiCard
           title="Kas Tunai (Laci)"
           value={`Rp ${cashBalance.toLocaleString('id-ID')}`}
           icon={<Wallet className="w-5 h-5 text-teal-600" />}
-          subtitle="Total fisik di laci kasir"
+          subtitle={selectedOutletId === 'ALL' ? 'Total fisik seluruh laci kasir' : 'Fisik di laci kasir cabang ini'}
         />
         <KpiCard
           title="Rekening Bank"
@@ -375,7 +375,7 @@ export const AccountsScreen: React.FC = () => {
           title="QRIS & E-Wallet"
           value={`Rp ${ewalletBalance.toLocaleString('id-ID')}`}
           icon={<QrCode className="w-5 h-5 text-purple-600" />}
-          subtitle="Penampungan settlement gateway"
+          subtitle={selectedOutletId === 'ALL' ? 'Penampungan seluruh cabang' : 'Penampungan QRIS cabang ini'}
         />
       </div>
 
