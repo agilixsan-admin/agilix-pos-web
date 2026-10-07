@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Outlet } from '@model/Auth';
 import {
   useOutlets,
@@ -18,6 +19,9 @@ import {
   Mail,
   MapPin,
   Trash2,
+  AlertTriangle,
+  ArrowRightLeft,
+  Wallet,
 } from 'lucide-react';
 import {
   Button,
@@ -30,6 +34,8 @@ import {
 } from '@presentation/components/ui';
 
 export const OutletsScreen: React.FC = () => {
+  const navigate = useNavigate();
+
   // Global auth state
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
   const setCurrentOutlet = useAuthStore((state) => state.setCurrentOutlet);
@@ -55,6 +61,12 @@ export const OutletsScreen: React.FC = () => {
     phone: '',
     email: '',
   });
+
+  const [remainingBalanceError, setRemainingBalanceError] = useState<{
+    outletName: string;
+    totalBalance: number;
+    accounts: Array<{ id?: string; name: string; type?: string; balance: number }>;
+  } | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successToast, setSuccessToast] = useState<string | null>(null);
@@ -221,8 +233,31 @@ export const OutletsScreen: React.FC = () => {
       refetch();
       refetchQuota();
     } catch (err: unknown) {
+      const errData = (err as {
+        response?: {
+          data?: {
+            code?: string;
+            message?: string;
+            data?: {
+              totalBalance?: number;
+              accounts?: Array<{ id?: string; name: string; type?: string; balance: number }>;
+            };
+          };
+        };
+      })?.response?.data;
+
+      if (errData?.code === 'OUTLET_HAS_REMAINING_BALANCE') {
+        setRemainingBalanceError({
+          outletName: targetOutlet.name,
+          totalBalance: errData.data?.totalBalance || 0,
+          accounts: errData.data?.accounts || [],
+        });
+        return;
+      }
+
       toast.error(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        errData?.message ||
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
           'Gagal menghapus cabang.'
       );
     }
@@ -516,6 +551,88 @@ export const OutletsScreen: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal Warning: Sisa Saldo Kas Terdeteksi */}
+      <Modal
+        isOpen={!!remainingBalanceError}
+        onClose={() => setRemainingBalanceError(null)}
+        title="Sisa Saldo Kas Terdeteksi"
+        maxWidth="md"
+      >
+        {remainingBalanceError && (
+          <div className="space-y-4 py-2">
+            <div className="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-xs text-amber-900 space-y-1">
+                <p className="font-semibold">
+                  Cabang &ldquo;{remainingBalanceError.outletName}&rdquo; tidak dapat dihapus.
+                </p>
+                <p className="text-amber-700 leading-relaxed">
+                  Masih terdapat akumulasi sisa saldo pada akun kas/keuangan cabang ini sebesar{' '}
+                  <strong className="text-amber-900 font-bold">
+                    Rp {remainingBalanceError.totalBalance.toLocaleString('id-ID')}
+                  </strong>
+                  . Untuk keamanan pembukuan dan integritas kas, pindahkan (transfer) saldo tersebut ke akun kas/bank cabang lain terlebih dahulu hingga saldo Rp 0.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-slate-700">Rincian Akun Kas Cabang:</p>
+              <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 max-h-52 overflow-y-auto">
+                {remainingBalanceError.accounts.map((acc, idx) => (
+                  <div
+                    key={acc.id || idx}
+                    className="p-3 flex items-center justify-between text-xs hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-100 flex items-center justify-center text-[#0D5C53] shrink-0">
+                        <Wallet className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-800">{acc.name}</p>
+                        <p className="text-[10px] text-slate-400 capitalize">
+                          {acc.type?.toLowerCase().replace(/_/g, ' ') || 'Akun Keuangan'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-slate-900">
+                        Rp {Number(acc.balance).toLocaleString('id-ID')}
+                      </p>
+                      <span className="text-[10px] text-amber-700 font-medium bg-amber-100/70 px-1.5 py-0.5 rounded">
+                        Perlu Ditransfer
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRemainingBalanceError(null)}
+              >
+                Tutup
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => {
+                  setRemainingBalanceError(null);
+                  navigate('/finance/accounts');
+                }}
+                className="bg-[#0D5C53] hover:bg-[#09423C] text-white flex items-center gap-1.5"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5" />
+                Buka Manajemen Akun Kas
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
