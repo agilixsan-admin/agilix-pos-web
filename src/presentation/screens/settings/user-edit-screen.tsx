@@ -18,6 +18,7 @@ import {
   Card,
   FormInput,
   FormSelect,
+  MultiOutletSelect,
   LoadingState,
   EmptyState,
   toast,
@@ -41,7 +42,7 @@ export const UserEditScreen: React.FC = () => {
     email: '',
     password: '',
     isSuperAdmin: false,
-    outletId: '',
+    outletIds: [] as string[],
     roleId: '',
     status: 'ACTIVE',
   });
@@ -50,12 +51,19 @@ export const UserEditScreen: React.FC = () => {
 
   useEffect(() => {
     if (user) {
+      const assignedIds =
+        user.assignedOutlets && user.assignedOutlets.length > 0
+          ? user.assignedOutlets.map((o) => o.id)
+          : user.outletId
+            ? [user.outletId]
+            : [];
+
       setFormData({
         name: user.name || '',
         email: user.email || '',
         password: '',
         isSuperAdmin: Boolean(user.isSuperAdmin),
-        outletId: user.outletId || '',
+        outletIds: assignedIds,
         roleId: user.roleId || '',
         status: user.status || 'ACTIVE',
       });
@@ -70,7 +78,7 @@ export const UserEditScreen: React.FC = () => {
     }
 
     if (!formData.isSuperAdmin) {
-      if (!formData.outletId) err.outletId = 'Assigned outlet is required';
+      if (formData.outletIds.length === 0) err.outletIds = 'Assigned outlet is required';
       if (!formData.roleId) err.roleId = 'Role selection is required';
     }
 
@@ -89,7 +97,7 @@ export const UserEditScreen: React.FC = () => {
           name: formData.name.trim(),
           password: formData.password.trim() || undefined,
           isSuperAdmin: formData.isSuperAdmin,
-          outletId: formData.isSuperAdmin ? undefined : formData.outletId || undefined,
+          outletIds: formData.isSuperAdmin ? undefined : formData.outletIds,
           roleId: formData.isSuperAdmin ? undefined : formData.roleId || undefined,
           status: formData.status,
         },
@@ -196,7 +204,7 @@ export const UserEditScreen: React.FC = () => {
                 setFormData((prev) => ({
                   ...prev,
                   isSuperAdmin: !prev.isSuperAdmin,
-                  outletId: !prev.isSuperAdmin ? '' : prev.outletId,
+                  outletIds: !prev.isSuperAdmin ? [] : prev.outletIds,
                   roleId: !prev.isSuperAdmin ? '' : prev.roleId,
                 }))
               }
@@ -256,27 +264,23 @@ export const UserEditScreen: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div className="space-y-1.5">
-                  <FormSelect
-                    label="Assigned Outlet"
+                  <MultiOutletSelect
+                    label="Assigned Outlets"
                     required
-                    value={formData.outletId}
-                    onChange={(e) => {
-                      setFormData({ ...formData, outletId: e.target.value });
-                      if (errors.outletId) setErrors({ ...errors, outletId: '' });
+                    outlets={outlets}
+                    selectedOutletIds={formData.outletIds}
+                    onChange={(ids) => {
+                      setFormData({ ...formData, outletIds: ids });
+                      if (errors.outletIds) setErrors({ ...errors, outletIds: '' });
                     }}
-                    error={errors.outletId}
+                    error={errors.outletIds}
                     disabled={outletsLoading}
-                  >
-                    <option value="">-- Select Outlet --</option>
-                    {outlets.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.name}
-                      </option>
-                    ))}
-                  </FormSelect>
-                  <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                    <Building2 className="w-3 h-3" /> Branch location where user operates
-                  </p>
+                    helperText={
+                      <span className="flex items-center gap-1">
+                        <Building2 className="w-3 h-3" /> Cabang tempat staf bertugas (bisa pilih &gt; 1)
+                      </span>
+                    }
+                  />
                 </div>
 
                 <div className="space-y-1.5">

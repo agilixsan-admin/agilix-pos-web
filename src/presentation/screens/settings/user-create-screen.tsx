@@ -14,6 +14,7 @@ import {
   Card,
   FormInput,
   FormSelect,
+  MultiOutletSelect,
   Modal,
   toast,
 } from '@presentation/components/ui';
@@ -33,7 +34,7 @@ export const UserCreateScreen: React.FC = () => {
     name: '',
     email: '',
     isSuperAdmin: false,
-    outletId: '',
+    outletIds: [] as string[],
     roleId: '',
   });
 
@@ -50,7 +51,7 @@ export const UserCreateScreen: React.FC = () => {
     }
 
     if (!formData.isSuperAdmin) {
-      if (!formData.outletId) err.outletId = 'Assigned outlet is required';
+      if (formData.outletIds.length === 0) err.outletIds = 'Assigned outlet is required';
       if (!formData.roleId) err.roleId = 'Role selection is required';
     }
 
@@ -67,7 +68,7 @@ export const UserCreateScreen: React.FC = () => {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         isSuperAdmin: formData.isSuperAdmin,
-        outletId: formData.isSuperAdmin ? undefined : formData.outletId || undefined,
+        outletIds: formData.isSuperAdmin ? undefined : formData.outletIds,
         roleId: formData.isSuperAdmin ? undefined : formData.roleId || undefined,
         status: 'ACTIVE',
       });
@@ -153,7 +154,7 @@ export const UserCreateScreen: React.FC = () => {
                 setFormData((prev) => ({
                   ...prev,
                   isSuperAdmin: !prev.isSuperAdmin,
-                  outletId: !prev.isSuperAdmin ? '' : prev.outletId,
+                  outletIds: !prev.isSuperAdmin ? [] : prev.outletIds,
                   roleId: !prev.isSuperAdmin ? '' : prev.roleId,
                 }))
               }
@@ -213,27 +214,23 @@ export const UserCreateScreen: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div className="space-y-1.5">
-                  <FormSelect
-                    label="Assigned Outlet"
+                  <MultiOutletSelect
+                    label="Assigned Outlets"
                     required
-                    value={formData.outletId}
-                    onChange={(e) => {
-                      setFormData({ ...formData, outletId: e.target.value });
-                      if (errors.outletId) setErrors({ ...errors, outletId: '' });
+                    outlets={outlets}
+                    selectedOutletIds={formData.outletIds}
+                    onChange={(ids) => {
+                      setFormData({ ...formData, outletIds: ids });
+                      if (errors.outletIds) setErrors({ ...errors, outletIds: '' });
                     }}
-                    error={errors.outletId}
+                    error={errors.outletIds}
                     disabled={outletsLoading}
-                  >
-                    <option value="">-- Select Outlet --</option>
-                    {outlets.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.name}
-                      </option>
-                    ))}
-                  </FormSelect>
-                  <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                    <Building2 className="w-3 h-3" /> Branch location where user operates
-                  </p>
+                    helperText={
+                      <span className="flex items-center gap-1">
+                        <Building2 className="w-3 h-3" /> Cabang tempat staf bertugas (bisa pilih &gt; 1)
+                      </span>
+                    }
+                  />
                 </div>
 
                 <div className="space-y-1.5">

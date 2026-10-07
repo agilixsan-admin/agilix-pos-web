@@ -342,10 +342,34 @@ export const UsersScreen: React.FC = () => {
 
                       {/* OUTLET Column */}
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5 text-slate-700">
-                          <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="font-medium">{outletName}</span>
-                        </div>
+                        {u.isSuperAdmin ? (
+                          <div className="flex items-center gap-1.5 text-amber-700">
+                            <Building2 className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+                            <span className="font-medium">Semua Outlet</span>
+                          </div>
+                        ) : u.assignedOutlets && u.assignedOutlets.length > 1 ? (
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <Building2 className="w-3.5 h-3.5 text-[#0D5C53] shrink-0" />
+                              <span className="font-semibold text-slate-800">
+                                {u.assignedOutlets.length} Cabang
+                              </span>
+                            </div>
+                            <span
+                              className="text-[10px] text-slate-400 truncate max-w-[180px]"
+                              title={u.assignedOutlets.map((o) => o.name).join(', ')}
+                            >
+                              {u.assignedOutlets.map((o) => o.name).join(', ')}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-slate-700">
+                            <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="font-medium">
+                              {u.assignedOutlets?.[0]?.name || u.outlet?.name || 'Belum Ditugaskan'}
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       {/* ROLE Column */}

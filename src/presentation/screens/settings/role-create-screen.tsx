@@ -158,7 +158,6 @@ export const RoleCreateScreen: React.FC = () => {
 
   // Form State
   const [name, setName] = useState('');
-  const [outletId, setOutletId] = useState(currentOutlet?.id || '');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([
@@ -226,11 +225,6 @@ export const RoleCreateScreen: React.FC = () => {
       return;
     }
 
-    if (!outletId) {
-      setFormError('Silakan pilih outlet penugasan role.');
-      return;
-    }
-
     if (selectedPermissions.length === 0) {
       setFormError('Permission Required: Minimal pilih satu izin akses untuk role ini.');
       return;
@@ -239,7 +233,6 @@ export const RoleCreateScreen: React.FC = () => {
     try {
       const payload = {
         name: name.trim(),
-        outletId,
         description: description.trim() || undefined,
         permissions: selectedPermissions,
         status,
@@ -291,32 +284,20 @@ export const RoleCreateScreen: React.FC = () => {
         {/* Card 1: Role Details (Informasi Dasar) */}
         <Card header={<h3 className="text-sm font-bold text-slate-900">Detail Role</h3>}>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <FormInput
-                  label="Nama Role"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Contoh: Store Manager, Kasir Utama, Barista..."
-                />
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-700">Nama Role *</label>
+                <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Building className="w-3 h-3" /> Berlaku untuk Semua Cabang
+                </span>
               </div>
-
-              <div>
-                <FormSelect
-                  label="Pilih Outlet Penugasan"
-                  required
-                  value={outletId}
-                  onChange={(e) => setOutletId(e.target.value)}
-                >
-                  <option value="">-- Pilih Outlet --</option>
-                  {outlets.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.name}
-                    </option>
-                  ))}
-                </FormSelect>
-              </div>
+              <FormInput
+                label=""
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Contoh: Store Manager, Kasir Utama, Barista..."
+              />
             </div>
 
             <div>

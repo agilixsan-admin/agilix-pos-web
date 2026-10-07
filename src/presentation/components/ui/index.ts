@@ -13,4 +13,4 @@ export * from './custom-datepicker';
 export * from './reset-password-modal';
 export * from './confirm-dialog';
 export * from './rupiah-input';
-
+export * from './multi-outlet-select';

@@ -323,26 +323,20 @@ export const RoleEditScreen: React.FC = () => {
         {/* Card 1: Role Details */}
         <Card header={<h3 className="text-sm font-bold text-slate-900">Detail Role</h3>}>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <FormInput
-                  label="Nama Role"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Contoh: Store Manager..."
-                />
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-700">Nama Role *</label>
+                <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Building className="w-3 h-3" /> Berlaku untuk Semua Cabang
+                </span>
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Outlet Penugasan
-                </label>
-                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 flex items-center gap-2">
-                  <Building className="w-4 h-4 text-slate-400" />
-                  <span>{role.outlet?.name || 'Semua Cabang'}</span>
-                </div>
-              </div>
+              <FormInput
+                label=""
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Contoh: Store Manager..."
+              />
             </div>
 
             <div>

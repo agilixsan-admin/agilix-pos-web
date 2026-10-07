@@ -264,23 +264,71 @@ export const UserDetailScreen: React.FC = () => {
               </h3>
             </div>
 
-            <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 flex items-start justify-between gap-4">
-              <div>
-                <div className="text-xs font-bold text-slate-900">{outletName}</div>
-                {user.outlet?.address ? (
-                  <p className="text-[11px] text-slate-500 mt-0.5">{user.outlet.address}</p>
-                ) : user.isSuperAdmin ? (
+            {user.isSuperAdmin ? (
+              <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs font-bold text-amber-800">Semua Outlet (Super Admin)</div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     User has global supervisory privileges across all store outlets.
                   </p>
-                ) : (
-                  <p className="text-[11px] text-slate-400 mt-0.5">No specific outlet assigned.</p>
-                )}
+                </div>
+                <Badge variant="warning">All Locations</Badge>
               </div>
-              <Badge variant={user.isSuperAdmin ? 'warning' : 'info'}>
-                {user.isSuperAdmin ? 'All Locations' : 'Branch Scope'}
-              </Badge>
-            </div>
+            ) : (
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                  <span>
+                    Ditugaskan ke{' '}
+                    <strong className="text-slate-700">
+                      {(user.assignedOutlets && user.assignedOutlets.length > 0
+                        ? user.assignedOutlets
+                        : user.outlet
+                          ? [user.outlet]
+                          : []
+                      ).length}{' '}
+                      Cabang
+                    </strong>
+                  </span>
+                  <Badge variant="info">Branch Scope</Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {(user.assignedOutlets && user.assignedOutlets.length > 0
+                    ? user.assignedOutlets
+                    : user.outlet
+                      ? [user.outlet]
+                      : []
+                  ).map((o, idx) => (
+                    <div
+                      key={o.id}
+                      className="p-3 bg-slate-50/80 border border-slate-200/80 rounded-xl flex items-start gap-2.5"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-teal-50 text-[#0D5C53] flex items-center justify-center shrink-0 mt-0.5">
+                        <Building2 className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 truncate flex items-center gap-1.5">
+                          {o.name}
+                          {idx === 0 && (
+                            <span className="text-[9px] bg-teal-100 text-[#0D5C53] px-1.5 py-0.2 rounded font-semibold">
+                              Primary
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                          {o.address || 'Alamat cabang'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {(!user.assignedOutlets || user.assignedOutlets.length === 0) && !user.outlet && (
+                    <div className="p-3 text-xs text-slate-400 col-span-2">
+                      Belum ada cabang yang ditugaskan.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </Card>
 
           {/* Card 2: Role & System Permissions */}

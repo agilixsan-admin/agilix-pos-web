@@ -301,10 +301,10 @@ export const RoleDetailScreen: React.FC = () => {
               </div>
 
               <div>
-                <span className="text-slate-400 block font-medium">PENUGASAN OUTLET</span>
+                <span className="text-slate-400 block font-medium">CAKUPAN ROLE</span>
                 <div className="flex items-center gap-1.5 font-semibold text-slate-800 mt-1">
-                  <Building className="w-4 h-4 text-slate-400" />
-                  <span>{role.outlet?.name || 'Semua Outlet Cabang'}</span>
+                  <Building className="w-4 h-4 text-teal-600" />
+                  <span>{role.outlet?.name || 'Semua Cabang (Tenant-Wide)'}</span>
                 </div>
               </div>
 

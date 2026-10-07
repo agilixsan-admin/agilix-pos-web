@@ -299,11 +299,11 @@ export interface PermissionGroup {
 export interface Role {
   id: string;
   tenantId: string;
-  outletId: string;
+  outletId?: string | null;
   outlet?: {
     id: string;
     name: string;
-  };
+  } | null;
   name: string;
   description?: string | null;
   menuAccess?: string[];
@@ -317,7 +317,7 @@ export interface Role {
 
 export interface CreateRolePayload {
   name: string;
-  outletId: string;
+  outletId?: string;
   description?: string;
   permissions: string[];
   status?: string;
@@ -354,6 +354,11 @@ export interface UserItem {
     name: string;
     address?: string;
   } | null;
+  assignedOutlets?: Array<{
+    id: string;
+    name: string;
+    address?: string;
+  }>;
   tenant?: {
     id: string;
     businessName: string;
@@ -373,6 +378,7 @@ export interface CreateUserPayload {
   isSuperAdmin?: boolean;
   roleId?: string;
   outletId?: string;
+  outletIds?: string[];
   status?: string;
 }
 
@@ -382,6 +388,7 @@ export interface UpdateUserPayload {
   isSuperAdmin?: boolean;
   roleId?: string;
   outletId?: string;
+  outletIds?: string[];
   status?: string;
 }
 
