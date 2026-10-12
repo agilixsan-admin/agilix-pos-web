@@ -373,12 +373,17 @@ export const PrintersScreen: React.FC = () => {
         return;
       }
 
-      if (printer.connectionType === 'BLUETOOTH' && isBluetoothConnected) {
+      if (printer.connectionType === 'BLUETOOTH') {
+        if (!isBluetoothConnected) {
+          const ok = await connectBluetooth();
+          if (!ok) return;
+        }
         await testPrintBluetooth();
         showToast(`Test print Bluetooth berhasil dikirim ke "${printer.name}".`);
         return;
       }
 
+      // Khusus printer NETWORK (LAN/Wi-Fi) yang di-handle oleh server backend
       await testPrintMutation.mutateAsync(printer.id);
       showToast(`Test print berhasil dikirim ke "${printer.name}".`);
     } catch (err: unknown) {

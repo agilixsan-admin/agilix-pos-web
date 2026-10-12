@@ -32,6 +32,10 @@ const PRINTER_SERVICES = [
   '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC Transparent TX Service
   '0000ff00-0000-1000-8000-00805f9b34fb', // Common ESC/POS Service
   '0000fee7-0000-1000-8000-00805f9b34fb', // Microchip / Tencent Thermal
+  '0000ffe0-0000-1000-8000-00805f9b34fb', // HM-10 / CC2541 BLE
+  '0000fff0-0000-1000-8000-00805f9b34fb', // Common Mini Thermal POS
+  '0000ae30-0000-1000-8000-00805f9b34fb', // Zhuhai / Xprinter BLE
+  '0000af30-0000-1000-8000-00805f9b34fb', // MPT / GOOJPRT BLE
 ];
 
 export interface PrintOptions {
@@ -80,6 +84,7 @@ class BluetoothPrinterService {
     }
 
     try {
+      console.log('[WebBluetooth] Membuka jendela pemilih perangkat Bluetooth...');
       const navBluetooth = (navigator as unknown as {
         bluetooth: {
           requestDevice(options: {
@@ -94,16 +99,21 @@ class BluetoothPrinterService {
         optionalServices: PRINTER_SERVICES,
       });
 
+      console.log('[WebBluetooth] Perangkat dipilih:', device.name || 'Unnamed', 'ID:', device.id);
+
       if (!device || !device.gatt) {
         throw new Error('Perangkat Bluetooth tidak memiliki layanan GATT.');
       }
 
       device.addEventListener('gattserverdisconnected', () => {
+        console.warn('[WebBluetooth] Perangkat terputus (gattserverdisconnected).');
         this.characteristic = null;
         this.notifyStatus();
       });
 
+      console.log('[WebBluetooth] Menghubungkan ke GATT server...');
       const server = await device.gatt.connect();
+      console.log('[WebBluetooth] GATT Server terhubung! Mencari writable characteristic...');
 
       // Find writable characteristic
       let writableChar: BluetoothRemoteGATTCharacteristic | null = null;
@@ -112,9 +122,11 @@ class BluetoothPrinterService {
       for (const serviceUuid of PRINTER_SERVICES) {
         try {
           const service = await server.getPrimaryService(serviceUuid);
+          console.log('[WebBluetooth] Menemukan primary service:', serviceUuid);
           const chars = await service.getCharacteristics();
           for (const char of chars) {
             writableChar = char;
+            console.log('[WebBluetooth] Menemukan characteristic:', (char as unknown as { uuid?: string })?.uuid || char);
             break;
           }
         } catch {
@@ -127,10 +139,12 @@ class BluetoothPrinterService {
       if (!writableChar) {
         try {
           const services = await server.getPrimaryServices();
+          console.log('[WebBluetooth] Mencari di semua primary services (total:', services.length, ')...');
           for (const s of services) {
             const chars = await s.getCharacteristics();
             if (chars.length > 0) {
               writableChar = chars[0];
+              console.log('[WebBluetooth] Menemukan fallback characteristic:', (writableChar as unknown as { uuid?: string })?.uuid);
               break;
             }
           }
@@ -140,17 +154,19 @@ class BluetoothPrinterService {
       }
 
       if (!writableChar) {
-        throw new Error('Tidak dapat menemukan jalur tulis (write characteristic) pada printer.');
+        throw new Error('Tidak dapat menemukan jalur tulis (write characteristic) pada printer Bluetooth.');
       }
 
       this.device = device;
       this.characteristic = writableChar;
       this.notifyStatus();
+      console.log('[WebBluetooth] Printer Bluetooth siap digunakan!');
       return true;
     } catch (err: unknown) {
       this.device = null;
       this.characteristic = null;
       this.notifyStatus();
+      console.error('[WebBluetooth] Gagal menghubungkan:', err);
       throw err;
     }
   }
@@ -344,6 +360,7 @@ class BluetoothPrinterService {
     }
 
     const data = this.encodeReceipt(order, options);
+    console.log('[WebBluetooth] Mengirim data cetak struk ESC/POS ke printer:', data.length, 'bytes...');
 
     // Send data in chunks of 100 bytes to avoid BLE buffer overflow
     const chunkSize = 100;
@@ -357,6 +374,7 @@ class BluetoothPrinterService {
       // Small pause between chunks
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
+    console.log('[WebBluetooth] Pengiriman data selesai!');
   }
 }
 
