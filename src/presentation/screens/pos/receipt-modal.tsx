@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Order } from '@model/Order';
-import { Printer, CheckCircle2, Bluetooth } from 'lucide-react';
+import { Printer, CheckCircle2, Bluetooth, Usb } from 'lucide-react';
 import { useAuthStore } from '@domain/state/auth-store';
 import { usePrinterStore } from '@domain/state/printer-store';
 import { usePosSettings } from '@domain/hooks';
@@ -24,8 +24,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   const {
     isConnected: isPrinterConnected,
     deviceName: printerName,
-    isConnecting: isPrinterConnecting,
-    connect: connectPrinter,
+    isUsbConnected,
+    isUsbConnecting,
+    isUsbSupported,
+    connectUsb,
+    isBluetoothConnected,
+    isBluetoothConnecting,
+    isBluetoothSupported,
+    connectBluetooth,
     printReceipt,
   } = usePrinterStore();
 
@@ -37,7 +43,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     window.print();
   };
 
-  const handleBluetoothPrint = async () => {
+  const handleDirectPrint = async () => {
     setIsPrinting(true);
     try {
       await printReceipt(order, {
@@ -46,17 +52,27 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         phone: currentOutlet?.phone,
         footerText: posSettings?.billFooterText,
       });
-      toast.success('Struk berhasil dicetak ke printer Bluetooth!');
+      const devType = isUsbConnected ? 'USB' : 'Bluetooth';
+      toast.success(`Struk berhasil dicetak langsung ke printer ${devType}!`);
     } catch (err: unknown) {
-      toast.error((err as Error)?.message || 'Gagal mencetak ke printer Bluetooth.');
+      toast.error((err as Error)?.message || 'Gagal mencetak struk langsung.');
     } finally {
       setIsPrinting(false);
     }
   };
 
+  const handleConnectUsb = async () => {
+    try {
+      await connectUsb();
+      toast.success('Printer USB berhasil terhubung!');
+    } catch (err: unknown) {
+      toast.warning((err as Error)?.message || 'Batal atau gagal menghubungkan printer USB.');
+    }
+  };
+
   const handleConnectBluetooth = async () => {
     try {
-      await connectPrinter();
+      await connectBluetooth();
       toast.success('Printer Bluetooth berhasil terhubung!');
     } catch (err: unknown) {
       toast.warning((err as Error)?.message || 'Batal atau gagal menghubungkan printer Bluetooth.');
@@ -89,26 +105,40 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <Button
                   variant="primary"
                   size="sm"
-                  leftIcon={<Printer className="w-4 h-4" />}
-                  onClick={handleBluetoothPrint}
+                  leftIcon={isUsbConnected ? <Usb className="w-4 h-4" /> : <Bluetooth className="w-4 h-4" />}
+                  onClick={handleDirectPrint}
                   isLoading={isPrinting}
                   className="font-bold shadow-md shadow-teal-900/10"
                 >
-                  Cetak (Bluetooth)
+                  Cetak ({isUsbConnected ? 'USB' : 'Bluetooth'})
                 </Button>
               </>
             ) : (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Bluetooth className="w-3.5 h-3.5 text-[#0D5C53]" />}
-                  onClick={handleConnectBluetooth}
-                  isLoading={isPrinterConnecting}
-                  className="text-xs font-semibold"
-                >
-                  Hubungkan Bluetooth
-                </Button>
+                {isUsbSupported && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<Usb className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                    onClick={handleConnectUsb}
+                    isLoading={isUsbConnecting}
+                    className="text-xs font-semibold"
+                  >
+                    Hubungkan USB
+                  </Button>
+                )}
+                {isBluetoothSupported && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<Bluetooth className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                    onClick={handleConnectBluetooth}
+                    isLoading={isBluetoothConnecting}
+                    className="text-xs font-semibold"
+                  >
+                    Bluetooth
+                  </Button>
+                )}
                 <Button
                   variant="primary"
                   size="sm"

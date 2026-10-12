@@ -2,18 +2,56 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Order } from '@model/Order';
 import { bluetoothPrinter } from '@domain/services/bluetooth-printer.service';
+import { webusbPrinter } from '@domain/services/webusb-printer.service';
+
+export type ActivePrinterConnectionType = 'USB' | 'BLUETOOTH' | 'BROWSER';
 
 interface PrinterStoreState {
+  activeConnectionType: ActivePrinterConnectionType;
+  isUsbSupported: boolean;
+  isBluetoothSupported: boolean;
+
+  // USB State
+  isUsbConnected: boolean;
+  isUsbConnecting: boolean;
+  usbDeviceName: string | null;
+
+  // Bluetooth State
+  isBluetoothConnected: boolean;
+  isBluetoothConnecting: boolean;
+  bluetoothDeviceName: string | null;
+
+  // Unified State (Backward Compatibility)
   isConnected: boolean;
   deviceName: string | null;
   isConnecting: boolean;
+
+  // Preferences
   autoPrintOnPayment: boolean;
   paperWidth: '58mm' | '80mm';
+  autoCutPaper: boolean;
+  autoOpenCashDrawer: boolean;
 
+  // Actions
+  setActiveConnectionType: (type: ActivePrinterConnectionType) => void;
+  connectUsb: () => Promise<boolean>;
+  disconnectUsb: () => Promise<void>;
+  testPrintUsb: () => Promise<void>;
+
+  connectBluetooth: () => Promise<boolean>;
+  disconnectBluetooth: () => void;
+  testPrintBluetooth: () => Promise<void>;
+
+  openCashDrawer: () => Promise<void>;
+
+  // Unified Actions
   connect: () => Promise<boolean>;
   disconnect: () => void;
   setAutoPrint: (enabled: boolean) => void;
   setPaperWidth: (width: '58mm' | '80mm') => void;
+  setAutoCutPaper: (enabled: boolean) => void;
+  setAutoOpenCashDrawer: (enabled: boolean) => void;
+
   printReceipt: (
     order: Order,
     outletInfo?: { name?: string; address?: string; phone?: string; footerText?: string | null }
@@ -23,37 +61,196 @@ interface PrinterStoreState {
 export const usePrinterStore = create<PrinterStoreState>()(
   persist(
     (set, get) => {
-      // Listen to Bluetooth status changes
-      bluetoothPrinter.onStatusChange((connected, deviceName) => {
-        set({ isConnected: connected, deviceName: deviceName || null });
+      const usbSupported = webusbPrinter.isSupported();
+      const btSupported = bluetoothPrinter.isSupported();
+
+      // Listener status WebUSB
+      webusbPrinter.onStatusChange((connected, devName) => {
+        const isBt = get().isBluetoothConnected;
+        set({
+          isUsbConnected: connected,
+          usbDeviceName: devName || null,
+          isConnected: connected || isBt,
+          deviceName: devName || (isBt ? get().bluetoothDeviceName : null),
+        });
       });
 
+      // Listener status Web Bluetooth
+      bluetoothPrinter.onStatusChange((connected, devName) => {
+        const isUsb = get().isUsbConnected;
+        set({
+          isBluetoothConnected: connected,
+          bluetoothDeviceName: devName || null,
+          isConnected: connected || isUsb,
+          deviceName: (isUsb ? get().usbDeviceName : null) || devName || null,
+        });
+      });
+
+      // Jalankan auto-reconnect WebUSB pada startup tanpa memblokir
+      if (typeof window !== 'undefined' && usbSupported) {
+        setTimeout(() => {
+          webusbPrinter.autoReconnect().catch(() => {});
+        }, 800);
+      }
+
       return {
-        isConnected: bluetoothPrinter.isConnected(),
-        deviceName: bluetoothPrinter.getConnectedDeviceName(),
+        activeConnectionType: 'USB',
+        isUsbSupported: usbSupported,
+        isBluetoothSupported: btSupported,
+
+        isUsbConnected: webusbPrinter.isConnected(),
+        isUsbConnecting: false,
+        usbDeviceName: webusbPrinter.getConnectedDeviceName(),
+
+        isBluetoothConnected: bluetoothPrinter.isConnected(),
+        isBluetoothConnecting: false,
+        bluetoothDeviceName: bluetoothPrinter.getConnectedDeviceName(),
+
+        isConnected: webusbPrinter.isConnected() || bluetoothPrinter.isConnected(),
+        deviceName: webusbPrinter.getConnectedDeviceName() || bluetoothPrinter.getConnectedDeviceName(),
         isConnecting: false,
+
         autoPrintOnPayment: true,
         paperWidth: '58mm',
+        autoCutPaper: true,
+        autoOpenCashDrawer: true,
 
-        connect: async () => {
-          set({ isConnecting: true });
+        setActiveConnectionType: (type: ActivePrinterConnectionType) => {
+          set({ activeConnectionType: type });
+        },
+
+        connectUsb: async () => {
+          set({ isUsbConnecting: true, isConnecting: true });
           try {
-            await bluetoothPrinter.connect();
+            await webusbPrinter.requestAndConnect();
+            const name = webusbPrinter.getConnectedDeviceName();
             set({
+              activeConnectionType: 'USB',
+              isUsbConnected: true,
+              usbDeviceName: name,
               isConnected: true,
-              deviceName: bluetoothPrinter.getConnectedDeviceName(),
+              deviceName: name,
+              isUsbConnecting: false,
               isConnecting: false,
             });
             return true;
           } catch (err: unknown) {
-            set({ isConnecting: false });
+            set({ isUsbConnecting: false, isConnecting: false });
             throw err;
           }
         },
 
-        disconnect: () => {
+        disconnectUsb: async () => {
+          await webusbPrinter.disconnect();
+          const isBt = get().isBluetoothConnected;
+          set({
+            isUsbConnected: false,
+            usbDeviceName: null,
+            isConnected: isBt,
+            deviceName: isBt ? get().bluetoothDeviceName : null,
+          });
+        },
+
+        testPrintUsb: async () => {
+          const { paperWidth, autoOpenCashDrawer, autoCutPaper } = get();
+          await webusbPrinter.testPrint({
+            paperWidth,
+            openCashDrawer: autoOpenCashDrawer,
+            cutPaper: autoCutPaper,
+          });
+        },
+
+        connectBluetooth: async () => {
+          set({ isBluetoothConnecting: true, isConnecting: true });
+          try {
+            await bluetoothPrinter.connect();
+            const name = bluetoothPrinter.getConnectedDeviceName();
+            set({
+              activeConnectionType: 'BLUETOOTH',
+              isBluetoothConnected: true,
+              bluetoothDeviceName: name,
+              isConnected: true,
+              deviceName: name,
+              isBluetoothConnecting: false,
+              isConnecting: false,
+            });
+            return true;
+          } catch (err: unknown) {
+            set({ isBluetoothConnecting: false, isConnecting: false });
+            throw err;
+          }
+        },
+
+        disconnectBluetooth: () => {
           bluetoothPrinter.disconnect();
-          set({ isConnected: false, deviceName: null });
+          const isUsb = get().isUsbConnected;
+          set({
+            isBluetoothConnected: false,
+            bluetoothDeviceName: null,
+            isConnected: isUsb,
+            deviceName: isUsb ? get().usbDeviceName : null,
+          });
+        },
+
+        testPrintBluetooth: async () => {
+          // Buat mock order sederhana untuk pengujian bluetooth
+          const mockOrder: Order = {
+            id: 'TEST-BT',
+            orderNumber: 'TEST-001',
+            orderType: 'DINE_IN',
+            status: 'COMPLETED',
+            totalAmount: 25000,
+            subtotal: 25000,
+            paidAmount: 25000,
+            changeAmount: 0,
+            paymentMethod: 'CASH',
+            items: [
+              {
+                id: '1',
+                orderId: 'TEST-BT',
+                productId: 'test-1',
+                productName: 'Uji Cetak Bluetooth',
+                quantity: 1,
+                unitPrice: 25000,
+                subtotal: 25000,
+                status: 'ACTIVE',
+              },
+            ],
+            createdAt: new Date().toISOString(),
+          } as unknown as Order;
+
+          const { paperWidth } = get();
+          await bluetoothPrinter.printReceipt(mockOrder, {
+            paperWidth,
+            outletName: 'AGILIX POS (TEST)',
+            footerText: 'Test Cetak Printer Bluetooth Sukses',
+          });
+        },
+
+        openCashDrawer: async () => {
+          if (get().isUsbConnected) {
+            await webusbPrinter.openCashDrawer();
+          } else {
+            throw new Error('Pembukaan laci kasir otomatis memerlukan koneksi printer USB terpasang.');
+          }
+        },
+
+        // Unified connect: prioritas USB jika mode USB atau didukung, selain itu Bluetooth
+        connect: async () => {
+          const { activeConnectionType, isUsbSupported } = get();
+          if (activeConnectionType === 'USB' || isUsbSupported) {
+            return get().connectUsb();
+          }
+          return get().connectBluetooth();
+        },
+
+        disconnect: () => {
+          if (get().isUsbConnected) {
+            get().disconnectUsb();
+          }
+          if (get().isBluetoothConnected) {
+            get().disconnectBluetooth();
+          }
         },
 
         setAutoPrint: (enabled: boolean) => {
@@ -64,25 +261,54 @@ export const usePrinterStore = create<PrinterStoreState>()(
           set({ paperWidth: width });
         },
 
+        setAutoCutPaper: (enabled: boolean) => {
+          set({ autoCutPaper: enabled });
+        },
+
+        setAutoOpenCashDrawer: (enabled: boolean) => {
+          set({ autoOpenCashDrawer: enabled });
+        },
+
         printReceipt: async (order: Order, outletInfo) => {
-          const { paperWidth } = get();
-          await bluetoothPrinter.printReceipt(order, {
-            paperWidth,
-            outletName: outletInfo?.name,
-            outletAddress: outletInfo?.address,
-            outletPhone: outletInfo?.phone,
-            footerText: outletInfo?.footerText,
-          });
+          const { paperWidth, isUsbConnected, isBluetoothConnected, autoOpenCashDrawer, autoCutPaper } = get();
+
+          if (isUsbConnected) {
+            await webusbPrinter.printReceipt(order, {
+              paperWidth,
+              outletName: outletInfo?.name,
+              outletAddress: outletInfo?.address,
+              outletPhone: outletInfo?.phone,
+              footerText: outletInfo?.footerText,
+              openCashDrawer: autoOpenCashDrawer,
+              cutPaper: autoCutPaper,
+            });
+            return;
+          }
+
+          if (isBluetoothConnected) {
+            await bluetoothPrinter.printReceipt(order, {
+              paperWidth,
+              outletName: outletInfo?.name,
+              outletAddress: outletInfo?.address,
+              outletPhone: outletInfo?.phone,
+              footerText: outletInfo?.footerText,
+            });
+            return;
+          }
+
+          throw new Error('Tidak ada printer USB atau Bluetooth yang terhubung.');
         },
       };
     },
     {
       name: 'agilix-pos-printer-storage',
       partialize: (state) => ({
+        activeConnectionType: state.activeConnectionType,
         autoPrintOnPayment: state.autoPrintOnPayment,
         paperWidth: state.paperWidth,
+        autoCutPaper: state.autoCutPaper,
+        autoOpenCashDrawer: state.autoOpenCashDrawer,
       }),
     }
   )
 );
-

@@ -15,6 +15,7 @@ import {
   X,
   FileText,
   Bluetooth,
+  Usb,
 } from 'lucide-react';
 import { Modal, Button, Badge, toast } from '@presentation/components/ui';
 
@@ -37,9 +38,15 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
   const {
     isConnected: isPrinterConnected,
     deviceName: printerName,
-    isConnecting: isPrinterConnecting,
+    isUsbConnected,
+    isUsbConnecting,
+    isUsbSupported,
+    connectUsb,
+    isBluetoothConnected,
+    isBluetoothConnecting,
+    isBluetoothSupported,
+    connectBluetooth,
     autoPrintOnPayment,
-    connect: connectPrinter,
     disconnect: disconnectPrinter,
     setAutoPrint,
     printReceipt,
@@ -47,7 +54,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
 
   const [printStatus, setPrintStatus] = useState<'IDLE' | 'PRINTING' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [isPrintingBluetooth, setIsPrintingBluetooth] = useState(false);
+  const [isPrintingDirect, setIsPrintingDirect] = useState(false);
 
   const rawPayments = (order as unknown as { payments?: Array<{ amount?: number; changeAmount?: number }> }).payments;
   const latestPayment = Array.isArray(rawPayments) && rawPayments.length > 0 ? rawPayments[rawPayments.length - 1] : undefined;
@@ -69,8 +76,8 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
   );
   const isCash = order.paymentMethod === 'CASH' || !order.paymentMethod;
 
-  const handleBluetoothPrint = async () => {
-    setIsPrintingBluetooth(true);
+  const handleDirectPrint = async () => {
+    setIsPrintingDirect(true);
     setErrorMessage('');
     try {
       await printReceipt(order, {
@@ -79,20 +86,31 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
         phone: currentOutlet?.phone,
       });
       setPrintStatus('SUCCESS');
-      toast.success('Struk berhasil dicetak ke printer Bluetooth!');
+      const devType = isUsbConnected ? 'USB' : 'Bluetooth';
+      toast.success(`Struk berhasil dicetak langsung ke printer ${devType}!`);
     } catch (err: unknown) {
-      const msg = (err as Error)?.message || 'Gagal mencetak ke printer Bluetooth.';
+      const msg = (err as Error)?.message || 'Gagal mencetak ke printer thermal.';
       setErrorMessage(msg);
       setPrintStatus('ERROR');
       toast.error(msg);
     } finally {
-      setIsPrintingBluetooth(false);
+      setIsPrintingDirect(false);
+    }
+  };
+
+  const handleConnectUsb = async () => {
+    try {
+      await connectUsb();
+      toast.success('Printer USB berhasil terhubung!');
+    } catch (err: unknown) {
+      const msg = (err as Error)?.message || 'Batal atau gagal menghubungkan printer USB.';
+      toast.warning(msg);
     }
   };
 
   const handleConnectBluetooth = async () => {
     try {
-      await connectPrinter();
+      await connectBluetooth();
       toast.success('Printer Bluetooth berhasil terhubung!');
     } catch (err: unknown) {
       const msg = (err as Error)?.message || 'Batal atau gagal menghubungkan printer Bluetooth.';
@@ -100,12 +118,12 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
     }
   };
 
-  // Auto-print receipt if Bluetooth printer is connected and autoPrint option is enabled
+  // Auto-print receipt if printer is connected and autoPrint option is enabled
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (isOpen && autoPrintOnPayment && isPrinterConnected) {
       timer = setTimeout(() => {
-        handleBluetoothPrint();
+        handleDirectPrint();
       }, 400);
     }
     return () => clearTimeout(timer);
@@ -113,7 +131,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
 
   const handleTriggerPrint = async () => {
     if (isPrinterConnected) {
-      await handleBluetoothPrint();
+      await handleDirectPrint();
       return;
     }
     setPrintStatus('PRINTING');
@@ -131,7 +149,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
     } catch (err: unknown) {
       const errMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Printer kasir tidak terhubung. Gunakan browser print atau hubungkan printer Bluetooth.';
+        'Printer kasir tidak terhubung. Gunakan browser print atau hubungkan printer USB/Bluetooth.';
       setErrorMessage(errMsg);
       setPrintStatus('ERROR');
     }
@@ -388,7 +406,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
               </div>
             </div>
 
-            {/* Bluetooth Thermal Printer Bar */}
+            {/* Thermal Printer Bar (USB / Bluetooth) */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div
@@ -398,12 +416,12 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                       : 'bg-slate-200 text-slate-500'
                   }`}
                 >
-                  <Bluetooth className="w-4 h-4" />
+                  {isUsbConnected ? <Usb className="w-4 h-4" /> : <Bluetooth className="w-4 h-4" />}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold text-slate-800 truncate">
-                      {isPrinterConnected ? printerName || 'Printer Bluetooth' : 'Printer Bluetooth'}
+                      {isPrinterConnected ? printerName || (isUsbConnected ? 'Printer USB' : 'Printer Bluetooth') : 'Printer Thermal Kasir'}
                     </span>
                     <span
                       className={`inline-block w-2 h-2 rounded-full ${
@@ -415,7 +433,9 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                         isPrinterConnected ? 'text-emerald-700' : 'text-slate-400'
                       }`}
                     >
-                      {isPrinterConnected ? 'Terhubung' : 'Tidak Terhubung'}
+                      {isPrinterConnected
+                        ? `Terhubung (${isUsbConnected ? 'Direct USB' : 'Bluetooth'})`
+                        : 'Belum Terhubung'}
                     </span>
                   </div>
                   <label className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 cursor-pointer">
@@ -440,16 +460,32 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                     Putus
                   </button>
                 ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    leftIcon={<Bluetooth className="w-3.5 h-3.5 text-[#0D5C53]" />}
-                    onClick={handleConnectBluetooth}
-                    isLoading={isPrinterConnecting}
-                    className="text-xs font-bold"
-                  >
-                    Hubungkan Printer
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    {isUsbSupported && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<Usb className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                        onClick={handleConnectUsb}
+                        isLoading={isUsbConnecting}
+                        className="text-xs font-bold"
+                      >
+                        Hubungkan USB
+                      </Button>
+                    )}
+                    {isBluetoothSupported && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<Bluetooth className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                        onClick={handleConnectBluetooth}
+                        isLoading={isBluetoothConnecting}
+                        className="text-xs font-bold"
+                      >
+                        Bluetooth
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -477,12 +513,12 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                     </Button>
                     <Button
                       variant="primary"
-                      leftIcon={<Printer className="w-4 h-4" />}
-                      onClick={handleBluetoothPrint}
-                      isLoading={isPrintingBluetooth}
+                      leftIcon={isUsbConnected ? <Usb className="w-4 h-4" /> : <Printer className="w-4 h-4" />}
+                      onClick={handleDirectPrint}
+                      isLoading={isPrintingDirect}
                       className="font-bold shadow-md shadow-teal-900/10"
                     >
-                      Cetak Struk (Bluetooth)
+                      Cetak Struk ({isUsbConnected ? 'USB' : 'Bluetooth'})
                     </Button>
                   </>
                 ) : (

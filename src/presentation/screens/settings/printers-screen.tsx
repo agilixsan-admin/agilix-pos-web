@@ -21,6 +21,7 @@ import {
   useUploadBillLogoMutation,
 } from '@domain/hooks';
 import { useAuthStore } from '@domain/state/auth-store';
+import { usePrinterStore } from '@domain/state/printer-store';
 import {
   Printer,
   Plus,
@@ -106,6 +107,24 @@ export const PrintersScreen: React.FC = () => {
   const { data: rawCategories = [] } = useCategories();
   const categories = Array.isArray(rawCategories) ? rawCategories : [];
   const configuredRules = routingRules.filter((r) => Boolean(r && r.printerId && r.printerName));
+
+  // Hardware Printer Store (WebUSB & Web Bluetooth)
+  const {
+    isUsbConnected,
+    isUsbConnecting,
+    isUsbSupported,
+    usbDeviceName,
+    connectUsb,
+    disconnectUsb,
+    testPrintUsb,
+    isBluetoothConnected,
+    isBluetoothConnecting,
+    isBluetoothSupported,
+    connectBluetooth,
+    disconnectBluetooth,
+    testPrintBluetooth,
+    openCashDrawer,
+  } = usePrinterStore();
 
   // Mutations
   const createPrinterMutation = useCreatePrinterMutation();
@@ -344,11 +363,28 @@ export const PrintersScreen: React.FC = () => {
   const handleTestPrint = async (printer: PrinterSetting) => {
     setTestingPrinterId(printer.id);
     try {
+      if (printer.connectionType === 'USB') {
+        if (!isUsbConnected) {
+          const ok = await connectUsb();
+          if (!ok) return;
+        }
+        await testPrintUsb();
+        showToast(`Test print WebUSB berhasil dikirim ke "${printer.name}". Kertas dipotong & laci kasir dibuka.`);
+        return;
+      }
+
+      if (printer.connectionType === 'BLUETOOTH' && isBluetoothConnected) {
+        await testPrintBluetooth();
+        showToast(`Test print Bluetooth berhasil dikirim ke "${printer.name}".`);
+        return;
+      }
+
       await testPrintMutation.mutateAsync(printer.id);
       showToast(`Test print berhasil dikirim ke "${printer.name}".`);
     } catch (err: unknown) {
       toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          (err as Error)?.message ||
           `Gagal menjalankan test print pada "${printer.name}". Periksa koneksi perangkat.`
       );
     } finally {
@@ -573,7 +609,9 @@ export const PrintersScreen: React.FC = () => {
             </Card>
           ) : (
             printers.map((printer) => {
-              const isConnected = printer.status === 'ACTIVE';
+              const isUsb = printer.connectionType === 'USB';
+              const isBt = printer.connectionType === 'BLUETOOTH';
+              const isConnected = isUsb ? isUsbConnected : isBt ? isBluetoothConnected : printer.status === 'ACTIVE';
               const isTesting = testingPrinterId === printer.id;
 
               return (
@@ -618,7 +656,13 @@ export const PrintersScreen: React.FC = () => {
                               isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
                             }`}
                           />
-                          {isConnected ? 'Connected' : 'Offline'}
+                          {isConnected
+                            ? isUsb
+                              ? `WebUSB (${usbDeviceName || 'Connected'})`
+                              : isBt
+                              ? 'Bluetooth Connected'
+                              : 'Connected'
+                            : 'Offline'}
                         </span>
 
                         {/* Connection Type */}
@@ -652,6 +696,25 @@ export const PrintersScreen: React.FC = () => {
                           Test Print
                         </Button>
 
+                        {isUsb && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await openCashDrawer();
+                                showToast('Perintah buka laci kasir berhasil dikirim ke printer USB.');
+                              } catch (e: unknown) {
+                                toast.error((e as Error)?.message || 'Gagal membuka laci kasir.');
+                              }
+                            }}
+                            title="Buka Laci Kasir"
+                            className="text-xs font-semibold px-2.5 py-1.5 rounded-xl border-slate-200 hover:bg-slate-50"
+                          >
+                            Buka Laci
+                          </Button>
+                        )}
+
                         <Button
                           variant="outline"
                           size="sm"
@@ -662,26 +725,76 @@ export const PrintersScreen: React.FC = () => {
                           <Edit2 className="w-3.5 h-3.5" />
                         </Button>
 
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleToggleStatus(printer)}
-                          title="Putuskan / Nonaktifkan"
-                          className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border-slate-200"
-                        >
-                          <Power className="w-3.5 h-3.5" />
-                        </Button>
+                        {isUsb ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={disconnectUsb}
+                            title="Putuskan WebUSB"
+                            className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border-slate-200"
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleStatus(printer)}
+                            title="Putuskan / Nonaktifkan"
+                            className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border-slate-200"
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </>
                     ) : (
                       <>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleToggleStatus(printer)}
-                          className="bg-[#0D5C53] hover:bg-[#09423C] text-white text-xs font-semibold px-4 py-1.5 rounded-xl"
-                        >
-                          Hubungkan
-                        </Button>
+                        {isUsb ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            leftIcon={<Usb className="w-3.5 h-3.5" />}
+                            onClick={async () => {
+                              try {
+                                await connectUsb();
+                                showToast('Printer USB berhasil terhubung!');
+                              } catch (e: unknown) {
+                                toast.warning((e as Error)?.message || 'Batal menghubungkan printer USB.');
+                              }
+                            }}
+                            isLoading={isUsbConnecting}
+                            className="bg-[#0D5C53] hover:bg-[#09423C] text-white text-xs font-semibold px-3 py-1.5 rounded-xl"
+                          >
+                            Sambung USB
+                          </Button>
+                        ) : isBt ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            leftIcon={<Bluetooth className="w-3.5 h-3.5" />}
+                            onClick={async () => {
+                              try {
+                                await connectBluetooth();
+                                showToast('Printer Bluetooth berhasil terhubung!');
+                              } catch (e: unknown) {
+                                toast.warning((e as Error)?.message || 'Batal menghubungkan printer Bluetooth.');
+                              }
+                            }}
+                            isLoading={isBluetoothConnecting}
+                            className="bg-[#0D5C53] hover:bg-[#09423C] text-white text-xs font-semibold px-3 py-1.5 rounded-xl"
+                          >
+                            Sambung BT
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleToggleStatus(printer)}
+                            className="bg-[#0D5C53] hover:bg-[#09423C] text-white text-xs font-semibold px-4 py-1.5 rounded-xl"
+                          >
+                            Hubungkan
+                          </Button>
+                        )}
 
                         <Button
                           variant="outline"
@@ -1317,6 +1430,107 @@ export const PrintersScreen: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, bluetoothMac: e.target.value })}
               helperText="Lakukan pairing perangkat di Bluetooth OS sebelum melakukan tes cetak."
             />
+          )}
+
+          {formData.connectionType === 'USB' && (
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#0D5C53] flex items-center justify-center shrink-0">
+                    <Usb className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800">Direct WebUSB Driver</h4>
+                    <p className="text-[11px] text-slate-500">
+                      {isUsbConnected
+                        ? `Terhubung: ${usbDeviceName || 'Printer Thermal USB'}`
+                        : isUsbSupported
+                        ? 'Siap dihubungkan tanpa dialog print browser'
+                        : 'WebUSB tidak didukung pada browser ini (gunakan Chromium)'}
+                    </p>
+                  </div>
+                </div>
+                {isUsbConnected ? (
+                  <Badge variant="success" dot>Terhubung</Badge>
+                ) : (
+                  <Badge variant="neutral">Belum Konek</Badge>
+                )}
+              </div>
+
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                Koneksi USB menggunakan WebUSB API untuk komunikasi direct byte stream ESC/POS tanpa dialog browser. Mendukung potong kertas otomatis (auto-cut) dan pembukaan laci kasir (cash drawer).
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {isUsbConnected ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await testPrintUsb();
+                          showToast('Test print berhasil dikirim ke printer USB!');
+                        } catch (e: unknown) {
+                          toast.error((e as Error)?.message || 'Gagal tes cetak USB.');
+                        }
+                      }}
+                      leftIcon={<PrinterCheck className="w-3.5 h-3.5" />}
+                      className="text-xs font-semibold"
+                    >
+                      Uji Cetak USB
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await openCashDrawer();
+                          showToast('Perintah buka laci kasir berhasil dikirim!');
+                        } catch (e: unknown) {
+                          toast.error((e as Error)?.message || 'Gagal membuka laci kasir.');
+                        }
+                      }}
+                      className="text-xs font-semibold"
+                    >
+                      Buka Laci Kasir
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={disconnectUsb}
+                      className="text-xs text-rose-600 hover:bg-rose-50"
+                    >
+                      Putus USB
+                    </Button>
+                  </>
+                ) : (
+                  isUsbSupported && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<Usb className="w-3.5 h-3.5" />}
+                      onClick={async () => {
+                        try {
+                          await connectUsb();
+                          showToast('Printer USB berhasil terhubung!');
+                        } catch (e: unknown) {
+                          toast.warning((e as Error)?.message || 'Batal menghubungkan printer USB.');
+                        }
+                      }}
+                      isLoading={isUsbConnecting}
+                      className="text-xs font-bold bg-[#0D5C53]"
+                    >
+                      Hubungkan Printer USB (WebUSB)
+                    </Button>
+                  )
+                )}
+              </div>
+            </div>
           )}
 
           {/* Default Toggle */}
