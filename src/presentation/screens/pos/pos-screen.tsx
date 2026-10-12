@@ -510,6 +510,11 @@ export const PosScreen: React.FC = () => {
         items: payloadItems,
       });
 
+      // Otomatis kirim tiket pesanan ke printer dapur/bar
+      posService.dispatchKitchenTicket(createdOrder.id).catch(() => {
+        // Abaikan jika printer belum terpasang atau offline agar transaksi kasir tidak terganggu
+      });
+
       clearCart();
       refreshAllData();
       setActivePaymentOrder(createdOrder);
@@ -553,11 +558,15 @@ export const PosScreen: React.FC = () => {
       if (activeAppendOrder) {
         // APPEND MODE: Tambah item ke order berjalan yang sudah ada
         await posService.addItemsToOrder(activeAppendOrder.id, payloadItems);
+        // Otomatis kirim tiket tambahan menu ke printer dapur/bar
+        posService.dispatchKitchenTicket(activeAppendOrder.id).catch(() => {
+          // Abaikan jika printer belum terpasang atau offline
+        });
         clearCart();
         setActiveAppendOrder(null);
         refreshAllData();
         setViewMode('FLOOR');
-        toast.success('Tambahan menu berhasil dikirim ke pesanan.');
+        toast.success('Tambahan menu berhasil disimpan & dikirim ke dapur.');
         return;
       }
 
@@ -567,7 +576,7 @@ export const PosScreen: React.FC = () => {
         return;
       }
 
-      await posService.createOrder({
+      const createdOrder = await posService.createOrder({
         outletId: activeOutlet.id,
         orderType: orderType as OrderType,
         tableId: tableId || undefined,
@@ -579,10 +588,15 @@ export const PosScreen: React.FC = () => {
         items: payloadItems,
       });
 
+      // Otomatis kirim tiket pesanan ke printer dapur/bar
+      posService.dispatchKitchenTicket(createdOrder.id).catch(() => {
+        // Abaikan jika printer belum terpasang atau offline
+      });
+
       clearCart();
       refreshAllData();
       setViewMode('FLOOR');
-      toast.success('Pesanan berhasil dikirim.');
+      toast.success('Pesanan berhasil disimpan & dikirim ke dapur.');
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||

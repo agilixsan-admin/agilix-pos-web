@@ -3,7 +3,7 @@ import type { Order } from '@model/Order';
 import { posService } from '@domain/services/pos-service';
 import { useAuthStore } from '@domain/state/auth-store';
 import { useCartStore } from '@domain/state/cart-store';
-import { Clock, PlusCircle, CreditCard, RefreshCw, Ban } from 'lucide-react';
+import { Clock, PlusCircle, CreditCard, RefreshCw, Ban, Printer } from 'lucide-react';
 import {
   Button,
   Badge,
@@ -37,6 +37,7 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
   const [openOrders, setOpenOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [dispatchingOrderId, setDispatchingOrderId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [voidTarget, setVoidTarget] = useState<{ orderId: string; itemId: string; name: string } | null>(null);
 
@@ -82,10 +83,14 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
       }));
 
       await posService.addItemsToOrder(order.id, payloadItems);
+      // Otomatis kirim tiket tambahan menu ke printer dapur/bar
+      posService.dispatchKitchenTicket(order.id).catch(() => {
+        // Abaikan jika printer belum terpasang atau offline
+      });
       clearCart();
       onOrderUpdated();
       onClose();
-      toast.success('Tambahan menu berhasil ditambahkan ke pesanan.');
+      toast.success('Tambahan menu berhasil ditambahkan & dikirim ke dapur.');
     } catch (err: unknown) {
       toast.error(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -93,6 +98,21 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
       );
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleDispatchKitchen = async (order: Order) => {
+    setDispatchingOrderId(order.id);
+    try {
+      await posService.dispatchKitchenTicket(order.id);
+      toast.success(`Tiket pesanan #${order.orderNumber || order.id.slice(0, 8)} berhasil dikirim ke printer dapur/bar.`);
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Gagal mengirim tiket ke printer dapur.';
+      toast.error(errorMsg);
+    } finally {
+      setDispatchingOrderId(null);
     }
   };
 
@@ -130,13 +150,24 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
                     <span className="font-bold text-slate-900 text-sm">
                       {order.orderNumber || order.id.slice(0, 8)}
                     </span>
-                    <Badge variant="warning" dot>
-                      {order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber
-                        ? `Meja ${order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber}`
-                        : order.orderType === 'TAKE_AWAY'
-                        ? 'Take Away'
-                        : 'Dine In'}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        title="Kirim ulang tiket ke printer dapur/bar"
+                        disabled={dispatchingOrderId === order.id}
+                        onClick={() => handleDispatchKitchen(order)}
+                        className="p-1 text-slate-400 hover:text-[#0D5C53] hover:bg-[#0D5C53]/10 rounded-md transition-colors disabled:opacity-50"
+                      >
+                        <Printer className={`w-3.5 h-3.5 ${dispatchingOrderId === order.id ? 'animate-pulse text-[#0D5C53]' : ''}`} />
+                      </button>
+                      <Badge variant="warning" dot>
+                        {order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber
+                          ? `Meja ${order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber}`
+                          : order.orderType === 'TAKE_AWAY'
+                          ? 'Take Away'
+                          : 'Dine In'}
+                      </Badge>
+                    </div>
                   </div>
 
                   <div className="text-xs text-slate-500 mb-3">
