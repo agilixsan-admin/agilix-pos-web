@@ -63,6 +63,7 @@ export interface USBDeviceFilter {
 
 export interface WebUsbPrintOptions {
   paperWidth?: '58mm' | '80mm';
+  columns?: number;
   businessName?: string;
   outletName?: string;
   outletAddress?: string;
@@ -429,7 +430,9 @@ class WebUsbPrinterService {
    */
   private async encodeReceipt(order: Order, options: WebUsbPrintOptions = {}): Promise<Uint8Array> {
     const paperWidth = options.paperWidth || '58mm';
-    const cols = paperWidth === '80mm' ? 48 : 32;
+    // Standar printer thermal portabel 58mm menggunakan Font B (48 kolom).
+    // Opsi kustom options.columns dapat diisi jika menggunakan konfigurasi khusus (mis. 32 kolom Font A).
+    const cols = options.columns || (paperWidth === '80mm' ? 48 : 48);
 
     const encoder = new TextEncoder();
     const bytes: number[] = [];
@@ -519,10 +522,11 @@ class WebUsbPrinterService {
       addLine(`Telp: ${options.outletPhone}`);
     }
 
+    // 3. Metadata Pesanan (Persis seperti tampilan Preview)
+    // Pindah ke RATA KIRI sebelum mencetak divider agar membentang penuh dari sisi kiri ke kanan
+    add(...ESC_ALIGN_LEFT);
     addLine(divider('-'));
 
-    // 3. Metadata Pesanan (Persis seperti tampilan Preview)
-    add(...ESC_ALIGN_LEFT);
     const orderNum = order.orderNumber || (order.id ? order.id.slice(0, 8).toUpperCase() : '');
     addLine(leftRight('No. Order:', orderNum));
 
