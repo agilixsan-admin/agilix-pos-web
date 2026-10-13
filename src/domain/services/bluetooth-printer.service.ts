@@ -507,13 +507,15 @@ class BluetoothPrinterService {
     return new Uint8Array(bytes);
   }
 
-  public async printReceipt(order: Order, options: PrintOptions = {}): Promise<void> {
+  /**
+   * Mengirim byte mentah ESC/POS langsung ke printer Bluetooth
+   */
+  public async printRaw(data: Uint8Array): Promise<void> {
     if (!this.isConnected() || !this.characteristic) {
       throw new Error('Printer Bluetooth belum terhubung. Silakan hubungkan printer terlebih dahulu.');
     }
 
-    const data = await this.encodeReceipt(order, options);
-    console.log('[WebBluetooth] Mengirim data cetak struk ESC/POS ke printer:', data.length, 'bytes...');
+    console.log('[WebBluetooth] Mengirim raw ESC/POS ke printer:', data.length, 'bytes...');
 
     // Kirim data dalam ukuran chunk 20 bytes (standar aman BLE ATT MTU default untuk Android & printer thermal)
     const chunkSize = 20;
@@ -533,6 +535,11 @@ class BluetoothPrinterService {
       await new Promise((resolve) => setTimeout(resolve, 15));
     }
     console.log('[WebBluetooth] Pengiriman data selesai!');
+  }
+
+  public async printReceipt(order: Order, options: PrintOptions = {}): Promise<void> {
+    const data = await this.encodeReceipt(order, options);
+    await this.printRaw(data);
   }
 }
 

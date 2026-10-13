@@ -1,4 +1,5 @@
 import { httpClient } from './http-client';
+import { usePrinterStore } from '@domain/state/printer-store';
 import type {
   Order,
   CreateOrderPayload,
@@ -10,6 +11,31 @@ import type {
   PaymentInfo,
 } from '@model/Order';
 import type { Table } from '@model/Settings';
+
+export interface DispatchedPrintJob {
+  printerId: string;
+  printerName: string;
+  station: string;
+  connectionType: 'BLUETOOTH' | 'USB' | 'NETWORK';
+  paperSize: string;
+  bluetoothMac?: string | null;
+  ipAddress?: string | null;
+  status: 'READY_TO_PRINT' | 'SENT' | 'NETWORK_ERROR';
+  itemCount: number;
+  escposPayload?: string;
+  rawText?: string;
+}
+
+export interface DispatchKitchenTicketResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    orderId: string;
+    orderNumber: string;
+    isSinglePrinterMode?: boolean;
+    printJobs: DispatchedPrintJob[];
+  };
+}
 
 const normalizeOrder = (order: Order): Order => {
   if (!order) return order;
@@ -210,9 +236,36 @@ export const posService = {
     return res.data?.data || res.data;
   },
 
-  dispatchKitchenTicket: async (orderId: string): Promise<{ success: boolean; message: string }> => {
+  dispatchKitchenTicket: async (orderId: string): Promise<DispatchKitchenTicketResponse> => {
     const res = await httpClient.post(`/orders/${orderId}/dispatch`);
-    return res.data?.data || res.data;
+    const rawData = res.data;
+    const dispatchData = (rawData?.data || rawData) as {
+      orderId?: string;
+      orderNumber?: string;
+      isSinglePrinterMode?: boolean;
+      printJobs?: DispatchedPrintJob[];
+    };
+
+    // Otomatis cetak tiket pesanan stasiun jika printer Bluetooth atau USB terhubung di browser kasir
+    if (dispatchData && Array.isArray(dispatchData.printJobs)) {
+      const printerStore = usePrinterStore.getState();
+      if (printerStore.isConnected) {
+        for (const job of dispatchData.printJobs) {
+          if (job.status === 'READY_TO_PRINT' && job.escposPayload) {
+            try {
+              console.log(`[Printer] Mencetak tiket pesanan stasiun ${job.station} (${job.printerName})...`);
+              await printerStore.printRaw(job.escposPayload);
+              // Berikan jeda 350ms antar tiket agar buffer printer tidak overflow
+              await new Promise((resolve) => setTimeout(resolve, 350));
+            } catch (err) {
+              console.warn(`[Printer] Gagal mencetak tiket stasiun ${job.station}:`, err);
+            }
+          }
+        }
+      }
+    }
+
+    return rawData;
   },
 };
 

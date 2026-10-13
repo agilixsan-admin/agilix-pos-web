@@ -52,6 +52,7 @@ interface PrinterStoreState {
   setAutoCutPaper: (enabled: boolean) => void;
   setAutoOpenCashDrawer: (enabled: boolean) => void;
 
+  printRaw: (payload: Uint8Array | string) => Promise<void>;
   printReceipt: (
     order: Order,
     outletInfo?: {
@@ -275,6 +276,34 @@ export const usePrinterStore = create<PrinterStoreState>()(
 
         setAutoOpenCashDrawer: (enabled: boolean) => {
           set({ autoOpenCashDrawer: enabled });
+        },
+
+        printRaw: async (payload: Uint8Array | string) => {
+          let data: Uint8Array;
+          if (typeof payload === 'string') {
+            // Decode base64 payload dari backend
+            const binaryString = atob(payload);
+            data = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              data[i] = binaryString.charCodeAt(i);
+            }
+          } else {
+            data = payload;
+          }
+
+          const { isUsbConnected, isBluetoothConnected } = get();
+
+          if (isUsbConnected) {
+            await webusbPrinter.printRaw(data);
+            return;
+          }
+
+          if (isBluetoothConnected) {
+            await bluetoothPrinter.printRaw(data);
+            return;
+          }
+
+          throw new Error('Tidak ada printer USB atau Bluetooth yang terhubung.');
         },
 
         printReceipt: async (order: Order, outletInfo) => {
