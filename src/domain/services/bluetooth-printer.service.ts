@@ -1,7 +1,18 @@
 import type { Order } from '@model/Order';
 
 // Web Bluetooth API Type Definitions
+export interface BluetoothCharacteristicProperties {
+  broadcast?: boolean;
+  read?: boolean;
+  writeWithoutResponse?: boolean;
+  write?: boolean;
+  notify?: boolean;
+  indicate?: boolean;
+}
+
 export interface BluetoothRemoteGATTCharacteristic {
+  uuid?: string;
+  properties?: BluetoothCharacteristicProperties;
   writeValue(value: BufferSource): Promise<void>;
   writeValueWithoutResponse?(value: BufferSource): Promise<void>;
 }
@@ -117,36 +128,53 @@ class BluetoothPrinterService {
       const server = await device.gatt.connect();
       console.log('[WebBluetooth] GATT Server terhubung! Mencari writable characteristic...');
 
-      // Find writable characteristic
+      // Cari characteristic yang benar-benar memiliki izin tulis (write / writeWithoutResponse)
       let writableChar: BluetoothRemoteGATTCharacteristic | null = null;
 
-      // Try known services first
+      // Coba layanan-layanan printer yang sudah terdaftar
       for (const serviceUuid of PRINTER_SERVICES) {
         try {
           const service = await server.getPrimaryService(serviceUuid);
           console.log('[WebBluetooth] Menemukan primary service:', serviceUuid);
           const chars = await service.getCharacteristics();
-          for (const char of chars) {
-            writableChar = char;
-            console.log('[WebBluetooth] Menemukan characteristic:', (char as unknown as { uuid?: string })?.uuid || char);
+
+          // Prioritas 1: Karakteristik dengan izin writeWithoutResponse (tercepat dan paling stabil di thermal printer)
+          const writeNoRespChar = chars.find((c) => c.properties?.writeWithoutResponse);
+          // Prioritas 2: Karakteristik dengan izin write standar
+          const writeChar = chars.find((c) => c.properties?.write);
+
+          if (writeNoRespChar) {
+            writableChar = writeNoRespChar;
+            console.log('[WebBluetooth] Memilih characteristic (writeWithoutResponse):', writableChar.uuid);
+            break;
+          } else if (writeChar) {
+            writableChar = writeChar;
+            console.log('[WebBluetooth] Memilih characteristic (write):', writableChar.uuid);
             break;
           }
         } catch {
-          // Continue trying other services
+          // Lanjut mencoba service berikutnya
         }
         if (writableChar) break;
       }
 
-      // If not found in known services, try any primary service
+      // Jika belum ditemukan di known services, cari di seluruh service yang ada
       if (!writableChar) {
         try {
           const services = await server.getPrimaryServices();
           console.log('[WebBluetooth] Mencari di semua primary services (total:', services.length, ')...');
           for (const s of services) {
             const chars = await s.getCharacteristics();
-            if (chars.length > 0) {
-              writableChar = chars[0];
-              console.log('[WebBluetooth] Menemukan fallback characteristic:', (writableChar as unknown as { uuid?: string })?.uuid);
+            const writeNoRespChar = chars.find((c) => c.properties?.writeWithoutResponse);
+            const writeChar = chars.find((c) => c.properties?.write);
+
+            if (writeNoRespChar) {
+              writableChar = writeNoRespChar;
+              console.log('[WebBluetooth] Menemukan fallback characteristic (writeWithoutResponse):', writableChar.uuid);
+              break;
+            } else if (writeChar) {
+              writableChar = writeChar;
+              console.log('[WebBluetooth] Menemukan fallback characteristic (write):', writableChar.uuid);
               break;
             }
           }
@@ -483,17 +511,22 @@ class BluetoothPrinterService {
     const data = await this.encodeReceipt(order, options);
     console.log('[WebBluetooth] Mengirim data cetak struk ESC/POS ke printer:', data.length, 'bytes...');
 
-    // Send data in chunks of 100 bytes to avoid BLE buffer overflow
-    const chunkSize = 100;
+    // Kirim data dalam ukuran chunk 20 bytes (standar aman BLE ATT MTU default untuk Android & printer thermal)
+    const chunkSize = 20;
+    const canWriteWithoutResp = Boolean(
+      this.characteristic.properties?.writeWithoutResponse &&
+      typeof this.characteristic.writeValueWithoutResponse === 'function'
+    );
+
     for (let offset = 0; offset < data.length; offset += chunkSize) {
       const chunk = data.slice(offset, offset + chunkSize);
-      if (this.characteristic.writeValueWithoutResponse) {
+      if (canWriteWithoutResp && this.characteristic.writeValueWithoutResponse) {
         await this.characteristic.writeValueWithoutResponse(chunk);
       } else {
         await this.characteristic.writeValue(chunk);
       }
-      // Small pause between chunks
-      await new Promise((resolve) => setTimeout(resolve, 25));
+      // Delay 15ms per paket agar buffer mikrokontroler printer tidak overflow
+      await new Promise((resolve) => setTimeout(resolve, 15));
     }
     console.log('[WebBluetooth] Pengiriman data selesai!');
   }
