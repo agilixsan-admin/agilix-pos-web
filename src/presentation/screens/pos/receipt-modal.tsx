@@ -47,10 +47,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     setIsPrinting(true);
     try {
       await printReceipt(order, {
-        name: tenant?.name || currentOutlet?.name,
+        businessName: tenant?.businessName || tenant?.name,
+        outletName: currentOutlet?.name,
         address: currentOutlet?.address,
         phone: currentOutlet?.phone,
         footerText: posSettings?.billFooterText,
+        logoUrl: posSettings?.billLogoUrl,
       });
       const devType = isUsbConnected ? 'USB' : 'Bluetooth';
       toast.success(`Struk berhasil dicetak langsung ke printer ${devType}!`);

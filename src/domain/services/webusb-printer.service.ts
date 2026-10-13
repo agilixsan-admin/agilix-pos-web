@@ -63,10 +63,12 @@ export interface USBDeviceFilter {
 
 export interface WebUsbPrintOptions {
   paperWidth?: '58mm' | '80mm';
+  businessName?: string;
   outletName?: string;
   outletAddress?: string;
   outletPhone?: string;
   footerText?: string | null;
+  logoUrl?: string | null;
   openCashDrawer?: boolean;
   cutPaper?: boolean;
 }
@@ -347,9 +349,85 @@ class WebUsbPrinterService {
   }
 
   /**
-   * Membuat byte data ESC/POS untuk struk pesanan
+   * Konversi URL gambar menjadi ESC/POS raster bit image (GS v 0).
+   * Jika gambar gagal dimuat (CORS, offline, URL rusak), mengembalikan null secara aman tanpa error.
    */
-  private encodeReceipt(order: Order, options: WebUsbPrintOptions = {}): Uint8Array {
+  private async convertImageToEscPosRaster(
+    imageUrl: string,
+    maxWidthDots = 200
+  ): Promise<number[] | null> {
+    if (typeof window === 'undefined' || !imageUrl) return null;
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxWidthDots / (img.width || 1));
+          const targetWidth = Math.max(8, Math.floor(img.width * scale));
+          const byteWidth = Math.ceil(targetWidth / 8);
+          const actualWidth = byteWidth * 8;
+          const actualHeight = Math.max(8, Math.floor(img.height * scale));
+
+          const canvas = document.createElement('canvas');
+          canvas.width = actualWidth;
+          canvas.height = actualHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(null);
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, actualWidth, actualHeight);
+
+          const offsetX = Math.floor((actualWidth - targetWidth) / 2);
+          ctx.drawImage(img, offsetX, 0, targetWidth, actualHeight);
+
+          const imgData = ctx.getImageData(0, 0, actualWidth, actualHeight);
+          const pixels = imgData.data;
+
+          const xL = byteWidth % 256;
+          const xH = Math.floor(byteWidth / 256);
+          const yL = actualHeight % 256;
+          const yH = Math.floor(actualHeight / 256);
+
+          // GS v 0 0 xL xH yL yH
+          const rasterBytes: number[] = [0x1d, 0x76, 0x30, 0x00, xL, xH, yL, yH];
+
+          for (let y = 0; y < actualHeight; y++) {
+            for (let x = 0; x < byteWidth; x++) {
+              let byteVal = 0;
+              for (let b = 0; b < 8; b++) {
+                const pixelX = x * 8 + b;
+                const idx = (y * actualWidth + pixelX) * 4;
+                const r = pixels[idx];
+                const g = pixels[idx + 1];
+                const bCol = pixels[idx + 2];
+                const alpha = pixels[idx + 3];
+
+                if (alpha >= 128) {
+                  const lum = 0.299 * r + 0.587 * g + 0.114 * bCol;
+                  if (lum < 160) {
+                    byteVal |= 1 << (7 - b);
+                  }
+                }
+              }
+              rasterBytes.push(byteVal);
+            }
+          }
+
+          resolve(rasterBytes);
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = imageUrl;
+    });
+  }
+
+  /**
+   * Membuat byte data ESC/POS untuk struk pesanan dengan layout identik dengan preview
+   */
+  private async encodeReceipt(order: Order, options: WebUsbPrintOptions = {}): Promise<Uint8Array> {
     const paperWidth = options.paperWidth || '58mm';
     const cols = paperWidth === '80mm' ? 48 : 32;
 
@@ -394,16 +472,45 @@ class WebUsbPrinterService {
     const ESC_DRAWER_KICK = [0x1b, 0x70, 0x00, 0x19, 0xfa, 0x1b, 0x70, 0x01, 0x19, 0xfa];
     const ESC_CUT_PARTIAL = [0x1d, 0x56, 0x42, 0x00];
 
-    // 1. Initialize Printer
+    // 1. Inisialisasi Printer
     add(...ESC_INIT);
 
-    // 2. Header: Nama Toko / Outlet (Double size, bold, center)
+    // 1b. Cetak Logo jika tersedia (ESC/POS Raster Bit Image)
+    if (options.logoUrl) {
+      try {
+        const logoRaster = await this.convertImageToEscPosRaster(
+          options.logoUrl,
+          paperWidth === '80mm' ? 320 : 200
+        );
+        if (logoRaster && logoRaster.length > 0) {
+          add(...ESC_ALIGN_CENTER);
+          add(...logoRaster);
+          addLine();
+        }
+      } catch {
+        // Fallback hening jika logo gagal dimuat (CORS / offline)
+      }
+    }
+
+    // 2. Header: Nama Brand & Outlet (Center)
     add(...ESC_ALIGN_CENTER);
-    add(...ESC_BOLD_ON);
-    add(...ESC_DOUBLE_SIZE);
-    addLine(options.outletName || 'AGILIX POS');
-    add(...ESC_NORMAL_SIZE);
-    add(...ESC_BOLD_OFF);
+    if (options.businessName) {
+      add(...ESC_BOLD_ON);
+      add(...ESC_DOUBLE_SIZE);
+      addLine(options.businessName.toUpperCase());
+      add(...ESC_NORMAL_SIZE);
+      add(...ESC_BOLD_OFF);
+
+      if (options.outletName && options.outletName.trim().toLowerCase() !== options.businessName.trim().toLowerCase()) {
+        addLine(options.outletName);
+      }
+    } else {
+      add(...ESC_BOLD_ON);
+      add(...ESC_DOUBLE_SIZE);
+      addLine((options.outletName || 'AGILIX POS').toUpperCase());
+      add(...ESC_NORMAL_SIZE);
+      add(...ESC_BOLD_OFF);
+    }
 
     if (options.outletAddress) {
       addLine(options.outletAddress);
@@ -414,10 +521,10 @@ class WebUsbPrinterService {
 
     addLine(divider('-'));
 
-    // 3. Metadata Pesanan
+    // 3. Metadata Pesanan (Persis seperti tampilan Preview)
     add(...ESC_ALIGN_LEFT);
     const orderNum = order.orderNumber || (order.id ? order.id.slice(0, 8).toUpperCase() : '');
-    addLine(`No. Order : #${orderNum}`);
+    addLine(leftRight('No. Order:', orderNum));
 
     const now = new Date(order.createdAt || Date.now());
     const dateStr = now.toLocaleDateString('id-ID', {
@@ -429,19 +536,28 @@ class WebUsbPrinterService {
       hour: '2-digit',
       minute: '2-digit',
     });
-    addLine(`Waktu     : ${dateStr} ${timeStr}`);
+    addLine(leftRight('Waktu:', `${dateStr}, ${timeStr}`));
 
-    const tableName = order.table?.name ? `Meja ${order.table.name}` : 'Take Away';
-    addLine(`Layanan   : ${tableName}`);
+    const isDineIn =
+      order.orderType === 'DINE_IN' ||
+      Boolean(order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber);
+    const tableIdentifier =
+      order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber;
+    const tipeLayanan = isDineIn
+      ? `Dine-In${tableIdentifier ? ` (${tableIdentifier})` : ''}`
+      : 'Take Away';
+    addLine(leftRight('Tipe:', tipeLayanan));
 
     if (order.customerName) {
-      addLine(`Pelanggan : ${order.customerName}`);
+      addLine(leftRight('Pelanggan:', order.customerName));
     }
 
     addLine(divider('-'));
 
     // 4. Daftar Item Pesanan
-    const activeItems = (order.items || []).filter((i) => !i.status || i.status === 'ACTIVE');
+    const activeItems = (order.items || []).filter(
+      (i) => (!i.status || i.status === 'ACTIVE' || i.status !== 'VOID') && !i.isVoid
+    );
     for (const item of activeItems) {
       const name = item.productName || 'Item';
       const isDefaultVariant =
@@ -450,14 +566,20 @@ class WebUsbPrinterService {
         item.variantName.trim().toLowerCase() === name.trim().toLowerCase();
       const variantName = !isDefaultVariant ? ` (${item.variantName})` : '';
       const fullName = `${name}${variantName}`;
-      addLine(fullName);
 
-      const qtyPrice = `  ${item.quantity} x ${formatRp(item.unitPrice)}`;
-      const itemSubtotal = formatRp(item.subtotal || item.quantity * Number(item.unitPrice));
-      addLine(leftRight(qtyPrice, itemSubtotal));
+      const itemSubtotal = formatRp(
+        item.subtotal ?? Number(item.unitPrice || item.price || 0) * item.quantity
+      );
+      addLine(leftRight(fullName, itemSubtotal));
 
+      const unitPriceVal = Number(
+        item.unitPrice || item.price || (item.subtotal ? item.subtotal / item.quantity : 0)
+      );
+      const qtyPrice = `${item.quantity} x ${formatRp(unitPriceVal)}`;
       if (item.notes) {
-        addLine(`  * Catatan: ${item.notes}`);
+        addLine(leftRight(qtyPrice, `(${item.notes})`));
+      } else {
+        addLine(qtyPrice);
       }
     }
 
@@ -480,7 +602,7 @@ class WebUsbPrinterService {
       addLine(leftRight(taxLabel, formatRp(order.taxAmount)));
     }
 
-    addLine(divider('='));
+    addLine(divider('-'));
 
     // Grand Total (Bold)
     add(...ESC_BOLD_ON);
@@ -490,7 +612,7 @@ class WebUsbPrinterService {
     // Informasi Pembayaran
     const payMethod = order.paymentMethod || 'CASH';
     const paidAmt = Number(order.paidAmount || order.totalAmount);
-    addLine(leftRight(`Bayar (${payMethod})`, formatRp(paidAmt)));
+    addLine(leftRight(`Metode: ${payMethod}`, `Bayar: ${formatRp(paidAmt)}`));
 
     if (Number(order.changeAmount || 0) > 0) {
       add(...ESC_BOLD_ON);
@@ -501,15 +623,17 @@ class WebUsbPrinterService {
     addLine(divider('-'));
 
     // 6. Catatan Kaki / Footer
+    add(...ESC_ALIGN_CENTER);
     if (options.footerText && options.footerText.trim()) {
-      add(...ESC_ALIGN_CENTER);
       const lines = options.footerText.split('\n');
       for (const line of lines) {
         if (line.trim()) {
           addLine(line.trim());
         }
       }
+      addLine();
     }
+    addLine('Powered by SAJI * Agilix Tech Solution');
 
     // 7. Buka Cash Drawer (jika aktif)
     if (options.openCashDrawer !== false) {
@@ -517,6 +641,10 @@ class WebUsbPrinterService {
     }
 
     // 8. Feed Kertas dan Potong (Auto-cut)
+    // Beri jeda feed baris ekstra agar kertas melewati pisau gerigi (tear bar)
+    addLine();
+    addLine();
+    addLine();
     add(...ESC_FEED_4);
     if (options.cutPaper !== false) {
       add(...ESC_CUT_PARTIAL);
@@ -532,7 +660,7 @@ class WebUsbPrinterService {
     if (!this.isConnected()) {
       throw new Error('Printer USB belum terhubung. Silakan hubungkan printer terlebih dahulu.');
     }
-    const data = this.encodeReceipt(order, options);
+    const data = await this.encodeReceipt(order, options);
     await this.printRaw(data);
   }
 

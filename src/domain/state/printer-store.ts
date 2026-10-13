@@ -54,7 +54,15 @@ interface PrinterStoreState {
 
   printReceipt: (
     order: Order,
-    outletInfo?: { name?: string; address?: string; phone?: string; footerText?: string | null }
+    outletInfo?: {
+      businessName?: string;
+      name?: string;
+      outletName?: string;
+      address?: string;
+      phone?: string;
+      footerText?: string | null;
+      logoUrl?: string | null;
+    }
   ) => Promise<void>;
 }
 
@@ -272,13 +280,18 @@ export const usePrinterStore = create<PrinterStoreState>()(
         printReceipt: async (order: Order, outletInfo) => {
           const { paperWidth, isUsbConnected, isBluetoothConnected, autoOpenCashDrawer, autoCutPaper } = get();
 
+          const resolvedBusinessName = outletInfo?.businessName;
+          const resolvedOutletName = outletInfo?.outletName || outletInfo?.name;
+
           if (isUsbConnected) {
             await webusbPrinter.printReceipt(order, {
               paperWidth,
-              outletName: outletInfo?.name,
+              businessName: resolvedBusinessName,
+              outletName: resolvedOutletName,
               outletAddress: outletInfo?.address,
               outletPhone: outletInfo?.phone,
               footerText: outletInfo?.footerText,
+              logoUrl: outletInfo?.logoUrl,
               openCashDrawer: autoOpenCashDrawer,
               cutPaper: autoCutPaper,
             });
@@ -288,10 +301,12 @@ export const usePrinterStore = create<PrinterStoreState>()(
           if (isBluetoothConnected) {
             await bluetoothPrinter.printReceipt(order, {
               paperWidth,
-              outletName: outletInfo?.name,
+              businessName: resolvedBusinessName,
+              outletName: resolvedOutletName,
               outletAddress: outletInfo?.address,
               outletPhone: outletInfo?.phone,
               footerText: outletInfo?.footerText,
+              logoUrl: outletInfo?.logoUrl,
             });
             return;
           }

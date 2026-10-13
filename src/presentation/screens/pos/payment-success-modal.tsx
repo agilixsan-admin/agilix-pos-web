@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Order } from '@model/Order';
 import { useAuthStore } from '@domain/state/auth-store';
 import { usePrinterStore } from '@domain/state/printer-store';
+import { usePosSettings } from '@domain/hooks';
 import { posService } from '@domain/services/pos-service';
 import {
   CheckCircle2,
@@ -35,6 +36,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
   onViewReceipt,
 }) => {
   const { tenant, currentOutlet, user } = useAuthStore();
+  const { data: posSettings } = usePosSettings(currentOutlet?.id);
   const {
     isConnected: isPrinterConnected,
     deviceName: printerName,
@@ -81,9 +83,12 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
     setErrorMessage('');
     try {
       await printReceipt(order, {
-        name: tenant?.name || currentOutlet?.name,
+        businessName: tenant?.businessName || tenant?.name,
+        outletName: currentOutlet?.name,
         address: currentOutlet?.address,
         phone: currentOutlet?.phone,
+        footerText: posSettings?.billFooterText,
+        logoUrl: posSettings?.billLogoUrl,
       });
       setPrintStatus('SUCCESS');
       const devType = isUsbConnected ? 'USB' : 'Bluetooth';
