@@ -172,11 +172,11 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           {/* Header */}
           <div className="text-center pb-3 border-b border-dashed border-slate-300">
             {posSettings?.billLogoUrl && (
-              <div className="flex justify-center mb-2">
+              <div className="flex justify-center mb-2 w-full text-center">
                 <img
                   src={posSettings.billLogoUrl}
                   alt="Logo Toko"
-                  className="max-h-14 max-w-[140px] object-contain"
+                  className="max-h-14 max-w-[140px] object-contain mx-auto block"
                 />
               </div>
             )}

@@ -352,54 +352,62 @@ class WebUsbPrinterService {
 
   /**
    * Konversi URL gambar menjadi ESC/POS raster bit image (GS v 0).
-   * Jika gambar gagal dimuat (CORS, offline, URL rusak), mengembalikan null secara aman tanpa error.
+   * Dibuat selebar total dot head printer (384 dot untuk 58mm, 576 dot untuk 80mm)
+   * dengan gambar diletakkan tepat di tengah kanvas secara presisi.
+   * Hal ini mencegah bug firmware printer thermal yang sering melempar raster ke margin kanan
+   * jika hanya mengandalkan perintah ESC a 1 (align center).
    */
   private async convertImageToEscPosRaster(
     imageUrl: string,
-    maxWidthDots = 200
+    paperWidth: '58mm' | '80mm' = '58mm'
   ): Promise<number[] | null> {
     if (typeof window === 'undefined' || !imageUrl) return null;
+
+    // Lebar head printer thermal standar: 58mm = 384 dot (48 byte), 80mm = 576 dot (72 byte)
+    const totalLineWidthDots = paperWidth === '80mm' ? 576 : 384;
+    const maxLogoDots = paperWidth === '80mm' ? 360 : 240;
 
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'Anonymous';
       img.onload = () => {
         try {
-          const scale = Math.min(1, maxWidthDots / (img.width || 1));
+          const scale = Math.min(1, maxLogoDots / (img.width || 1));
           const targetWidth = Math.max(8, Math.floor(img.width * scale));
-          const byteWidth = Math.ceil(targetWidth / 8);
-          const actualWidth = byteWidth * 8;
-          const actualHeight = Math.max(8, Math.floor(img.height * scale));
+          const targetHeight = Math.max(8, Math.floor(img.height * scale));
 
           const canvas = document.createElement('canvas');
-          canvas.width = actualWidth;
-          canvas.height = actualHeight;
+          canvas.width = totalLineWidthDots;
+          canvas.height = targetHeight;
           const ctx = canvas.getContext('2d');
           if (!ctx) return resolve(null);
 
+          // Background putih penuh dari tepi kiri ke kanan
           ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, actualWidth, actualHeight);
+          ctx.fillRect(0, 0, totalLineWidthDots, targetHeight);
 
-          const offsetX = Math.floor((actualWidth - targetWidth) / 2);
-          ctx.drawImage(img, offsetX, 0, targetWidth, actualHeight);
+          // Gambar logo tepat di tengah canvas selebar kertas
+          const offsetX = Math.floor((totalLineWidthDots - targetWidth) / 2);
+          ctx.drawImage(img, offsetX, 0, targetWidth, targetHeight);
 
-          const imgData = ctx.getImageData(0, 0, actualWidth, actualHeight);
+          const imgData = ctx.getImageData(0, 0, totalLineWidthDots, targetHeight);
           const pixels = imgData.data;
 
+          const byteWidth = totalLineWidthDots / 8; // 48 atau 72 byte
           const xL = byteWidth % 256;
           const xH = Math.floor(byteWidth / 256);
-          const yL = actualHeight % 256;
-          const yH = Math.floor(actualHeight / 256);
+          const yL = targetHeight % 256;
+          const yH = Math.floor(targetHeight / 256);
 
           // GS v 0 0 xL xH yL yH
           const rasterBytes: number[] = [0x1d, 0x76, 0x30, 0x00, xL, xH, yL, yH];
 
-          for (let y = 0; y < actualHeight; y++) {
+          for (let y = 0; y < targetHeight; y++) {
             for (let x = 0; x < byteWidth; x++) {
               let byteVal = 0;
               for (let b = 0; b < 8; b++) {
                 const pixelX = x * 8 + b;
-                const idx = (y * actualWidth + pixelX) * 4;
+                const idx = (y * totalLineWidthDots + pixelX) * 4;
                 const r = pixels[idx];
                 const g = pixels[idx + 1];
                 const bCol = pixels[idx + 2];
@@ -480,14 +488,16 @@ class WebUsbPrinterService {
     add(...ESC_INIT);
 
     // 1b. Cetak Logo jika tersedia (ESC/POS Raster Bit Image)
+    // Logo sudah di-center secara matematis pada canvas selebar kertas (384/576 dot),
+    // sehingga dicetak mulai dari margin kiri tanpa terpengaruh bug alignment firmware.
     if (options.logoUrl) {
       try {
         const logoRaster = await this.convertImageToEscPosRaster(
           options.logoUrl,
-          paperWidth === '80mm' ? 320 : 200
+          paperWidth
         );
         if (logoRaster && logoRaster.length > 0) {
-          add(...ESC_ALIGN_CENTER);
+          add(...ESC_ALIGN_LEFT);
           add(...logoRaster);
           addLine();
         }

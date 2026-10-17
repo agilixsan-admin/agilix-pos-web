@@ -1227,11 +1227,11 @@ export const PrintersScreen: React.FC = () => {
                   {/* Receipt Header */}
                   <div className="text-center pb-3 border-b border-dashed border-slate-300">
                     {billLogoUrl ? (
-                      <div className="flex justify-center mb-2">
+                      <div className="flex justify-center mb-2 w-full text-center">
                         <img
                           src={billLogoUrl}
                           alt="Logo Toko"
-                          className="max-h-12 max-w-[130px] object-contain"
+                          className="max-h-12 max-w-[130px] object-contain mx-auto block"
                         />
                       </div>
                     ) : (
