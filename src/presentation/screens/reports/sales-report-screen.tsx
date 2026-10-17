@@ -63,7 +63,7 @@ export const SalesReportScreen: React.FC = () => {
   }, [isSuperAdmin, accessibleOutlets]);
 
   // Date Range State
-  const [datePreset, setDatePreset] = useState<string>('LAST_30_DAYS');
+  const [datePreset, setDatePreset] = useState<string>('TODAY');
 
   const getDateRange = (preset: string): { startDate: string; endDate: string } => {
     const now = new Date();

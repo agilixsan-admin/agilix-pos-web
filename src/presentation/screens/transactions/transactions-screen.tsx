@@ -102,7 +102,7 @@ export const TransactionsScreen: React.FC = () => {
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>('ALL');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [datePreset, setDatePreset] = useState<string>('ALL');
+  const [datePreset, setDatePreset] = useState<string>('TODAY');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 10;
 
@@ -110,8 +110,9 @@ export const TransactionsScreen: React.FC = () => {
   const getDateRange = (preset: string): { startDate?: string; endDate?: string } => {
     const now = new Date();
     if (preset === 'TODAY') {
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      return { startDate: start.toISOString() };
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      return { startDate: start.toISOString(), endDate: end.toISOString() };
     }
     if (preset === 'LAST_7_DAYS') {
       const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -153,7 +154,7 @@ export const TransactionsScreen: React.FC = () => {
     setOrderTypeFilter('ALL');
     setPaymentMethodFilter('ALL');
     setStatusFilter('ALL');
-    setDatePreset('ALL');
+    setDatePreset('TODAY');
     setCurrentPage(1);
   };
 
@@ -344,10 +345,10 @@ export const TransactionsScreen: React.FC = () => {
                 setCurrentPage(1);
               }}
               options={[
-                { value: 'ALL', label: 'Semua Waktu' },
                 { value: 'TODAY', label: 'Hari Ini' },
                 { value: 'LAST_7_DAYS', label: '7 Hari Terakhir' },
                 { value: 'LAST_30_DAYS', label: '30 Hari Terakhir' },
+                { value: 'ALL', label: 'Semua Waktu' },
               ]}
               buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl"
             />
@@ -401,7 +402,7 @@ export const TransactionsScreen: React.FC = () => {
               buttonClassName="bg-slate-50 border-slate-200 text-xs py-2 px-3 rounded-xl"
             />
 
-            {(searchQuery || orderTypeFilter !== 'ALL' || paymentMethodFilter !== 'ALL' || statusFilter !== 'ALL' || datePreset !== 'ALL') && (
+            {(searchQuery || orderTypeFilter !== 'ALL' || paymentMethodFilter !== 'ALL' || statusFilter !== 'ALL' || datePreset !== 'TODAY') && (
               <Button
                 variant="ghost"
                 size="sm"

@@ -37,7 +37,7 @@ export const ShiftReconciliationScreen: React.FC = () => {
   const effectiveOutletId = selectedOutletId === 'ALL' ? undefined : selectedOutletId;
 
   // Date Range Presets
-  const [datePreset, setDatePreset] = useState<string>('THIS_MONTH');
+  const [datePreset, setDatePreset] = useState<string>('TODAY');
 
   const getDateRange = (preset: string) => {
     const now = new Date();
