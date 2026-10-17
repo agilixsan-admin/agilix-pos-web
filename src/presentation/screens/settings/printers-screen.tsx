@@ -125,6 +125,8 @@ export const PrintersScreen: React.FC = () => {
     disconnectBluetooth,
     testPrintBluetooth,
     openCashDrawer,
+    paperWidth,
+    setPaperWidth,
   } = usePrinterStore();
 
   // Mutations
@@ -171,8 +173,14 @@ export const PrintersScreen: React.FC = () => {
   const [billFooterText, setBillFooterText] = useState<string>('Terima kasih atas kunjungan Anda!');
   const [isUploadingLogo, setIsUploadingLogo] = useState<boolean>(false);
   const [isSavingFormat, setIsSavingFormat] = useState<boolean>(false);
-  const [previewPaperSize, setPreviewPaperSize] = useState<'58mm' | '80mm'>('58mm');
+  const [previewPaperSize, setPreviewPaperSize] = useState<'58mm' | '80mm'>(paperWidth || '58mm');
   const logoFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (paperWidth) {
+      setPreviewPaperSize(paperWidth);
+    }
+  }, [paperWidth]);
 
   // Sync with fetched posSettings
   useEffect(() => {
@@ -1186,7 +1194,10 @@ export const PrintersScreen: React.FC = () => {
                 <div className="flex items-center bg-slate-100 p-0.5 rounded-lg text-[10px] font-bold">
                   <button
                     type="button"
-                    onClick={() => setPreviewPaperSize('58mm')}
+                    onClick={() => {
+                      setPreviewPaperSize('58mm');
+                      setPaperWidth('58mm');
+                    }}
                     className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
                       previewPaperSize === '58mm'
                         ? 'bg-white text-slate-900 shadow-xs'
@@ -1197,7 +1208,10 @@ export const PrintersScreen: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPreviewPaperSize('80mm')}
+                    onClick={() => {
+                      setPreviewPaperSize('80mm');
+                      setPaperWidth('80mm');
+                    }}
                     className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
                       previewPaperSize === '80mm'
                         ? 'bg-white text-slate-900 shadow-xs'
