@@ -325,6 +325,9 @@ export const PosScreen: React.FC = () => {
       setNotesModalItem(null);
       setVoidModalItem(null);
       setIsOrderTypeModalOpen(false);
+      if (activePaymentOrder) {
+        handleSelectOpenOrderForAppend(activePaymentOrder);
+      }
       setActivePaymentOrder(null);
       setIsOpenOrdersOpen(false);
     },
@@ -1503,7 +1506,13 @@ export const PosScreen: React.FC = () => {
           order={activePaymentOrder}
           isOpen={!!activePaymentOrder}
           taxName={taxName || taxConfig?.defaultGlobalTax?.name}
-          onClose={() => setActivePaymentOrder(null)}
+          onClose={(latestOrder) => {
+            const targetOrder = latestOrder || activePaymentOrder;
+            if (targetOrder) {
+              handleSelectOpenOrderForAppend(targetOrder);
+            }
+            setActivePaymentOrder(null);
+          }}
           onPaymentSuccess={(completed) => {
             setActivePaymentOrder(null);
             setActiveAppendOrder(null);

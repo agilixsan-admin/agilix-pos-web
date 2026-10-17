@@ -20,7 +20,7 @@ import { DiscountModal } from './discount-modal';
 interface PaymentModalProps {
   order: Order;
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (latestOrder?: Order) => void;
   onPaymentSuccess: (completedOrder: Order) => void;
   taxName?: string | null;
 }
@@ -226,7 +226,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     <>
       <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => onClose(currentOrder)}
       title="Checkout & Pembayaran"
       subtitle={`No. Order: ${currentOrder.orderNumber || currentOrder.id.slice(0, 8)} • ${
         currentOrder.orderType === 'DINE_IN'
@@ -236,7 +236,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       maxWidth="2xl"
       footer={
         <>
-          <Button variant="outline" onClick={onClose} disabled={loading || checkingQris}>
+          <Button variant="outline" onClick={() => onClose(currentOrder)} disabled={loading || checkingQris}>
             Batal
           </Button>
           {method === 'QRIS' ? (
