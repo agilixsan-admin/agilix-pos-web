@@ -61,6 +61,13 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
   const rawPayments = (order as unknown as { payments?: Array<{ amount?: number; changeAmount?: number }> }).payments;
   const latestPayment = Array.isArray(rawPayments) && rawPayments.length > 0 ? rawPayments[rawPayments.length - 1] : undefined;
 
+  const cashierName =
+    order.cashierName ||
+    order.creator?.name ||
+    (order as unknown as { user?: { name?: string } }).user?.name ||
+    user?.name ||
+    'Kasir';
+
   const totalAmount = Number(order.totalAmount || 0);
   const paidAmount = Number(
     order.paidAmount !== undefined
@@ -89,6 +96,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
         phone: currentOutlet?.phone,
         footerText: posSettings?.billFooterText,
         logoUrl: posSettings?.billLogoUrl,
+        cashierName,
       });
       setPrintStatus('SUCCESS');
       const devType = isUsbConnected ? 'USB' : 'Bluetooth';
@@ -287,6 +295,13 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                         ? `Dine In (${order.tableName || order.tableNumber || order.table?.name || 'Meja'})`
                         : 'Take Away'}
                     </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <span className="text-xs font-semibold text-slate-500">Kasir</span>
+                    <span className="text-xs font-bold text-slate-800">
+                      {cashierName}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between pb-2 border-b border-slate-200">

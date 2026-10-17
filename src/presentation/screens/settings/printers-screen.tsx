@@ -65,6 +65,7 @@ import {
 
 export const PrintersScreen: React.FC = () => {
   const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const user = useAuthStore((state) => state.user);
   const { data: rawOutlets = [], isLoading: outletsLoading } = useOutlets();
   const outlets = Array.isArray(rawOutlets) ? rawOutlets : [];
 
@@ -1265,6 +1266,10 @@ export const PrintersScreen: React.FC = () => {
                     <div className="flex justify-between">
                       <span>Tipe:</span>
                       <span className="font-semibold">Dine-In (Meja 04)</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Kasir:</span>
+                      <span>{user?.name || 'Budi Kasir'}</span>
                     </div>
                   </div>
 

@@ -63,6 +63,7 @@ interface PrinterStoreState {
       phone?: string;
       footerText?: string | null;
       logoUrl?: string | null;
+      cashierName?: string;
     }
   ) => Promise<void>;
 }
@@ -311,6 +312,11 @@ export const usePrinterStore = create<PrinterStoreState>()(
 
           const resolvedBusinessName = outletInfo?.businessName;
           const resolvedOutletName = outletInfo?.outletName || outletInfo?.name;
+          const resolvedCashier =
+            outletInfo?.cashierName ||
+            order.cashierName ||
+            order.creator?.name ||
+            (order as unknown as { user?: { name?: string } }).user?.name;
 
           if (isUsbConnected) {
             await webusbPrinter.printReceipt(order, {
@@ -321,6 +327,7 @@ export const usePrinterStore = create<PrinterStoreState>()(
               outletPhone: outletInfo?.phone,
               footerText: outletInfo?.footerText,
               logoUrl: outletInfo?.logoUrl,
+              cashierName: resolvedCashier,
               openCashDrawer: autoOpenCashDrawer,
               cutPaper: autoCutPaper,
             });
@@ -336,6 +343,7 @@ export const usePrinterStore = create<PrinterStoreState>()(
               outletPhone: outletInfo?.phone,
               footerText: outletInfo?.footerText,
               logoUrl: outletInfo?.logoUrl,
+              cashierName: resolvedCashier,
             });
             return;
           }

@@ -19,7 +19,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   onClose,
   taxName,
 }) => {
-  const { tenant, currentOutlet } = useAuthStore();
+  const { tenant, currentOutlet, user } = useAuthStore();
   const { data: posSettings } = usePosSettings(currentOutlet?.id);
   const {
     isConnected: isPrinterConnected,
@@ -37,6 +37,13 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
   const [isPrinting, setIsPrinting] = useState(false);
 
+  const cashierName =
+    order.cashierName ||
+    order.creator?.name ||
+    (order as unknown as { user?: { name?: string } }).user?.name ||
+    user?.name ||
+    'Kasir';
+
   if (!isOpen) return null;
 
   const handleBrowserPrint = () => {
@@ -53,6 +60,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         phone: currentOutlet?.phone,
         footerText: posSettings?.billFooterText,
         logoUrl: posSettings?.billLogoUrl,
+        cashierName,
       });
       const devType = isUsbConnected ? 'USB' : 'Bluetooth';
       toast.success(`Struk berhasil dicetak langsung ke printer ${devType}!`);
@@ -208,6 +216,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   ? `Dine-In (${order.tableName || order.tableNumber || order.table?.name || 'Meja'})`
                   : 'Take Away'}
               </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Kasir:</span>
+              <span>{cashierName}</span>
             </div>
             {order.customerName && (
               <div className="flex justify-between">

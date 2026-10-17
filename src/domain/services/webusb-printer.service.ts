@@ -70,6 +70,7 @@ export interface WebUsbPrintOptions {
   outletPhone?: string;
   footerText?: string | null;
   logoUrl?: string | null;
+  cashierName?: string;
   openCashDrawer?: boolean;
   cutPaper?: boolean;
 }
@@ -551,6 +552,14 @@ class WebUsbPrinterService {
       ? `Dine-In${tableIdentifier ? ` (${tableIdentifier})` : ''}`
       : 'Take Away';
     addLine(leftRight('Tipe:', tipeLayanan));
+
+    const cashierName =
+      options.cashierName ||
+      order.cashierName ||
+      order.creator?.name ||
+      (order as unknown as { user?: { name?: string } }).user?.name ||
+      'Kasir';
+    addLine(leftRight('Kasir:', cashierName));
 
     if (order.customerName) {
       addLine(leftRight('Pelanggan:', order.customerName));
