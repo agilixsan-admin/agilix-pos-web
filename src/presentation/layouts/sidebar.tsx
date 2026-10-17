@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Store,
@@ -37,6 +37,8 @@ import {
 } from 'lucide-react';
 import { useAccess } from '@domain/hooks/use-access';
 import { useUiStore } from '@domain/state/ui-store';
+import { useAuthStore } from '@domain/state/auth-store';
+import { usePosSettings } from '@domain/hooks';
 
 interface SubMenuItem {
   title: string;
@@ -123,6 +125,14 @@ export const Sidebar: React.FC = () => {
     toggleSidebarCollapsed,
   } = useUiStore();
 
+  const currentOutlet = useAuthStore((state) => state.currentOutlet);
+  const { data: posSettings } = usePosSettings(currentOutlet?.id);
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    setLogoError(false);
+  }, [posSettings?.billLogoUrl]);
+
   // Filter groups: only keep items user has permission for, and remove empty groups
   const accessibleGroups = MENU_GROUPS.map((group) => {
     const accessibleItems = group.items.filter((item) => hasAccess(item.permission));
@@ -148,9 +158,20 @@ export const Sidebar: React.FC = () => {
         }`}
       >
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-9 h-9 rounded-xl bg-[#0D5C53] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
-            S
-          </div>
+          {posSettings?.billLogoUrl && !logoError ? (
+            <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0 p-1">
+              <img
+                src={posSettings.billLogoUrl}
+                alt="Logo Bisnis"
+                className="w-full h-full object-contain"
+                onError={() => setLogoError(true)}
+              />
+            </div>
+          ) : (
+            <div className="w-9 h-9 rounded-xl bg-[#0D5C53] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
+              S
+            </div>
+          )}
           {(!isSidebarCollapsed || isMobileMenuOpen) && (
             <div className="overflow-hidden">
               <h1 className="font-bold text-slate-800 text-base leading-tight tracking-tight truncate">
