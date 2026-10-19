@@ -168,17 +168,17 @@ export const Sidebar: React.FC = () => {
               />
             </div>
           ) : (
-            <div className="w-9 h-9 rounded-xl bg-[#0D5C53] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-b from-[#0E6D62] to-[#0A574E] flex items-center justify-center text-white font-bold text-base shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-[#08453E] shrink-0">
               S
             </div>
           )}
           {(!isSidebarCollapsed || isMobileMenuOpen) && (
             <div className="overflow-hidden">
-              <h1 className="font-bold text-slate-800 text-base leading-tight tracking-tight truncate">
+              <h1 className="font-bold text-slate-900 text-sm tracking-tight truncate">
                 SAJI
               </h1>
-              <p className="text-[10px] text-slate-500 font-medium truncate">
-                by Agilix Tech Solution
+              <p className="text-[10px] text-slate-400 font-medium tracking-wide truncate">
+                POS by Agilix
               </p>
             </div>
           )}
@@ -195,11 +195,11 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Navigation Groups List */}
-      <nav className="flex-1 overflow-y-auto px-2.5 py-4 space-y-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
         {accessibleGroups.map((group) => (
           <div key={group.groupTitle} className="space-y-1">
             {!isSidebarCollapsed || isMobileMenuOpen ? (
-              <h2 className="px-2.5 text-[11px] font-bold tracking-wider text-slate-400 uppercase truncate">
+              <h2 className="px-3 text-[10px] font-bold tracking-widest text-slate-400 uppercase truncate">
                 {group.groupTitle}
               </h2>
             ) : (
@@ -222,33 +222,33 @@ export const Sidebar: React.FC = () => {
                       closeMobileMenu();
                     }}
                     title={isIconOnly ? item.title : undefined}
-                    className={`flex items-center rounded-lg text-sm font-medium transition-all group relative ${
+                    className={`flex items-center rounded-xl text-xs font-medium transition-all group relative ${
                       isIconOnly
-                        ? 'justify-center w-11 h-11 mx-auto'
+                        ? 'justify-center w-10 h-10 mx-auto'
                         : 'gap-3 px-3 py-2.5'
                     } ${
                       isActive
-                        ? 'bg-[#E6F4F1] text-[#0D5C53] font-semibold shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'bg-teal-50/80 text-[#0A574E] font-semibold border border-teal-200/60 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
                     }`}
                   >
                     <Icon
                       className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                        isActive ? 'text-[#0D5C53]' : 'text-slate-500 group-hover:text-slate-800'
+                        isActive ? 'text-[#0A574E]' : 'text-slate-400 group-hover:text-slate-700'
                       }`}
                     />
                     {!isIconOnly && (
                       <span className="truncate">{item.title}</span>
                     )}
                     {!isIconOnly && item.badge && (
-                      <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                      <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 shrink-0">
                         {item.badge}
                       </span>
                     )}
 
                     {/* Tooltip on hover when desktop is in collapsed icon mode */}
                     {isIconOnly && (
-                      <span className="hidden lg:group-hover:flex absolute left-full ml-3 px-2.5 py-1 bg-slate-900 text-white text-xs font-semibold rounded-md whitespace-nowrap shadow-lg z-50 pointer-events-none items-center gap-1.5">
+                      <span className="hidden lg:group-hover:flex absolute left-full ml-3 px-2.5 py-1 bg-slate-900 text-white text-xs font-medium rounded-lg whitespace-nowrap shadow-lg z-50 pointer-events-none items-center gap-1.5">
                         {item.title}
                         {item.badge && (
                           <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-500 text-white uppercase">
@@ -270,12 +270,12 @@ export const Sidebar: React.FC = () => {
         <button
           onClick={toggleSidebarCollapsed}
           title={isSidebarCollapsed ? 'Buka Penuh (Expand)' : 'Perkecil Menu (Collapse)'}
-          className={`w-full flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-[#0D5C53] hover:bg-teal-50 transition-colors cursor-pointer text-xs font-medium ${
+          className={`w-full flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#0A574E] hover:bg-teal-50/70 transition-all active:scale-[0.98] cursor-pointer text-xs font-medium ${
             isSidebarCollapsed ? 'gap-0' : 'gap-2'
           }`}
         >
           {isSidebarCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-[#0D5C53]" />
+            <ChevronRight className="w-4 h-4 text-[#0A574E]" />
           ) : (
             <>
               <ChevronLeft className="w-4 h-4" />

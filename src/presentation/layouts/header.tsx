@@ -52,14 +52,14 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 select-none">
+    <header className="h-16 bg-white/95 backdrop-blur-xs border-b border-slate-200/80 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 select-none z-30">
       {/* Left: Toggles & Outlet Selector */}
       <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
         {/* Mobile / Tablet Hamburger Toggle */}
         <button
           onClick={toggleMobileMenu}
           aria-label="Buka Menu"
-          className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+          className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 rounded-xl transition-all active:scale-95 cursor-pointer"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -69,7 +69,7 @@ export const Header: React.FC = () => {
           onClick={toggleSidebarCollapsed}
           aria-label={isSidebarCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
           title={isSidebarCollapsed ? 'Buka Penuh Sidebar' : 'Tutup Sidebar (Mode Ikon Saja)'}
-          className="hidden lg:flex p-2 text-slate-500 hover:text-[#0D5C53] hover:bg-teal-50 rounded-xl transition-colors cursor-pointer"
+          className="hidden lg:flex p-2 text-slate-500 hover:text-[#0A574E] hover:bg-teal-50/70 rounded-xl transition-all active:scale-95 cursor-pointer"
         >
           {isSidebarCollapsed ? (
             <PanelLeftOpen className="w-5 h-5" />
@@ -88,7 +88,7 @@ export const Header: React.FC = () => {
         )}
 
         {isTenantLocked && (
-          <div className="flex items-center gap-1.5 bg-red-50 text-red-700 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold border border-red-200 shrink-0">
+          <div className="flex items-center gap-1.5 bg-rose-50 text-rose-700 px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold border border-rose-200/80 shadow-2xs shrink-0">
             <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span className="hidden sm:inline">Akun Tenant Terkunci</span>
             <span className="sm:hidden">Terkunci</span>
@@ -103,17 +103,17 @@ export const Header: React.FC = () => {
           ref={triggerRef}
           type="button"
           onClick={() => setIsUserMenuOpen((prev) => !prev)}
-          className={`flex items-center gap-2.5 p-1 -mr-1 rounded-2xl transition-all cursor-pointer ${
+          className={`flex items-center gap-2.5 p-1.5 -mr-1 rounded-2xl transition-all cursor-pointer ${
             isUserMenuOpen
-              ? 'bg-slate-100 ring-2 ring-[#0D5C53]/15'
-              : 'hover:bg-slate-50'
+              ? 'bg-slate-100 ring-2 ring-[#0A574E]/15'
+              : 'hover:bg-slate-50/80'
           }`}
           aria-haspopup="menu"
           aria-expanded={isUserMenuOpen}
           title={`Akun: ${user?.name || 'Kasir'}`}
         >
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-bold text-slate-800 leading-tight">
+            <p className="text-xs font-semibold text-slate-800 leading-tight tracking-tight">
               {user?.name || 'Kasir'}
             </p>
             <div className="flex items-center justify-end gap-1 mt-0.5">
@@ -121,7 +121,7 @@ export const Header: React.FC = () => {
                 {user?.role?.name || user?.roleName || (user?.isSuperAdmin ? 'Super Admin' : 'Staff')}
               </span>
               {tenant?.name && (
-                <span className="text-[9px] bg-slate-100 text-slate-600 px-1 py-0.2 rounded font-medium">
+                <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-medium border border-slate-200/50">
                   {tenant.name}
                 </span>
               )}
@@ -129,12 +129,12 @@ export const Header: React.FC = () => {
           </div>
 
           {/* User Avatar Circle */}
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-[#0D5C53] to-teal-500 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 border border-teal-100/50">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-[#0E6D62] to-[#0A574E] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 ring-2 ring-white/80">
             {getInitials(user?.name || 'Kasir')}
           </div>
           <ChevronDown
             className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 hidden sm:block ${
-              isUserMenuOpen ? 'rotate-180 text-[#0D5C53]' : ''
+              isUserMenuOpen ? 'rotate-180 text-[#0A574E]' : ''
             }`}
           />
         </button>
@@ -165,14 +165,14 @@ export const Header: React.FC = () => {
             maxHeight: `${coords.maxHeight}px`,
             zIndex: 99999,
           }}
-          className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-1.5 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100 w-60"
+          className="bg-white border border-slate-200/90 rounded-2xl shadow-xl p-1.5 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100 w-64"
         >
           {/* User Info Header */}
-          <div className="px-3 py-2.5 bg-slate-50 rounded-xl mb-1 border border-slate-100">
-            <p className="text-xs font-bold text-slate-900 truncate">{user?.name || 'Kasir'}</p>
+          <div className="px-3.5 py-3 bg-slate-50/80 rounded-xl mb-1 border border-slate-100">
+            <p className="text-xs font-bold text-slate-900 truncate tracking-tight">{user?.name || 'Kasir'}</p>
             <p className="text-[11px] text-slate-500 truncate font-mono mt-0.5">{user?.email || '-'}</p>
-            <div className="mt-1.5 flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold bg-teal-50 text-[#0D5C53] border border-teal-200/60 px-2 py-0.5 rounded-full">
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold bg-teal-50 text-[#0A574E] border border-teal-200/60 px-2 py-0.5 rounded-full">
                 {user?.role?.name || user?.roleName || (user?.isSuperAdmin ? 'Super Admin' : 'Staff')}
               </span>
             </div>
@@ -185,9 +185,9 @@ export const Header: React.FC = () => {
               setIsUserMenuOpen(false);
               navigate('/profile');
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 rounded-xl transition-colors cursor-pointer text-left font-medium"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-left font-medium"
           >
-            <User className="w-4 h-4 text-slate-500" />
+            <User className="w-4 h-4 text-slate-400" />
             <span>Profil Pengguna</span>
           </button>
 
@@ -198,9 +198,9 @@ export const Header: React.FC = () => {
               setIsUserMenuOpen(false);
               setIsResetModalOpen(true);
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 rounded-xl transition-colors cursor-pointer text-left font-medium"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-left font-medium"
           >
-            <KeyRound className="w-4 h-4 text-slate-500" />
+            <KeyRound className="w-4 h-4 text-slate-400" />
             <span>Reset Password</span>
           </button>
 
@@ -213,7 +213,7 @@ export const Header: React.FC = () => {
               setIsUserMenuOpen(false);
               handleLogout();
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer text-left font-medium"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50/80 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-left font-medium"
           >
             <LogOut className="w-4 h-4 text-rose-500" />
             <span>Keluar</span>

@@ -181,19 +181,19 @@ export const CustomOutletSelect: React.FC<CustomOutletSelectProps> = ({
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex items-center gap-1.5 bg-slate-50 hover:bg-white border border-slate-200 hover:border-slate-300 rounded-xl transition-all cursor-pointer ${
-          compact ? 'px-2 py-1 text-xs' : 'px-2.5 py-1.5 text-xs'
-        } ${isOpen ? 'ring-2 ring-[#0D5C53]/20 border-[#0D5C53] bg-white' : ''}`}
+        className={`flex items-center gap-2 bg-slate-50/80 hover:bg-slate-100/70 border border-slate-200/90 rounded-xl transition-all cursor-pointer shadow-2xs ${
+          compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-xs'
+        } ${isOpen ? 'ring-2 ring-[#0A574E]/15 border-[#0A574E] bg-white' : ''}`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <Building2 className="w-3.5 h-3.5 text-[#0D5C53] shrink-0" />
-        <span className="font-bold text-slate-800 truncate max-w-[120px] sm:max-w-[180px]">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)] shrink-0" />
+        <span className="font-semibold text-slate-800 tracking-tight truncate max-w-[120px] sm:max-w-[180px]">
           {selectedOutlet?.name || 'Pilih Cabang'}
         </span>
         <ChevronDown
           className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${
-            isOpen ? 'rotate-180 text-[#0D5C53]' : ''
+            isOpen ? 'rotate-180 text-[#0A574E]' : ''
           }`}
         />
       </button>
@@ -212,10 +212,10 @@ export const CustomOutletSelect: React.FC<CustomOutletSelectProps> = ({
             maxHeight: `${coords.maxHeight}px`,
             zIndex: 99999,
           }}
-          className="bg-white border border-slate-200 rounded-xl shadow-2xl p-1 min-w-[180px] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100"
+          className="bg-white border border-slate-200/90 rounded-2xl shadow-xl p-1.5 min-w-[200px] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100"
         >
-          <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Pilih Cabang Aktif
+          <div className="px-2.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            Cabang Aktif
           </div>
           {outlets.map((outlet) => {
             const isSelected = outlet.id === selectedOutlet?.id;
@@ -227,14 +227,17 @@ export const CustomOutletSelect: React.FC<CustomOutletSelectProps> = ({
                   onSelectOutlet(outlet);
                   setIsOpen(false);
                 }}
-                className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 text-xs rounded-lg transition-colors cursor-pointer text-left ${
+                className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 text-xs rounded-xl transition-all cursor-pointer text-left ${
                   isSelected
-                    ? 'bg-teal-50 text-[#0D5C53] font-bold'
-                    : 'text-slate-800 hover:bg-slate-50'
+                    ? 'bg-teal-50/80 text-[#0A574E] font-semibold border border-teal-200/50'
+                    : 'text-slate-700 hover:bg-slate-50 font-medium'
                 }`}
               >
-                <span className="truncate">{outlet.name}</span>
-                {isSelected && <Check className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                <div className="flex items-center gap-2 truncate">
+                  <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-[#0A574E]' : 'bg-slate-300'}`} />
+                  <span className="truncate">{outlet.name}</span>
+                </div>
+                {isSelected && <Check className="w-3.5 h-3.5 text-[#0A574E] shrink-0" />}
               </button>
             );
           })}
