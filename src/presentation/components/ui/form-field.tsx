@@ -33,7 +33,7 @@ export const FormInput: React.FC<FormInputProps> = ({
       <div className="relative">
         <input
           disabled={disabled || isLocked}
-          className={`w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] transition-all disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed ${
+          className={`w-full bg-slate-50/60 hover:bg-slate-50 focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0A574E]/15 focus:border-[#0A574E] transition-all shadow-2xs disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed ${
             error ? 'border-rose-300 focus:ring-rose-200 focus:border-rose-500' : ''
           } ${className}`}
           {...props}
@@ -123,12 +123,12 @@ export const FormSelect: React.FC<FormSelectProps> = ({
         disabled={disabled}
         id={id}
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full bg-white border rounded-xl px-3.5 py-2.5 text-xs text-left flex items-center justify-between gap-2 transition-all cursor-pointer ${
+        className={`w-full bg-slate-50/60 hover:bg-slate-50 focus:bg-white border rounded-xl px-3.5 py-2.5 text-xs text-left flex items-center justify-between gap-2 transition-all cursor-pointer shadow-2xs ${
           error
             ? 'border-rose-300 ring-2 ring-rose-100'
             : isOpen
-              ? 'border-[#0D5C53] ring-2 ring-[#0D5C53]/15'
-              : 'border-slate-200 hover:border-slate-300'
+              ? 'border-[#0A574E] ring-2 ring-[#0A574E]/15 bg-white'
+              : 'border-slate-200/90 hover:border-slate-300'
         } ${disabled ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'text-slate-900'}`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -138,7 +138,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
         </span>
         <ChevronDown
           className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-[#0D5C53]' : ''
+            isOpen ? 'rotate-180 text-[#0A574E]' : ''
           }`}
         />
       </button>
@@ -212,7 +212,7 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
         </label>
       )}
       <textarea
-        className={`w-full bg-white border border-slate-200 rounded-xl p-3.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] transition-all ${
+        className={`w-full bg-slate-50/60 hover:bg-slate-50 focus:bg-white border border-slate-200/90 rounded-xl p-3.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0A574E]/15 focus:border-[#0A574E] transition-all shadow-2xs ${
           error ? 'border-rose-300 focus:ring-rose-200 focus:border-rose-500' : ''
         } ${className}`}
         {...props}

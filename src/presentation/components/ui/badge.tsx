@@ -14,7 +14,7 @@ export const Badge: React.FC<BadgeProps> = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center rounded-full font-semibold border';
+  const baseStyles = 'inline-flex items-center rounded-full font-medium tracking-tight border shadow-2xs';
 
   const sizeStyles = {
     sm: 'px-2 py-0.5 text-[10px] gap-1',
@@ -22,18 +22,18 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const variantStyles = {
-    success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    danger: 'bg-rose-50 text-rose-700 border-rose-200',
-    warning: 'bg-amber-50 text-amber-700 border-amber-200',
-    info: 'bg-teal-50 text-[#0D5C53] border-teal-200',
-    neutral: 'bg-slate-100 text-slate-700 border-slate-200',
+    success: 'bg-emerald-50/90 text-emerald-800 border-emerald-200/80',
+    danger: 'bg-rose-50/90 text-rose-800 border-rose-200/80',
+    warning: 'bg-amber-50/90 text-amber-800 border-amber-200/80',
+    info: 'bg-teal-50/90 text-[#0A574E] border-teal-200/80',
+    neutral: 'bg-slate-100/90 text-slate-700 border-slate-200/80',
   };
 
   const dotColors = {
-    success: 'bg-emerald-500',
-    danger: 'bg-rose-500',
-    warning: 'bg-amber-500',
-    info: 'bg-[#0D5C53]',
+    success: 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.4)]',
+    danger: 'bg-rose-500 shadow-[0_0_4px_rgba(244,63,94,0.4)]',
+    warning: 'bg-amber-500 shadow-[0_0_4px_rgba(245,158,11,0.4)]',
+    info: 'bg-[#0A574E] shadow-[0_0_4px_rgba(10,87,78,0.4)]',
     neutral: 'bg-slate-400',
   };
 

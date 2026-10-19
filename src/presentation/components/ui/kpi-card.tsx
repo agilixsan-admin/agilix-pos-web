@@ -38,19 +38,19 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   };
 
   return (
-    <div className={`bg-white border border-slate-200 rounded-2xl p-4 shadow-xs ${className}`}>
+    <div className={`bg-white border border-slate-200/80 rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-all duration-200 ${className}`}>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-500">{title}</span>
-        {icon && <div className={`p-2 rounded-xl ${iconThemes[theme]}`}>{icon}</div>}
+        <span className="text-xs font-medium text-slate-500 tracking-tight">{title}</span>
+        {icon && <div className={`p-2.5 rounded-xl ring-1 ring-black/5 ${iconThemes[theme]}`}>{icon}</div>}
       </div>
-      <div className="mt-3">
+      <div className="mt-3.5">
         <div className="flex items-baseline gap-1.5">
-          <span className={`text-2xl font-bold tracking-tight ${valueThemes[theme]}`}>
+          <span className={`text-2xl font-bold tracking-tight tabular-nums ${valueThemes[theme]}`}>
             {value}
           </span>
           {unit && <span className="text-xs font-semibold text-slate-500">{unit}</span>}
         </div>
-        {statusBadge && <div className="mt-1.5">{statusBadge}</div>}
+        {statusBadge && <div className="mt-2">{statusBadge}</div>}
         {subtitle && <p className="text-[11px] text-slate-400 mt-1">{subtitle}</p>}
       </div>
     </div>

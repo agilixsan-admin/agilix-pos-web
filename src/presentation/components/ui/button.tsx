@@ -21,7 +21,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-semibold rounded-xl transition-all cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none active:scale-[0.98]';
+    'inline-flex items-center justify-center font-medium tracking-tight rounded-xl transition-all duration-150 cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none active:scale-[0.97]';
 
   const sizeStyles = {
     sm: 'px-3 py-1.5 text-xs gap-1.5',
@@ -31,15 +31,15 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary:
-      'bg-[#0D5C53] hover:bg-[#094740] text-white shadow-xs focus:ring-2 focus:ring-[#0D5C53]/30',
+      'bg-gradient-to-b from-[#0E6D62] to-[#0A574E] hover:from-[#10776B] hover:to-[#0C5F55] active:from-[#084840] active:to-[#063B34] text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.15)] border border-[#08453E] focus:ring-2 focus:ring-[#0D5C53]/25',
     secondary:
-      'bg-slate-100 hover:bg-slate-200 text-slate-700 focus:ring-2 focus:ring-slate-300',
+      'bg-slate-100 hover:bg-slate-200/80 active:bg-slate-200 text-slate-700 border border-slate-200/60 shadow-2xs focus:ring-2 focus:ring-slate-200',
     outline:
-      'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-xs focus:ring-2 focus:ring-slate-200',
+      'bg-white hover:bg-slate-50/90 active:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs hover:border-slate-300 focus:ring-2 focus:ring-slate-200',
     danger:
-      'bg-rose-600 hover:bg-rose-700 text-white shadow-xs focus:ring-2 focus:ring-rose-400',
+      'bg-gradient-to-b from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 active:from-rose-700 active:to-rose-800 text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.15)] border border-rose-700/30 focus:ring-2 focus:ring-rose-400',
     ghost:
-      'bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900',
+      'bg-transparent hover:bg-slate-100/80 active:bg-slate-200/70 text-slate-600 hover:text-slate-900',
   };
 
   return (
