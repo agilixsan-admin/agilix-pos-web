@@ -145,7 +145,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       className={`
-        fixed inset-y-0 left-0 z-50 bg-white dark:bg-[#101828] border-r border-slate-200 dark:border-slate-800/80 h-screen flex flex-col select-none transition-all duration-300 ease-in-out shrink-0
+        fixed inset-y-0 left-0 z-50 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700/80 h-screen flex flex-col select-none transition-all duration-300 ease-in-out shrink-0
         lg:static lg:z-auto
         ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
         ${isSidebarCollapsed ? 'lg:w-[72px]' : 'w-64'}

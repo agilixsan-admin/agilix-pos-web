@@ -84,9 +84,9 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
   const reservedCount = tables.filter((t) => t.status === 'RESERVED').length;
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-6rem)] overflow-hidden bg-slate-50 dark:bg-[#060B19] p-2 sm:p-4 space-y-3 sm:space-y-4">
+    <div className="flex-1 flex flex-col h-[calc(100vh-6rem)] overflow-hidden bg-slate-50 dark:bg-slate-900 p-2 sm:p-4 space-y-3 sm:space-y-4">
       {/* Top POS Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-[#101828] p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
         <div className="flex items-center gap-3">
           {posSettings?.billLogoUrl && !logoError ? (
             <div className="w-10 h-10 rounded-xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center justify-center shrink-0 p-1">
@@ -213,7 +213,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
       {/* Main Split Grid: Active Orders Banner & Table Floor Grid */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
         {/* Left / Main Floor Grid */}
-        <div className="flex-1 flex flex-col bg-white dark:bg-[#101828] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+        <div className="flex-1 flex flex-col bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xs overflow-hidden">
           {/* Controls Bar */}
           <div className="p-4 border-b border-slate-100 dark:border-slate-800 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -507,7 +507,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                       className={`rounded-2xl p-3.5 flex flex-col justify-between transition-all border-2 min-h-[175px] ${
                         isReserved
                           ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50 cursor-not-allowed opacity-80'
-                          : 'bg-white dark:bg-[#101828] border-slate-200 dark:border-slate-800 hover:border-[#2563EB] dark:hover:border-blue-500 hover:shadow-md cursor-pointer group active:scale-[0.98]'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-[#2563EB] dark:hover:border-blue-500 hover:shadow-md cursor-pointer group active:scale-[0.98]'
                       }`}
                     >
                       <div className="space-y-1.5">
@@ -568,7 +568,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
         </div>
 
         {/* Right Panel: Open Orders / Pesanan Berjalan */}
-        <div className="w-full lg:w-80 bg-white dark:bg-[#101828] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs flex flex-col overflow-hidden shrink-0">
+        <div className="w-full lg:w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xs flex flex-col overflow-hidden shrink-0">
           <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-500" />

@@ -35,7 +35,7 @@ export const Button: React.FC<ButtonProps> = ({
     secondary:
       'bg-slate-100 hover:bg-slate-200/80 active:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:active:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-700',
     outline:
-      'bg-white dark:bg-[#101828] hover:bg-slate-50/90 dark:hover:bg-slate-800/80 active:bg-slate-100 dark:active:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700',
+      'bg-white dark:bg-slate-800 hover:bg-slate-50/90 dark:hover:bg-slate-700/80 active:bg-slate-100 dark:active:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700',
     danger:
       'bg-gradient-to-b from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 active:from-rose-700 active:to-rose-800 text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.15)] border border-rose-700/30 focus:ring-2 focus:ring-rose-400',
     ghost:

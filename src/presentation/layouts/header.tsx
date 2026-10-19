@@ -56,7 +56,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white/95 dark:bg-[#101828]/95 backdrop-blur-xs border-b border-slate-200/80 dark:border-slate-800/80 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 select-none z-30 transition-colors duration-200">
+    <header className="h-16 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xs border-b border-slate-200/80 dark:border-slate-700/80 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 select-none z-30 transition-colors duration-200">
       {/* Left: Toggles & Outlet Selector */}
       <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
         {/* Mobile / Tablet Hamburger Toggle */}

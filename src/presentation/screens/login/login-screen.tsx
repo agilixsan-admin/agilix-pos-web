@@ -150,7 +150,7 @@ export const LoginScreen: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-between items-center p-4 sm:p-6 md:p-8 bg-[#F8FAFC] dark:bg-[#060B19] relative overflow-hidden font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen w-full flex flex-col justify-between items-center p-4 sm:p-6 md:p-8 bg-[#F8FAFC] dark:bg-slate-900 relative overflow-hidden font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
       {/* Background Architectural Texture (Subtle dot grid & soft ambient gradient) */}
       <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-gradient-to-b from-blue-600/[0.08] dark:from-blue-500/[0.15] to-transparent rounded-full blur-3xl pointer-events-none" />
@@ -177,7 +177,7 @@ export const LoginScreen: React.FC = () => {
 
       {/* Card Utama (Centered Studio Workstation) */}
       <main className="relative z-10 w-full max-w-[420px] my-auto">
-        <div className="bg-white dark:bg-[#101828] border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-[0_12px_40px_rgba(15,23,42,0.06)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4)] p-7 sm:p-9 transition-all">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-2xl shadow-[0_12px_40px_rgba(15,23,42,0.06)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4)] p-7 sm:p-9 transition-all">
           {/* Brand Header */}
           <div className="flex flex-col items-center text-center mb-7">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-b from-[#2563EB] to-[#1D4ED8] text-white flex items-center justify-center shadow-md shadow-blue-500/20 mb-3.5 ring-4 ring-blue-500/10 font-black text-2xl tracking-wider">

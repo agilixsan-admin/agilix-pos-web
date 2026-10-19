@@ -11,7 +11,7 @@ export const AppLayout: React.FC = () => {
   const { isMobileMenuOpen, closeMobileMenu } = useUiStore();
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAFC] dark:bg-[#060B19] text-slate-900 dark:text-slate-100 relative transition-colors duration-200">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAFC] dark:bg-slate-900 text-slate-900 dark:text-slate-100 relative transition-colors duration-200">
       {/* Mobile Backdrop Overlay */}
       {isMobileMenuOpen && (
         <div

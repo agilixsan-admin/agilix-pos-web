@@ -19,9 +19,7 @@ interface UiStoreState {
 export const applyThemeToDocument = (theme: ThemeMode) => {
   if (typeof window === 'undefined') return;
   const root = document.documentElement;
-  const isDark =
-    theme === 'dark' ||
-    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = theme === 'dark';
 
   if (isDark) {
     root.classList.add('dark');
@@ -31,33 +29,28 @@ export const applyThemeToDocument = (theme: ThemeMode) => {
 };
 
 const getInitialTheme = (): ThemeMode => {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') return 'light';
   try {
     const raw = localStorage.getItem('agilix-pos-ui-storage');
     if (raw) {
       const parsed = JSON.parse(raw);
+      // Ensure we switch to light mode on load as requested by user
+      if (parsed?.state?.theme === 'dark' || parsed?.state?.theme === 'system') {
+        parsed.state.theme = 'light';
+        localStorage.setItem('agilix-pos-ui-storage', JSON.stringify(parsed));
+        return 'light';
+      }
       if (parsed?.state?.theme) {
         return parsed.state.theme;
       }
     }
   } catch {}
-  return 'system';
+  return 'light';
 };
 
 // Immediate DOM sync to prevent flash of wrong theme
 const initialTheme = getInitialTheme();
 applyThemeToDocument(initialTheme);
-
-// Listen to system preference changes if in system mode
-if (typeof window !== 'undefined') {
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  mediaQuery.addEventListener('change', () => {
-    const currentTheme = useUiStore.getState()?.theme;
-    if (currentTheme === 'system') {
-      applyThemeToDocument('system');
-    }
-  });
-}
 
 export const useUiStore = create<UiStoreState>()(
   persist(
@@ -79,13 +72,7 @@ export const useUiStore = create<UiStoreState>()(
       },
       toggleTheme: () => {
         const current = get().theme;
-        let next: ThemeMode;
-        if (current === 'system') {
-          const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          next = isSystemDark ? 'light' : 'dark';
-        } else {
-          next = current === 'dark' ? 'light' : 'dark';
-        }
+        const next: ThemeMode = current === 'dark' ? 'light' : 'dark';
         applyThemeToDocument(next);
         set({ theme: next });
       },
@@ -97,9 +84,8 @@ export const useUiStore = create<UiStoreState>()(
         theme: state.theme,
       }),
       onRehydrateStorage: () => (state) => {
-        if (state?.theme) {
-          applyThemeToDocument(state.theme);
-        }
+        const targetTheme = state?.theme || 'light';
+        applyThemeToDocument(targetTheme);
       },
     },
   ),

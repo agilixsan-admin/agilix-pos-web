@@ -551,7 +551,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
 
             {/* Total Grand Banner */}
-            <div className="p-4 bg-white dark:bg-[#101828] border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-2xs">
+            <div className="p-4 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-xl shadow-2xs">
               <span className="text-[10px] text-slate-400 uppercase tracking-widest block font-bold">
                 Total Pembayaran
               </span>

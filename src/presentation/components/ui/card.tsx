@@ -27,17 +27,17 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <div
-      className={`bg-white dark:bg-[#101828] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-card transition-all duration-200 ${hasOverflowClass ? '' : 'overflow-hidden'} ${className}`}
+      className={`bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-card transition-all duration-200 ${hasOverflowClass ? '' : 'overflow-hidden'} ${className}`}
       {...props}
     >
       {header && (
-        <div className="px-6 py-4.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between relative z-20 text-slate-900 dark:text-slate-100">
+        <div className="px-6 py-4.5 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between relative z-20 text-slate-900 dark:text-slate-100">
           {header}
         </div>
       )}
       <div className={`relative z-10 ${paddingStyles[padding]}`}>{children}</div>
       {footer && (
-        <div className="px-6 py-3.5 bg-slate-50/70 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-2.5">
+        <div className="px-6 py-3.5 bg-slate-50/70 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/80 flex items-center justify-end gap-2.5">
           {footer}
         </div>
       )}

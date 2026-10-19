@@ -38,7 +38,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   };
 
   return (
-    <div className={`bg-white dark:bg-[#101828] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-all duration-200 ${className}`}>
+    <div className={`bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-all duration-200 ${className}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400 tracking-tight">{title}</span>
         {icon && <div className={`p-2.5 rounded-xl ring-1 ring-black/5 dark:ring-white/10 ${iconThemes[theme]}`}>{icon}</div>}

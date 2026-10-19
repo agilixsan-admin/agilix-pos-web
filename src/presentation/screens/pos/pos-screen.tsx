@@ -661,7 +661,7 @@ export const PosScreen: React.FC = () => {
 
     return (
       <div
-        className={`flex flex-col h-full overflow-hidden ${isMobileSheet ? 'bg-white dark:bg-[#101828]' : ''}`}
+        className={`flex flex-col h-full overflow-hidden ${isMobileSheet ? 'bg-white dark:bg-slate-800' : ''}`}
       >
         {/* Cart Header & Order Type Switcher */}
         <div className="p-3 sm:p-4 border-b border-slate-100 dark:border-slate-800 space-y-3 shrink-0">
@@ -706,7 +706,7 @@ export const PosScreen: React.FC = () => {
               onClick={() => setOrderType('DINE_IN')}
               className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 effectiveOrderType === 'DINE_IN'
-                  ? 'bg-white dark:bg-[#101828] text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
+                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -720,7 +720,7 @@ export const PosScreen: React.FC = () => {
               }}
               className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 effectiveOrderType === 'TAKE_AWAY'
-                  ? 'bg-white dark:bg-[#101828] text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
+                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -750,7 +750,7 @@ export const PosScreen: React.FC = () => {
                 placeholder="Nama Pelanggan (Opsional)"
                 value={effectiveCustomerName || ''}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className={`w-full bg-slate-50/70 dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-900/80 focus:bg-white dark:focus:bg-[#101828] border border-slate-200/90 dark:border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 focus:border-blue-500 transition-all shadow-2xs ${activeAppendOrder ? 'opacity-95 font-medium bg-slate-100/90 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-not-allowed' : ''}`}
+                className={`w-full bg-slate-50/70 dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-900/80 focus:bg-white dark:focus:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 focus:border-blue-500 transition-all shadow-2xs ${activeAppendOrder ? 'opacity-95 font-medium bg-slate-100/90 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-not-allowed' : ''}`}
               />
             </div>
           </div>
@@ -1102,9 +1102,9 @@ export const PosScreen: React.FC = () => {
         />
       ) : (
         /* VIEW 2: MENU CATALOG & CART MANAGEMENT */
-        <div className="flex-1 flex gap-3 sm:gap-4 overflow-hidden p-2 sm:p-4 bg-slate-50 dark:bg-[#060B19] relative transition-colors duration-200">
+        <div className="flex-1 flex gap-3 sm:gap-4 overflow-hidden p-2 sm:p-4 bg-slate-50 dark:bg-slate-900 relative transition-colors duration-200">
           {/* Left: Product Catalog & Category Tabs */}
-          <div className="flex-1 flex flex-col bg-white dark:bg-[#101828] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+          <div className="flex-1 flex flex-col bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xs overflow-hidden">
             {/* Top Filter Bar */}
             <div className="p-2.5 sm:p-4 border-b border-slate-100 dark:border-slate-800 space-y-2.5 sm:space-y-3">
               <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
@@ -1277,7 +1277,7 @@ export const PosScreen: React.FC = () => {
                         className={`rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 select-none ${
                           isUnavailable
                             ? 'bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 opacity-60 grayscale cursor-not-allowed shadow-none'
-                            : 'bg-white dark:bg-[#101828] border border-slate-200/80 dark:border-slate-800 hover:border-blue-500/40 dark:hover:border-blue-500/60 shadow-card hover:shadow-card-hover cursor-pointer group active:scale-[0.98]'
+                            : 'bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 hover:border-blue-500/40 dark:hover:border-blue-500/60 shadow-card hover:shadow-card-hover cursor-pointer group active:scale-[0.98]'
                         }`}
                       >
                         <div>
@@ -1396,7 +1396,7 @@ export const PosScreen: React.FC = () => {
           </div>
 
           {/* Right: Desktop Cart & Checkout Panel */}
-          <div className="hidden lg:flex w-84 xl:w-96 bg-white dark:bg-[#101828] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-card flex-col overflow-hidden shrink-0">
+          <div className="hidden lg:flex w-84 xl:w-96 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl shadow-card flex-col overflow-hidden shrink-0">
             {renderCartContent(false)}
           </div>
         </div>
