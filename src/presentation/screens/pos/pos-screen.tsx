@@ -700,13 +700,13 @@ export const PosScreen: React.FC = () => {
 
           {/* Dine In / Take Away Switcher */}
           <div
-            className={`grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl ${activeAppendOrder ? 'opacity-70 pointer-events-none' : ''}`}
+            className={`grid grid-cols-2 gap-1.5 bg-slate-100/80 p-1 rounded-xl ${activeAppendOrder ? 'opacity-70 pointer-events-none' : ''}`}
           >
             <button
               onClick={() => setOrderType('DINE_IN')}
               className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 effectiveOrderType === 'DINE_IN'
-                  ? 'bg-white text-[#0D5C53] shadow-xs'
+                  ? 'bg-white text-[#0A574E] shadow-2xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -720,7 +720,7 @@ export const PosScreen: React.FC = () => {
               }}
               className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 effectiveOrderType === 'TAKE_AWAY'
-                  ? 'bg-white text-[#0D5C53] shadow-xs'
+                  ? 'bg-white text-[#0A574E] shadow-2xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -750,7 +750,7 @@ export const PosScreen: React.FC = () => {
                 placeholder="Nama Pelanggan (Opsional)"
                 value={effectiveCustomerName || ''}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53] ${activeAppendOrder ? 'opacity-95 font-medium bg-slate-100/90 text-slate-800 cursor-not-allowed' : ''}`}
+                className={`w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0A574E]/15 focus:border-[#0A574E] transition-all shadow-2xs ${activeAppendOrder ? 'opacity-95 font-medium bg-slate-100/90 text-slate-800 cursor-not-allowed' : ''}`}
               />
             </div>
           </div>
@@ -961,7 +961,7 @@ export const PosScreen: React.FC = () => {
             {activeAppendOrder && (
               <div className="flex justify-between text-amber-900 font-medium">
                 <span>Pesanan Sebelumnya</span>
-                <span className="font-mono">
+                <span className="tabular-nums font-semibold">
                   Rp {previousTotalAmount.toLocaleString('id-ID')}
                 </span>
               </div>
@@ -971,7 +971,7 @@ export const PosScreen: React.FC = () => {
               <span>
                 {activeAppendOrder ? 'Tambahan Menu Baru' : 'Subtotal'}
               </span>
-              <span className="font-semibold text-slate-800">
+              <span className="font-semibold text-slate-800 tabular-nums">
                 Rp {getSubtotal().toLocaleString('id-ID')}
               </span>
             </div>
@@ -979,7 +979,7 @@ export const PosScreen: React.FC = () => {
             {getDiscount() > 0 && (
               <div className="flex justify-between items-center text-xs text-emerald-600">
                 <span>Diskon</span>
-                <span className="font-bold">
+                <span className="font-bold tabular-nums">
                   -Rp {getDiscount().toLocaleString('id-ID')}
                 </span>
               </div>
@@ -990,7 +990,7 @@ export const PosScreen: React.FC = () => {
                 <span>
                   {serviceChargeName || 'Service Charge'} ({servicePercent}%)
                 </span>
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-slate-800 tabular-nums">
                   Rp {getServiceCharge().toLocaleString('id-ID')}
                 </span>
               </div>
@@ -1001,17 +1001,17 @@ export const PosScreen: React.FC = () => {
                 <span>
                   {taxName || 'Pajak'} ({taxPercent}%)
                 </span>
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-slate-800 tabular-nums">
                   Rp {getTax().toLocaleString('id-ID')}
                 </span>
               </div>
             )}
 
-            <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
-              <span>
+            <div className="flex justify-between items-baseline text-sm font-bold text-slate-900 pt-2 border-t border-slate-200/80">
+              <span className="tracking-tight">
                 {activeAppendOrder ? 'Total Tagihan Meja' : 'Total Tagihan'}
               </span>
-              <span className="text-[#0D5C53] text-base font-mono">
+              <span className="text-[#0A574E] text-lg font-bold tabular-nums">
                 Rp {grandTotal.toLocaleString('id-ID')}
               </span>
             </div>
@@ -1222,10 +1222,10 @@ export const PosScreen: React.FC = () => {
               <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
                 <button
                   onClick={() => setSelectedCategory('ALL')}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 cursor-pointer ${
                     selectedCategory === 'ALL'
-                      ? 'bg-[#0D5C53] text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-gradient-to-b from-[#0E6D62] to-[#0A574E] text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-[#08453E]'
+                      : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-transparent'
                   }`}
                 >
                   Semua Menu
@@ -1234,10 +1234,10 @@ export const PosScreen: React.FC = () => {
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 cursor-pointer ${
                       selectedCategory === cat.id
-                        ? 'bg-[#0D5C53] text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        ? 'bg-gradient-to-b from-[#0E6D62] to-[#0A574E] text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-[#08453E]'
+                        : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-transparent'
                     }`}
                   >
                     {cat.name}
@@ -1274,15 +1274,15 @@ export const PosScreen: React.FC = () => {
                       <div
                         key={product.id}
                         onClick={() => handleProductClick(product)}
-                        className={`rounded-2xl p-3.5 flex flex-col justify-between transition-all select-none ${
+                        className={`rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 select-none ${
                           isUnavailable
-                            ? 'bg-slate-100/70 border border-slate-200 opacity-60 grayscale cursor-not-allowed shadow-none'
-                            : 'bg-white border border-slate-200 hover:border-[#0D5C53]/60 hover:shadow-md cursor-pointer group active:scale-[0.98]'
+                            ? 'bg-slate-100/70 border border-slate-200/80 opacity-60 grayscale cursor-not-allowed shadow-none'
+                            : 'bg-white border border-slate-200/80 hover:border-[#0A574E]/40 shadow-card hover:shadow-card-hover cursor-pointer group active:scale-[0.98]'
                         }`}
                       >
                         <div>
                           {/* Product Thumbnail with 2-letter Initials Fallback */}
-                          <div className="w-full h-28 bg-slate-100 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden relative">
+                          <div className="w-full h-28 bg-slate-100 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden relative ring-1 ring-black/5">
                             {hasValidImage ? (
                               <img
                                 src={imageUrl}
@@ -1303,13 +1303,13 @@ export const PosScreen: React.FC = () => {
                                 }`}
                               >
                                 <div
-                                  className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-300 ${
+                                  className={`w-13 h-13 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-300 ${
                                     isUnavailable
                                       ? 'bg-slate-200 border border-slate-300 text-slate-500'
-                                      : 'bg-white/95 border border-teal-200/80 text-[#0D5C53] group-hover:scale-110 group-hover:bg-[#0D5C53] group-hover:text-white'
+                                      : 'bg-white/95 border border-teal-200/80 text-[#0A574E] group-hover:scale-110 group-hover:bg-[#0A574E] group-hover:text-white'
                                   }`}
                                 >
-                                  <span className="font-mono font-black text-xl tracking-wider">
+                                  <span className="font-mono font-black text-lg tracking-wider">
                                     {getProductInitials(product.name)}
                                   </span>
                                 </div>
@@ -1342,7 +1342,7 @@ export const PosScreen: React.FC = () => {
                             className={`font-bold text-sm leading-snug line-clamp-2 mb-1 transition-colors ${
                               isUnavailable
                                 ? 'text-slate-500 line-through decoration-slate-400'
-                                : 'text-slate-800 group-hover:text-[#0D5C53]'
+                                : 'text-slate-800 group-hover:text-[#0A574E]'
                             }`}
                           >
                             {product.name}
@@ -1356,16 +1356,16 @@ export const PosScreen: React.FC = () => {
                           <div>
                             {product.minPrice !== undefined && product.maxPrice !== undefined && product.maxPrice > product.minPrice ? (
                               <span
-                                className={`font-bold text-xs ${
-                                  isUnavailable ? 'text-slate-400' : 'text-[#0D5C53]'
+                                className={`font-bold text-xs tabular-nums ${
+                                  isUnavailable ? 'text-slate-400' : 'text-[#0A574E]'
                                 }`}
                               >
                                 Rp {Number(product.minPrice).toLocaleString('id-ID')} - {Number(product.maxPrice).toLocaleString('id-ID')}
                               </span>
                             ) : (
                               <span
-                                className={`font-bold text-sm ${
-                                  isUnavailable ? 'text-slate-400' : 'text-[#0D5C53]'
+                                className={`font-bold text-sm tabular-nums ${
+                                  isUnavailable ? 'text-slate-400' : 'text-[#0A574E]'
                                 }`}
                               >
                                 Rp {Number(product.price ?? product.minPrice ?? 0).toLocaleString('id-ID')}
@@ -1382,7 +1382,7 @@ export const PosScreen: React.FC = () => {
                               Habis
                             </div>
                           ) : (
-                            <div className="w-7 h-7 bg-teal-50 group-hover:bg-[#0D5C53] text-[#0D5C53] group-hover:text-white rounded-lg flex items-center justify-center transition-colors shadow-xs">
+                            <div className="w-7 h-7 bg-teal-50/80 group-hover:bg-[#0A574E] text-[#0A574E] group-hover:text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xs">
                               <Plus className="w-4 h-4" />
                             </div>
                           )}
@@ -1396,7 +1396,7 @@ export const PosScreen: React.FC = () => {
           </div>
 
           {/* Right: Desktop Cart & Checkout Panel */}
-          <div className="hidden lg:flex w-84 xl:w-96 bg-white border border-slate-200 rounded-2xl shadow-xs flex-col overflow-hidden shrink-0">
+          <div className="hidden lg:flex w-84 xl:w-96 bg-white border border-slate-200/80 rounded-2xl shadow-card flex-col overflow-hidden shrink-0">
             {renderCartContent(false)}
           </div>
         </div>
@@ -1407,7 +1407,7 @@ export const PosScreen: React.FC = () => {
         <div className="lg:hidden fixed bottom-4 left-4 right-4 z-30 animate-in slide-in-from-bottom duration-300">
           <button
             onClick={() => setIsMobileCartOpen(true)}
-            className="w-full bg-[#0D5C53] hover:bg-[#0A4841] text-white px-4 py-3.5 rounded-2xl shadow-xl flex items-center justify-between font-semibold active:scale-[0.99] transition-transform cursor-pointer border border-teal-600/30"
+            className="w-full bg-gradient-to-r from-[#0E6D62] to-[#0A574E] text-white px-4 py-3.5 rounded-2xl shadow-xl flex items-center justify-between font-semibold active:scale-[0.99] transition-transform cursor-pointer border border-[#08453E]"
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-bold text-xs text-white">

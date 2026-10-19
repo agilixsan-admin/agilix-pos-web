@@ -260,10 +260,10 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
           <div className="space-y-6">
             {/* Header Success Badge */}
             <div className="text-center pt-2">
-              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2.5 shadow-xs">
+              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2.5 shadow-2xs border border-emerald-200/80 ring-4 ring-emerald-50/50">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-extrabold text-slate-900">Pembayaran Berhasil!</h3>
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight">Pembayaran Berhasil!</h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Transaksi telah selesai dicatat dan stok inventaris otomatis diperbarui.
               </p>
@@ -272,23 +272,23 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
             {/* Split Content: Left Details & Right Receipt Preview */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Left Card: Transaction Details */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between space-y-4">
+              <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-4 flex flex-col justify-between space-y-4 shadow-2xs">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
                     <span className="text-xs font-semibold text-slate-500">ID Transaksi</span>
                     <span className="text-xs font-mono font-bold text-slate-800">
                       TRX-{order.id.slice(0, 8).toUpperCase()}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
                     <span className="text-xs font-semibold text-slate-500">No. Order</span>
                     <span className="text-xs font-mono font-bold text-slate-800">
                       {order.orderNumber || order.id.slice(0, 8)}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
                     <span className="text-xs font-semibold text-slate-500">Tipe Pesanan</span>
                     <Badge variant={order.orderType === 'DINE_IN' ? 'success' : 'info'}>
                       {order.orderType === 'DINE_IN'
@@ -297,14 +297,14 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                     </Badge>
                   </div>
 
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
                     <span className="text-xs font-semibold text-slate-500">Kasir</span>
                     <span className="text-xs font-bold text-slate-800">
                       {cashierName}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
                     <span className="text-xs font-semibold text-slate-500">Metode Bayar</span>
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       {isCash ? <Banknote className="w-4 h-4 text-emerald-600" /> : <QrCode className="w-4 h-4 text-teal-600" />}
@@ -314,10 +314,10 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                 </div>
 
                 {/* Calculation Box */}
-                <div className="space-y-2 pt-2 border-t border-slate-200">
+                <div className="space-y-2 pt-2 border-t border-slate-200/80">
                   <div className="flex justify-between text-xs text-slate-600">
                     <span>Total Tagihan</span>
-                    <span className="font-bold text-slate-900">
+                    <span className="font-bold text-slate-900 tabular-nums">
                       Rp {totalAmount.toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -325,16 +325,16 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                   {isCash && (
                     <div className="flex justify-between text-xs text-slate-600">
                       <span>Uang Diterima</span>
-                      <span className="font-semibold text-slate-800 font-mono">
+                      <span className="font-semibold text-slate-800 tabular-nums">
                         Rp {paidAmount.toLocaleString('id-ID')}
                       </span>
                     </div>
                   )}
 
                   {isCash && (
-                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+                    <div className="p-3 bg-emerald-50 border border-emerald-200/90 rounded-xl flex items-center justify-between shadow-2xs">
                       <span className="text-xs font-bold text-emerald-900">Kembalian:</span>
-                      <span className="text-base font-extrabold text-emerald-700 font-mono">
+                      <span className="text-base font-bold text-emerald-700 tabular-nums">
                         Rp {changeAmount.toLocaleString('id-ID')}
                       </span>
                     </div>
