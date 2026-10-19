@@ -31,15 +31,15 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary:
-      'bg-gradient-to-b from-[#0E6D62] to-[#0A574E] hover:from-[#10776B] hover:to-[#0C5F55] active:from-[#084840] active:to-[#063B34] text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.15)] border border-[#08453E] focus:ring-2 focus:ring-[#0D5C53]/25',
+      'bg-gradient-to-b from-[#2563EB] to-[#1D4ED8] hover:from-[#3B82F6] hover:to-[#2563EB] active:from-[#1E40AF] active:to-[#1E3A8A] text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-[#1E40AF] focus:ring-2 focus:ring-blue-500/25',
     secondary:
-      'bg-slate-100 hover:bg-slate-200/80 active:bg-slate-200 text-slate-700 border border-slate-200/60 shadow-2xs focus:ring-2 focus:ring-slate-200',
+      'bg-slate-100 hover:bg-slate-200/80 active:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:active:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-700',
     outline:
-      'bg-white hover:bg-slate-50/90 active:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs hover:border-slate-300 focus:ring-2 focus:ring-slate-200',
+      'bg-white dark:bg-[#101828] hover:bg-slate-50/90 dark:hover:bg-slate-800/80 active:bg-slate-100 dark:active:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700',
     danger:
       'bg-gradient-to-b from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 active:from-rose-700 active:to-rose-800 text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.15)] border border-rose-700/30 focus:ring-2 focus:ring-rose-400',
     ghost:
-      'bg-transparent hover:bg-slate-100/80 active:bg-slate-200/70 text-slate-600 hover:text-slate-900',
+      'bg-transparent hover:bg-slate-100/80 dark:hover:bg-slate-800/80 active:bg-slate-200/70 dark:active:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white',
   };
 
   return (

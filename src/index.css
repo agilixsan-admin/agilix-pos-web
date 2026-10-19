@@ -2,14 +2,34 @@
 
 @layer base {
   :root {
-    --primary: #0D5C53;
-    --primary-hover: #094740;
-    --primary-light: #E6F4F1;
+    --primary: #2563EB;
+    --primary-hover: #1D4ED8;
+    --primary-light: #EFF6FF;
+    --accent: #0EA5E9;
+    --accent-light: #E0F2FE;
     --background: #F8FAFC;
     --surface: #FFFFFF;
+    --surface-card: #FFFFFF;
     --border: #E2E8F0;
     --text-main: #0F172A;
     --text-muted: #64748B;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+  }
+
+  .dark {
+    --primary: #3B82F6;
+    --primary-hover: #60A5FA;
+    --primary-light: #1E293B;
+    --accent: #38BDF8;
+    --accent-light: #0C4A6E;
+    --background: #060B19;
+    --surface: #101828;
+    --surface-card: #151F32;
+    --border: #1E293B;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
     --success: #10B981;
     --warning: #F59E0B;
     --danger: #EF4444;
@@ -65,6 +85,10 @@
   scrollbar-color: #CBD5E1 transparent;
 }
 
+.dark * {
+  scrollbar-color: #334155 transparent;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -83,6 +107,14 @@
   background: #94A3B8;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
 /* Thermal receipt printable area styling */
 @page {
   margin: 0;
@@ -90,11 +122,17 @@
 }
 
 @media print {
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
   body * {
     visibility: hidden;
   }
   #printable-receipt, #printable-receipt * {
     visibility: visible;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
   #printable-receipt {
     position: absolute;
@@ -105,3 +143,4 @@
     padding: 10px;
   }
 }
+

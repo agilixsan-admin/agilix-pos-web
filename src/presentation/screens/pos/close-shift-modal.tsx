@@ -335,7 +335,7 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
             isLoading={isSubmitting}
             disabled={hasOpenOrders}
             leftIcon={<Lock className="w-4 h-4" />}
-            className="font-bold bg-[#0D5C53]"
+            className="font-bold bg-[#2563EB] hover:bg-blue-700"
           >
             Tutup Shift & Hitung Selisih
           </Button>
@@ -345,11 +345,11 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
       <div className="space-y-4">
         {/* Open Orders Warning */}
         {hasOpenOrders && (
-          <div className="p-3.5 bg-rose-50 border-2 border-rose-300 rounded-2xl flex items-start gap-2.5 text-xs text-rose-900">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-300 dark:border-rose-800 rounded-2xl flex items-start gap-2.5 text-xs text-rose-900 dark:text-rose-200">
+            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold text-sm">Tidak Dapat Menutup Shift!</p>
-              <p className="text-[11px] mt-0.5 text-rose-700 leading-relaxed">
+              <p className="text-[11px] mt-0.5 text-rose-700 dark:text-rose-300 leading-relaxed">
                 Masih terdapat <strong>{openOrders.length} pesanan berjalan / meja belum dibayar</strong>.
                 Semua pesanan harus diselesaikan pembayarannya atau dibatalkan sebelum shift dapat ditutup.
               </p>
@@ -358,12 +358,12 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
         )}
 
         {/* Blind Close Explanation Card */}
-        <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-xs text-slate-600">
-          <div className="flex items-center gap-1.5 font-bold text-slate-800">
-            <HelpCircle className="w-4 h-4 text-[#0D5C53]" />
+        <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+          <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+            <HelpCircle className="w-4 h-4 text-[#2563EB] dark:text-blue-400" />
             <span>SOP Blind Close Kasir:</span>
           </div>
-          <p className="text-[11px] leading-relaxed">
+          <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
             Hitung seluruh uang kertas dan koin yang ada di dalam laci kasir secara jujur tanpa melihat estimasi sistem. Sistem akan menghitung otomatis selisih kas setelah tombol ditekan.
           </p>
         </div>
@@ -385,7 +385,7 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Contoh: Shift berjalan lancar, uang fisik pecahan lengkap"
-            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+            className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB]"
           />
         </FormField>
       </div>

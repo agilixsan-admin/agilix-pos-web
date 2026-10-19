@@ -205,17 +205,17 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Contoh: Beli es batu kristal 2 kantong di Alfamart karena stok habis"
-            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+            className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB]"
           />
         </FormField>
 
         {/* Upload Foto Nota (Wajib) */}
         <div>
-          <label className="text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
             <span>
               Foto Nota / Bukti Struk <span className="text-rose-500">*</span>
             </span>
-            <span className="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+            <span className="text-[10px] text-amber-600 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
               Wajib SOP
             </span>
           </label>
@@ -230,20 +230,20 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
           />
 
           {receiptPhotoUrl ? (
-            <div className="relative border-2 border-emerald-300 bg-emerald-50/50 rounded-2xl p-2.5 flex items-center gap-3">
+            <div className="relative border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-2xl p-2.5 flex items-center gap-3">
               <img
                 src={receiptPhotoUrl}
                 alt="Bukti Nota"
-                className="w-16 h-16 object-cover rounded-xl border border-emerald-200 shrink-0"
+                className="w-16 h-16 object-cover rounded-xl border border-emerald-200 dark:border-emerald-700 shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-emerald-900 truncate">Foto Nota Terlampir</p>
-                <p className="text-[10px] text-emerald-700">Tersimpan di server bukti transaksi</p>
+                <p className="text-xs font-bold text-emerald-900 dark:text-emerald-300 truncate">Foto Nota Terlampir</p>
+                <p className="text-[10px] text-emerald-700 dark:text-emerald-400">Tersimpan di server bukti transaksi</p>
               </div>
               <button
                 type="button"
                 onClick={() => setReceiptPhotoUrl('')}
-                className="p-1.5 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-950/50 rounded-lg transition-colors cursor-pointer"
                 title="Hapus foto"
               >
                 <Trash2 className="w-4 h-4" />
@@ -254,27 +254,27 @@ export const PettyCashModal: React.FC<PettyCashModalProps> = ({
               type="button"
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
-              className="w-full border-2 border-dashed border-slate-300 hover:border-[#0D5C53] rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 text-slate-500 hover:text-[#0D5C53] bg-slate-50 hover:bg-teal-50/40 transition-colors cursor-pointer"
+              className="w-full border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-[#2563EB] dark:hover:border-blue-500 rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-[#2563EB] dark:hover:text-blue-400 bg-slate-50 dark:bg-slate-800/60 hover:bg-blue-50/40 dark:hover:bg-blue-950/30 transition-colors cursor-pointer"
             >
               {uploading ? (
-                <div className="text-xs font-semibold text-teal-700 animate-pulse">
+                <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 animate-pulse">
                   Mengunggah foto bukti...
                 </div>
               ) : (
                 <>
-                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-[#0D5C53] shadow-xs">
-                    <Camera className="w-5 h-5 text-teal-700" />
+                  <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-400 group-hover:text-[#2563EB] shadow-xs">
+                    <Camera className="w-5 h-5 text-[#2563EB] dark:text-blue-400" />
                   </div>
-                  <span className="text-xs font-bold text-slate-700">Ambil Foto / Unggah Nota</span>
-                  <span className="text-[10px] text-slate-400">Kamera atau galeri ponsel/tablet (Maks. 5 MB)</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Ambil Foto / Unggah Nota</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Kamera atau galeri ponsel/tablet (Maks. 5 MB)</span>
                 </>
               )}
             </button>
           )}
         </div>
 
-        <div className="p-3 bg-amber-50 rounded-xl border border-amber-200/80 flex items-start gap-2 text-xs text-amber-800">
-          <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200/80 dark:border-amber-800 flex items-start gap-2 text-xs text-amber-800 dark:text-amber-200">
+          <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <p className="text-[11px] leading-relaxed">
             Pengeluaran ini akan langsung memotong uang laci shift berjalan dan otomatis tercatat pada Buku Kas & Jurnal Pengeluaran Operasional back-office.
           </p>

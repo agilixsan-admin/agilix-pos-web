@@ -661,14 +661,14 @@ export const PosScreen: React.FC = () => {
 
     return (
       <div
-        className={`flex flex-col h-full overflow-hidden ${isMobileSheet ? 'bg-white' : ''}`}
+        className={`flex flex-col h-full overflow-hidden ${isMobileSheet ? 'bg-white dark:bg-[#101828]' : ''}`}
       >
         {/* Cart Header & Order Type Switcher */}
-        <div className="p-3 sm:p-4 border-b border-slate-100 space-y-3 shrink-0">
+        <div className="p-3 sm:p-4 border-b border-slate-100 dark:border-slate-800 space-y-3 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <ShoppingBag className="w-4 h-4 text-[#0D5C53]" />
-              <span className="font-bold text-slate-800 text-sm">
+              <ShoppingBag className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                 Keranjang Pesanan ({cartItems.length})
               </span>
             </div>
@@ -690,7 +690,7 @@ export const PosScreen: React.FC = () => {
               {isMobileSheet && (
                 <button
                   onClick={() => setIsMobileCartOpen(false)}
-                  className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
+                  className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -700,14 +700,14 @@ export const PosScreen: React.FC = () => {
 
           {/* Dine In / Take Away Switcher */}
           <div
-            className={`grid grid-cols-2 gap-1.5 bg-slate-100/80 p-1 rounded-xl ${activeAppendOrder ? 'opacity-70 pointer-events-none' : ''}`}
+            className={`grid grid-cols-2 gap-1.5 bg-slate-100/80 dark:bg-slate-800 p-1 rounded-xl ${activeAppendOrder ? 'opacity-70 pointer-events-none' : ''}`}
           >
             <button
               onClick={() => setOrderType('DINE_IN')}
               className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 effectiveOrderType === 'DINE_IN'
-                  ? 'bg-white text-[#0A574E] shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-[#101828] text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Utensils className="w-3.5 h-3.5" />
@@ -720,8 +720,8 @@ export const PosScreen: React.FC = () => {
               }}
               className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 effectiveOrderType === 'TAKE_AWAY'
-                  ? 'bg-white text-[#0A574E] shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-[#101828] text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <ShoppingBag className="w-3.5 h-3.5" />
@@ -750,7 +750,7 @@ export const PosScreen: React.FC = () => {
                 placeholder="Nama Pelanggan (Opsional)"
                 value={effectiveCustomerName || ''}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className={`w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0A574E]/15 focus:border-[#0A574E] transition-all shadow-2xs ${activeAppendOrder ? 'opacity-95 font-medium bg-slate-100/90 text-slate-800 cursor-not-allowed' : ''}`}
+                className={`w-full bg-slate-50/70 dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-900/80 focus:bg-white dark:focus:bg-[#101828] border border-slate-200/90 dark:border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 focus:border-blue-500 transition-all shadow-2xs ${activeAppendOrder ? 'opacity-95 font-medium bg-slate-100/90 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-not-allowed' : ''}`}
               />
             </div>
           </div>
@@ -853,13 +853,13 @@ export const PosScreen: React.FC = () => {
           {/* SECTION 2: NEW ITEMS HEADER */}
           {activeAppendOrder && (
             <div className="pt-2 pb-1">
-              <div className="flex items-center justify-between pb-1 border-b border-teal-200">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#0D5C53] flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#0D5C53] inline-block" />
+              <div className="flex items-center justify-between pb-1 border-b border-blue-200 dark:border-blue-900/60">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 inline-block" />
                   Tambahan Menu Baru
                 </span>
                 {cartItems.length > 0 && (
-                  <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-bold px-2 py-0.5 rounded-full">
                     {cartItems.length} Menu Baru
                   </span>
                 )}
@@ -869,14 +869,14 @@ export const PosScreen: React.FC = () => {
 
           {/* SECTION 3: NEW ITEMS LIST OR EMPTY PLACEHOLDER */}
           {cartItems.length === 0 ? (
-            <div className="py-6 flex flex-col items-center justify-center text-slate-300">
-              <ShoppingBag className="w-8 h-8 stroke-[1.5] mb-1.5 opacity-30 text-teal-700" />
-              <p className="text-xs font-semibold text-slate-500">
+            <div className="py-6 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600">
+              <ShoppingBag className="w-8 h-8 stroke-[1.5] mb-1.5 opacity-30 text-blue-500" />
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 {activeAppendOrder
                   ? 'Belum Ada Tambahan Menu'
                   : 'Keranjang Masih Kosong'}
               </p>
-              <p className="text-[11px] text-slate-400 text-center mt-0.5 max-w-[220px]">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center mt-0.5 max-w-[220px]">
                 {activeAppendOrder
                   ? 'Pilih menu di sebelah kiri untuk menambah menu ke pesanan ini.'
                   : 'Pilih menu di sebelah kiri untuk membuat pesanan.'}
@@ -890,22 +890,22 @@ export const PosScreen: React.FC = () => {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 pr-2">
-                    <h5 className="font-semibold text-slate-800 text-xs leading-tight">
+                    <h5 className="font-semibold text-slate-800 dark:text-slate-100 text-xs leading-tight">
                       {item.name}
                     </h5>
                     {item.variantName && !item.variantName.trim().toLowerCase().includes('default') && (
-                      <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+                      <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium block mt-0.5">
                         Varian: {item.variantName}
                       </span>
                     )}
                     {item.notes && (
-                      <p className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-1 inline-block border border-amber-200">
+                      <p className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded mt-1 inline-block border border-amber-200 dark:border-amber-800">
                         Catatan: {item.notes}
                       </p>
                     )}
                   </div>
 
-                  <span className="font-bold text-slate-800 text-xs">
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">
                     Rp {(item.price * item.quantity).toLocaleString('id-ID')}
                   </span>
                 </div>
@@ -920,31 +920,31 @@ export const PosScreen: React.FC = () => {
                         notes: item.notes || '',
                       })
                     }
-                    className="text-[11px] text-slate-400 hover:text-[#0D5C53] flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer"
                   >
                     <Edit2 className="w-3 h-3" />
                     <span>{item.notes ? 'Ubah Catatan' : '+ Catatan'}</span>
                   </button>
 
-                  <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
+                  <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5">
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
+                      className="w-6 h-6 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded cursor-pointer"
                     >
                       <Minus className="w-3 h-3" />
                     </button>
-                    <span className="w-6 text-center text-xs font-bold text-slate-800">
+                    <span className="w-6 text-center text-xs font-bold text-slate-800 dark:text-slate-100">
                       {item.quantity}
                     </span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-200 rounded cursor-pointer"
+                      className="w-6 h-6 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => removeItem(item.id)}
-                      className="w-6 h-6 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded ml-1 cursor-pointer"
+                      className="w-6 h-6 flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded ml-1 cursor-pointer"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -956,10 +956,10 @@ export const PosScreen: React.FC = () => {
         </div>
 
         {/* Cart Calculations & Checkout Footer */}
-        <div className="p-3 sm:p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 shrink-0">
-          <div className="space-y-1.5 text-xs text-slate-500">
+        <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3 shrink-0">
+          <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
             {activeAppendOrder && (
-              <div className="flex justify-between text-amber-900 font-medium">
+              <div className="flex justify-between text-amber-900 dark:text-amber-300 font-medium">
                 <span>Pesanan Sebelumnya</span>
                 <span className="tabular-nums font-semibold">
                   Rp {previousTotalAmount.toLocaleString('id-ID')}
@@ -971,13 +971,13 @@ export const PosScreen: React.FC = () => {
               <span>
                 {activeAppendOrder ? 'Tambahan Menu Baru' : 'Subtotal'}
               </span>
-              <span className="font-semibold text-slate-800 tabular-nums">
+              <span className="font-semibold text-slate-800 dark:text-slate-100 tabular-nums">
                 Rp {getSubtotal().toLocaleString('id-ID')}
               </span>
             </div>
 
             {getDiscount() > 0 && (
-              <div className="flex justify-between items-center text-xs text-emerald-600">
+              <div className="flex justify-between items-center text-xs text-emerald-600 dark:text-emerald-400">
                 <span>Diskon</span>
                 <span className="font-bold tabular-nums">
                   -Rp {getDiscount().toLocaleString('id-ID')}
@@ -990,7 +990,7 @@ export const PosScreen: React.FC = () => {
                 <span>
                   {serviceChargeName || 'Service Charge'} ({servicePercent}%)
                 </span>
-                <span className="font-semibold text-slate-800 tabular-nums">
+                <span className="font-semibold text-slate-800 dark:text-slate-100 tabular-nums">
                   Rp {getServiceCharge().toLocaleString('id-ID')}
                 </span>
               </div>
@@ -1001,32 +1001,32 @@ export const PosScreen: React.FC = () => {
                 <span>
                   {taxName || 'Pajak'} ({taxPercent}%)
                 </span>
-                <span className="font-semibold text-slate-800 tabular-nums">
+                <span className="font-semibold text-slate-800 dark:text-slate-100 tabular-nums">
                   Rp {getTax().toLocaleString('id-ID')}
                 </span>
               </div>
             )}
 
-            <div className="flex justify-between items-baseline text-sm font-bold text-slate-900 pt-2 border-t border-slate-200/80">
+            <div className="flex justify-between items-baseline text-sm font-bold text-slate-900 dark:text-slate-100 pt-2 border-t border-slate-200/80 dark:border-slate-800">
               <span className="tracking-tight">
                 {activeAppendOrder ? 'Total Tagihan Meja' : 'Total Tagihan'}
               </span>
-              <span className="text-[#0A574E] text-lg font-bold tabular-nums">
+              <span className="text-blue-600 dark:text-blue-400 text-lg font-bold tabular-nums">
                 Rp {grandTotal.toLocaleString('id-ID')}
               </span>
             </div>
           </div>
 
           {!currentShift && (
-            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-800">
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 rounded-xl flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
               <div className="flex items-center gap-1.5 font-medium">
-                <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                 <span>Shift kasir belum dibuka</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpenShiftModalOpen(true)}
-                className="text-[11px] font-bold text-emerald-800 hover:text-emerald-900 underline cursor-pointer"
+                className="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 hover:text-emerald-900 underline cursor-pointer"
               >
                 Buka Shift
               </button>
@@ -1037,7 +1037,7 @@ export const PosScreen: React.FC = () => {
             <Button
               variant="outline"
               disabled={cartItems.length === 0 || orderProcessing || !currentShift}
-              leftIcon={<Send className="w-3.5 h-3.5 text-teal-700" />}
+              leftIcon={<Send className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
               onClick={() => {
                 if (!currentShift) {
                   toast.warning('Shift kasir belum dibuka. Silakan buka shift terlebih dahulu.');
@@ -1069,7 +1069,7 @@ export const PosScreen: React.FC = () => {
                 if (isMobileSheet) setIsMobileCartOpen(false);
                 handleCheckoutDirect();
               }}
-              className="font-bold shadow-md shadow-teal-900/10"
+              className="font-bold shadow-md shadow-blue-900/10"
             >
               {activeAppendOrder
                 ? cartItems.length > 0
@@ -1102,11 +1102,11 @@ export const PosScreen: React.FC = () => {
         />
       ) : (
         /* VIEW 2: MENU CATALOG & CART MANAGEMENT */
-        <div className="flex-1 flex gap-3 sm:gap-4 overflow-hidden p-2 sm:p-4 bg-slate-50 relative">
+        <div className="flex-1 flex gap-3 sm:gap-4 overflow-hidden p-2 sm:p-4 bg-slate-50 dark:bg-[#060B19] relative transition-colors duration-200">
           {/* Left: Product Catalog & Category Tabs */}
-          <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+          <div className="flex-1 flex flex-col bg-white dark:bg-[#101828] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
             {/* Top Filter Bar */}
-            <div className="p-2.5 sm:p-4 border-b border-slate-100 space-y-2.5 sm:space-y-3">
+            <div className="p-2.5 sm:p-4 border-b border-slate-100 dark:border-slate-800 space-y-2.5 sm:space-y-3">
               <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
                 <Button
                   variant="outline"
@@ -1130,8 +1130,8 @@ export const PosScreen: React.FC = () => {
                     compact
                   />
                 ) : (
-                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 shrink-0 text-xs font-semibold text-slate-700">
-                    <Building2 className="w-3.5 h-3.5 text-[#0D5C53]" />
+                  <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 shrink-0 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                     <span>{effectiveOutlet?.name || 'Outlet Utama'}</span>
                   </div>
                 )}
@@ -1224,8 +1224,8 @@ export const PosScreen: React.FC = () => {
                   onClick={() => setSelectedCategory('ALL')}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 cursor-pointer ${
                     selectedCategory === 'ALL'
-                      ? 'bg-gradient-to-b from-[#0E6D62] to-[#0A574E] text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-[#08453E]'
-                      : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-transparent'
+                      ? 'bg-gradient-to-b from-[#2563EB] to-[#1D4ED8] text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-blue-700'
+                      : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white border border-transparent'
                   }`}
                 >
                   Semua Menu
@@ -1236,8 +1236,8 @@ export const PosScreen: React.FC = () => {
                     onClick={() => setSelectedCategory(cat.id)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 cursor-pointer ${
                       selectedCategory === cat.id
-                        ? 'bg-gradient-to-b from-[#0E6D62] to-[#0A574E] text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-[#08453E]'
-                        : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-transparent'
+                        ? 'bg-gradient-to-b from-[#2563EB] to-[#1D4ED8] text-white shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-blue-700'
+                        : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white border border-transparent'
                     }`}
                   >
                     {cat.name}
@@ -1276,13 +1276,13 @@ export const PosScreen: React.FC = () => {
                         onClick={() => handleProductClick(product)}
                         className={`rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 select-none ${
                           isUnavailable
-                            ? 'bg-slate-100/70 border border-slate-200/80 opacity-60 grayscale cursor-not-allowed shadow-none'
-                            : 'bg-white border border-slate-200/80 hover:border-[#0A574E]/40 shadow-card hover:shadow-card-hover cursor-pointer group active:scale-[0.98]'
+                            ? 'bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 opacity-60 grayscale cursor-not-allowed shadow-none'
+                            : 'bg-white dark:bg-[#101828] border border-slate-200/80 dark:border-slate-800 hover:border-blue-500/40 dark:hover:border-blue-500/60 shadow-card hover:shadow-card-hover cursor-pointer group active:scale-[0.98]'
                         }`}
                       >
                         <div>
                           {/* Product Thumbnail with 2-letter Initials Fallback */}
-                          <div className="w-full h-28 bg-slate-100 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden relative ring-1 ring-black/5">
+                          <div className="w-full h-28 bg-slate-100 dark:bg-slate-800 rounded-xl mb-2.5 flex items-center justify-center overflow-hidden relative ring-1 ring-black/5 dark:ring-white/5">
                             {hasValidImage ? (
                               <img
                                 src={imageUrl}
@@ -1298,15 +1298,15 @@ export const PosScreen: React.FC = () => {
                               <div
                                 className={`w-full h-full flex items-center justify-center relative select-none ${
                                   isUnavailable
-                                    ? 'bg-slate-100'
-                                    : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-slate-100'
+                                    ? 'bg-slate-100 dark:bg-slate-800'
+                                    : 'bg-gradient-to-br from-blue-50 via-sky-50 to-slate-100 dark:from-slate-800 dark:via-slate-850 dark:to-slate-900'
                                 }`}
                               >
                                 <div
                                   className={`w-13 h-13 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-300 ${
                                     isUnavailable
-                                      ? 'bg-slate-200 border border-slate-300 text-slate-500'
-                                      : 'bg-white/95 border border-teal-200/80 text-[#0A574E] group-hover:scale-110 group-hover:bg-[#0A574E] group-hover:text-white'
+                                      ? 'bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400'
+                                      : 'bg-white/95 dark:bg-slate-800 border border-blue-200/80 dark:border-blue-800 text-blue-600 dark:text-blue-400 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white'
                                   }`}
                                 >
                                   <span className="font-mono font-black text-lg tracking-wider">
@@ -1342,7 +1342,7 @@ export const PosScreen: React.FC = () => {
                             className={`font-bold text-sm leading-snug line-clamp-2 mb-1 transition-colors ${
                               isUnavailable
                                 ? 'text-slate-500 line-through decoration-slate-400'
-                                : 'text-slate-800 group-hover:text-[#0A574E]'
+                                : 'text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400'
                             }`}
                           >
                             {product.name}
@@ -1352,12 +1352,12 @@ export const PosScreen: React.FC = () => {
                           )}
                         </div>
 
-                        <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
+                        <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                           <div>
                             {product.minPrice !== undefined && product.maxPrice !== undefined && product.maxPrice > product.minPrice ? (
                               <span
                                 className={`font-bold text-xs tabular-nums ${
-                                  isUnavailable ? 'text-slate-400' : 'text-[#0A574E]'
+                                  isUnavailable ? 'text-slate-400' : 'text-blue-600 dark:text-blue-400'
                                 }`}
                               >
                                 Rp {Number(product.minPrice).toLocaleString('id-ID')} - {Number(product.maxPrice).toLocaleString('id-ID')}
@@ -1365,7 +1365,7 @@ export const PosScreen: React.FC = () => {
                             ) : (
                               <span
                                 className={`font-bold text-sm tabular-nums ${
-                                  isUnavailable ? 'text-slate-400' : 'text-[#0A574E]'
+                                  isUnavailable ? 'text-slate-400' : 'text-blue-600 dark:text-blue-400'
                                 }`}
                               >
                                 Rp {Number(product.price ?? product.minPrice ?? 0).toLocaleString('id-ID')}
@@ -1374,15 +1374,15 @@ export const PosScreen: React.FC = () => {
                           </div>
 
                           {isInactiveInOutlet ? (
-                            <div className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-bold border border-slate-300">
+                            <div className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md text-[10px] font-bold border border-slate-300 dark:border-slate-700">
                               Nonaktif
                             </div>
                           ) : isOutOfStock ? (
-                            <div className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-md text-[10px] font-bold border border-rose-200/80">
+                            <div className="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-md text-[10px] font-bold border border-rose-200/80 dark:border-rose-800/60">
                               Habis
                             </div>
                           ) : (
-                            <div className="w-7 h-7 bg-teal-50/80 group-hover:bg-[#0A574E] text-[#0A574E] group-hover:text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xs">
+                            <div className="w-7 h-7 bg-blue-50/80 dark:bg-blue-950/60 group-hover:bg-blue-600 text-blue-600 dark:text-blue-400 group-hover:text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-2xs">
                               <Plus className="w-4 h-4" />
                             </div>
                           )}
@@ -1396,7 +1396,7 @@ export const PosScreen: React.FC = () => {
           </div>
 
           {/* Right: Desktop Cart & Checkout Panel */}
-          <div className="hidden lg:flex w-84 xl:w-96 bg-white border border-slate-200/80 rounded-2xl shadow-card flex-col overflow-hidden shrink-0">
+          <div className="hidden lg:flex w-84 xl:w-96 bg-white dark:bg-[#101828] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-card flex-col overflow-hidden shrink-0">
             {renderCartContent(false)}
           </div>
         </div>
@@ -1407,7 +1407,7 @@ export const PosScreen: React.FC = () => {
         <div className="lg:hidden fixed bottom-4 left-4 right-4 z-30 animate-in slide-in-from-bottom duration-300">
           <button
             onClick={() => setIsMobileCartOpen(true)}
-            className="w-full bg-gradient-to-r from-[#0E6D62] to-[#0A574E] text-white px-4 py-3.5 rounded-2xl shadow-xl flex items-center justify-between font-semibold active:scale-[0.99] transition-transform cursor-pointer border border-[#08453E]"
+            className="w-full bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white px-4 py-3.5 rounded-2xl shadow-xl flex items-center justify-between font-semibold active:scale-[0.99] transition-transform cursor-pointer border border-blue-700"
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-bold text-xs text-white">

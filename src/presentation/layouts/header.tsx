@@ -12,6 +12,8 @@ import {
   PanelLeftOpen,
   User,
   KeyRound,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CustomOutletSelect, ResetPasswordModal } from '@presentation/components/ui';
@@ -24,6 +26,8 @@ export const Header: React.FC = () => {
     isSidebarCollapsed,
     toggleSidebarCollapsed,
     toggleMobileMenu,
+    theme,
+    toggleTheme,
   } = useUiStore();
   const navigate = useNavigate();
 
@@ -52,14 +56,14 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white/95 backdrop-blur-xs border-b border-slate-200/80 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 select-none z-30">
+    <header className="h-16 bg-white/95 dark:bg-[#101828]/95 backdrop-blur-xs border-b border-slate-200/80 dark:border-slate-800/80 px-3 sm:px-6 flex items-center justify-between flex-shrink-0 select-none z-30 transition-colors duration-200">
       {/* Left: Toggles & Outlet Selector */}
       <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
         {/* Mobile / Tablet Hamburger Toggle */}
         <button
           onClick={toggleMobileMenu}
           aria-label="Buka Menu"
-          className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 rounded-xl transition-all active:scale-95 cursor-pointer"
+          className="lg:hidden p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/80 rounded-xl transition-all active:scale-95 cursor-pointer"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -69,7 +73,7 @@ export const Header: React.FC = () => {
           onClick={toggleSidebarCollapsed}
           aria-label={isSidebarCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
           title={isSidebarCollapsed ? 'Buka Penuh Sidebar' : 'Tutup Sidebar (Mode Ikon Saja)'}
-          className="hidden lg:flex p-2 text-slate-500 hover:text-[#0A574E] hover:bg-teal-50/70 rounded-xl transition-all active:scale-95 cursor-pointer"
+          className="hidden lg:flex p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/70 dark:hover:bg-blue-950/40 rounded-xl transition-all active:scale-95 cursor-pointer"
         >
           {isSidebarCollapsed ? (
             <PanelLeftOpen className="w-5 h-5" />
@@ -88,7 +92,7 @@ export const Header: React.FC = () => {
         )}
 
         {isTenantLocked && (
-          <div className="flex items-center gap-1.5 bg-rose-50 text-rose-700 px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold border border-rose-200/80 shadow-2xs shrink-0">
+          <div className="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold border border-rose-200/80 dark:border-rose-800/60 shadow-2xs shrink-0">
             <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span className="hidden sm:inline">Akun Tenant Terkunci</span>
             <span className="sm:hidden">Terkunci</span>
@@ -98,6 +102,21 @@ export const Header: React.FC = () => {
 
       {/* Right: User Profile & Actions */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Dark / Light Mode Switcher Pill */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label="Ganti Tema Tampilan"
+          title={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
+          className="p-2 text-slate-500 dark:text-amber-400 hover:text-blue-600 dark:hover:text-amber-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl transition-all active:scale-95 cursor-pointer"
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-5 h-5 transition-transform rotate-0 hover:rotate-45" />
+          ) : (
+            <Moon className="w-5 h-5 transition-transform -rotate-12 hover:rotate-0" />
+          )}
+        </button>
+
         {/* User Profile / Avatar Trigger Button */}
         <button
           ref={triggerRef}
@@ -105,23 +124,23 @@ export const Header: React.FC = () => {
           onClick={() => setIsUserMenuOpen((prev) => !prev)}
           className={`flex items-center gap-2.5 p-1.5 -mr-1 rounded-2xl transition-all cursor-pointer ${
             isUserMenuOpen
-              ? 'bg-slate-100 ring-2 ring-[#0A574E]/15'
-              : 'hover:bg-slate-50/80'
+              ? 'bg-slate-100 dark:bg-slate-800 ring-2 ring-blue-500/20'
+              : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
           }`}
           aria-haspopup="menu"
           aria-expanded={isUserMenuOpen}
           title={`Akun: ${user?.name || 'Kasir'}`}
         >
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-semibold text-slate-800 leading-tight tracking-tight">
+            <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-tight tracking-tight">
               {user?.name || 'Kasir'}
             </p>
             <div className="flex items-center justify-end gap-1 mt-0.5">
-              <span className="text-[10px] font-medium text-slate-500">
+              <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
                 {user?.role?.name || user?.roleName || (user?.isSuperAdmin ? 'Super Admin' : 'Staff')}
               </span>
               {tenant?.name && (
-                <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-medium border border-slate-200/50">
+                <span className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.2 rounded font-medium border border-slate-200/50 dark:border-slate-700/50">
                   {tenant.name}
                 </span>
               )}
@@ -129,22 +148,22 @@ export const Header: React.FC = () => {
           </div>
 
           {/* User Avatar Circle */}
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-[#0E6D62] to-[#0A574E] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 ring-2 ring-white/80">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-[#2563EB] to-[#1D4ED8] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 ring-2 ring-white/80 dark:ring-slate-700/80">
             {getInitials(user?.name || 'Kasir')}
           </div>
           <ChevronDown
             className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 hidden sm:block ${
-              isUserMenuOpen ? 'rotate-180 text-[#0A574E]' : ''
+              isUserMenuOpen ? 'rotate-180 text-blue-600 dark:text-blue-400' : ''
             }`}
           />
         </button>
 
-        <div className="h-6 sm:h-7 w-px bg-slate-200" />
+        <div className="h-6 sm:h-7 w-px bg-slate-200 dark:bg-slate-800" />
 
         <button
           onClick={handleLogout}
           title="Keluar"
-          className="p-1.5 sm:p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+          className="p-1.5 sm:p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
         >
           <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
@@ -165,14 +184,14 @@ export const Header: React.FC = () => {
             maxHeight: `${coords.maxHeight}px`,
             zIndex: 99999,
           }}
-          className="bg-white border border-slate-200/90 rounded-2xl shadow-xl p-1.5 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100 w-64"
+          className="bg-white dark:bg-[#151F32] border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xl p-1.5 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-100 w-64"
         >
           {/* User Info Header */}
-          <div className="px-3.5 py-3 bg-slate-50/80 rounded-xl mb-1 border border-slate-100">
-            <p className="text-xs font-bold text-slate-900 truncate tracking-tight">{user?.name || 'Kasir'}</p>
-            <p className="text-[11px] text-slate-500 truncate font-mono mt-0.5">{user?.email || '-'}</p>
+          <div className="px-3.5 py-3 bg-slate-50/80 dark:bg-slate-800/80 rounded-xl mb-1 border border-slate-100 dark:border-slate-700/60">
+            <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate tracking-tight">{user?.name || 'Kasir'}</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate font-mono mt-0.5">{user?.email || '-'}</p>
             <div className="mt-2 flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold bg-teal-50 text-[#0A574E] border border-teal-200/60 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 px-2 py-0.5 rounded-full">
                 {user?.role?.name || user?.roleName || (user?.isSuperAdmin ? 'Super Admin' : 'Staff')}
               </span>
             </div>
@@ -185,7 +204,7 @@ export const Header: React.FC = () => {
               setIsUserMenuOpen(false);
               navigate('/profile');
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-left font-medium"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-left font-medium"
           >
             <User className="w-4 h-4 text-slate-400" />
             <span>Profil Pengguna</span>
@@ -198,13 +217,13 @@ export const Header: React.FC = () => {
               setIsUserMenuOpen(false);
               setIsResetModalOpen(true);
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-left font-medium"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-left font-medium"
           >
             <KeyRound className="w-4 h-4 text-slate-400" />
             <span>Reset Password</span>
           </button>
 
-          <div className="h-px bg-slate-100 my-1" />
+          <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
 
           {/* Menu Item 3: Keluar / Logout */}
           <button
@@ -213,9 +232,9 @@ export const Header: React.FC = () => {
               setIsUserMenuOpen(false);
               handleLogout();
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50/80 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-left font-medium"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50/80 dark:hover:bg-rose-950/40 rounded-xl transition-all active:scale-[0.98] cursor-pointer text-left font-medium"
           >
-            <LogOut className="w-4 h-4 text-rose-500" />
+            <LogOut className="w-4 h-4 text-rose-500 dark:text-rose-400" />
             <span>Keluar</span>
           </button>
         </div>,

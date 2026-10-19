@@ -278,7 +278,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           <div className="md:col-span-7 space-y-4">
             {/* Payment Method Switcher */}
             <div>
-              <span className="text-xs font-bold text-slate-700 block mb-2">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
                 Pilih Metode Pembayaran:
               </span>
               <div className="grid grid-cols-2 gap-3">
@@ -290,20 +290,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   }}
                   className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 font-bold text-xs transition-all cursor-pointer ${
                     method === 'CASH'
-                      ? 'border-[#0A574E] bg-teal-50/70 text-[#0A574E] shadow-2xs'
-                      : 'border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50'
+                      ? 'border-[#2563EB] bg-blue-50/70 dark:bg-blue-950/40 text-[#2563EB] dark:text-blue-400 shadow-2xs'
+                      : 'border-slate-200/90 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60'
                   }`}
                 >
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-xs ${
-                      method === 'CASH' ? 'bg-[#0A574E] text-white' : 'bg-slate-100 text-slate-600'
+                      method === 'CASH' ? 'bg-[#2563EB] text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                     }`}
                   >
                     <Banknote className="w-5 h-5" />
                   </div>
                   <div className="text-left">
-                    <span>Uang Tunai (Cash)</span>
-                    <span className="text-[10px] text-slate-400 block font-normal">
+                    <span className="text-slate-800 dark:text-slate-100">Uang Tunai (Cash)</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-normal">
                       Pecahan & Numpad Kasir
                     </span>
                   </div>
@@ -317,20 +317,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   }}
                   className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 font-bold text-xs transition-all cursor-pointer ${
                     method === 'QRIS'
-                      ? 'border-[#0A574E] bg-teal-50/70 text-[#0A574E] shadow-2xs'
-                      : 'border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50'
+                      ? 'border-[#2563EB] bg-blue-50/70 dark:bg-blue-950/40 text-[#2563EB] dark:text-blue-400 shadow-2xs'
+                      : 'border-slate-200/90 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60'
                   }`}
                 >
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-xs ${
-                      method === 'QRIS' ? 'bg-[#0A574E] text-white' : 'bg-slate-100 text-slate-600'
+                      method === 'QRIS' ? 'bg-[#2563EB] text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                     }`}
                   >
                     <QrCode className="w-5 h-5" />
                   </div>
                   <div className="text-left">
-                    <span>QRIS / E-Wallet</span>
-                    <span className="text-[10px] text-slate-400 block font-normal">
+                    <span className="text-slate-800 dark:text-slate-100">QRIS / E-Wallet</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-normal">
                       Scan QR Dinamis / Statis
                     </span>
                   </div>
@@ -343,11 +343,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <div className="space-y-3">
                 {/* Cash Received & Kembalian Bar */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/90 shadow-2xs">
-                    <span className="text-[10px] text-slate-500 font-semibold block">
+                  <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/60 rounded-xl border border-slate-200/90 dark:border-slate-700 shadow-2xs">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block">
                       Uang Diterima:
                     </span>
-                    <span className="text-lg font-bold text-slate-900 tabular-nums">
+                    <span className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                       Rp {cashGiven.toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -355,8 +355,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <div
                     className={`p-3.5 rounded-xl border transition-all shadow-2xs ${
                       isCashSufficient
-                        ? 'bg-emerald-50/90 border-emerald-200/90 text-emerald-800'
-                        : 'bg-rose-50/90 border-rose-200/90 text-rose-800'
+                        ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-200/90 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300'
+                        : 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-200/90 dark:border-rose-800/60 text-rose-800 dark:text-rose-300'
                     }`}
                   >
                     <span className="text-[10px] font-semibold block">
@@ -370,7 +370,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
                 {/* Quick Presets */}
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-500 block mb-1.5">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
                     Pecahan Cepat:
                   </span>
                   <div className="grid grid-cols-4 gap-2">
@@ -381,8 +381,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         onClick={() => setCashGiven(preset.value)}
                         className={`py-2 px-1 text-center rounded-xl text-xs font-bold cursor-pointer transition-all border tabular-nums ${
                           cashGiven === preset.value
-                            ? 'bg-gradient-to-b from-[#0E6D62] to-[#0A574E] text-white border-[#08453E] shadow-xs'
-                            : 'bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 border-slate-200/80'
+                            ? 'bg-gradient-to-b from-[#2563EB] to-[#1D4ED8] text-white border-blue-600 shadow-xs'
+                            : 'bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700'
                         }`}
                       >
                         {preset.label}
@@ -398,7 +398,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       key={btn}
                       type="button"
                       onClick={() => handleNumpadPress(btn)}
-                      className="py-3 bg-white border border-slate-200/90 hover:bg-slate-50 rounded-xl font-bold text-base text-slate-800 cursor-pointer shadow-2xs active:scale-95 transition-all tabular-nums"
+                      className="py-3 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 rounded-xl font-bold text-base text-slate-800 dark:text-slate-100 cursor-pointer shadow-2xs active:scale-95 transition-all tabular-nums"
                     >
                       {btn}
                     </button>
@@ -406,7 +406,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <button
                     type="button"
                     onClick={handleNumpadBackspace}
-                    className="py-3 bg-rose-50/80 border border-rose-200/80 hover:bg-rose-100 text-rose-700 rounded-xl font-bold text-base flex items-center justify-center cursor-pointer shadow-2xs active:scale-95 transition-all"
+                    className="py-3 bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 rounded-xl font-bold text-base flex items-center justify-center cursor-pointer shadow-2xs active:scale-95 transition-all"
                   >
                     <Delete className="w-5 h-5" />
                   </button>
@@ -416,24 +416,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
             {/* QRIS PAYMENT SECTION */}
             {method === 'QRIS' && (
-              <div className="p-6 border-2 border-dashed border-teal-200 bg-teal-50/30 rounded-2xl text-center space-y-4">
+              <div className="p-6 border-2 border-dashed border-blue-200 dark:border-blue-800/60 bg-blue-50/30 dark:bg-blue-950/20 rounded-2xl text-center space-y-4">
                 <div className="w-44 h-44 bg-white p-3 rounded-2xl shadow-sm border border-slate-200 mx-auto flex flex-col items-center justify-center">
                   <QrCode className="w-32 h-32 text-slate-800" />
-                  <span className="text-[10px] font-bold text-[#0D5C53] tracking-widest mt-1">
+                  <span className="text-[10px] font-bold text-[#2563EB] tracking-widest mt-1">
                     QRIS RESMI
                   </span>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-bold text-slate-800">
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">
                     Arahkan Pelanggan untuk Scan QR
                   </h4>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Mendukung GoPay, OVO, Dana, ShopeePay, BCA, Mandiri & Mobile Banking lainnya.
                   </p>
                 </div>
 
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full text-xs font-bold">
                   <span>Nominal: Rp {totalAmount.toLocaleString('id-ID')}</span>
                 </div>
               </div>
@@ -441,10 +441,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </div>
 
           {/* Right Panel: Order Summary & Bill Preview (5 Cols) */}
-          <div className="md:col-span-5 bg-slate-50/70 border border-slate-200/90 rounded-2xl p-4 flex flex-col justify-between space-y-4 shadow-2xs">
+          <div className="md:col-span-5 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-4 shadow-2xs">
             <div className="space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                <span className="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                   <Receipt className="w-4 h-4 text-slate-500" />
                   Ringkasan Tagihan
                 </span>
@@ -456,23 +456,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </div>
 
               {/* Items List Preview */}
-              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 divide-y divide-slate-100 text-xs">
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                 {currentOrder.items?.map((item, idx) => (
-                  <div key={idx} className="pt-1.5 first:pt-0 flex justify-between text-slate-700">
+                  <div key={idx} className="pt-1.5 first:pt-0 flex justify-between text-slate-700 dark:text-slate-300">
                     <div>
-                      <span className="font-semibold">{item.quantity}x {item.productName}</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{item.quantity}x {item.productName}</span>
                       {item.variantName && !item.variantName.trim().toLowerCase().includes('default') && (
-                        <span className="text-[10px] text-slate-400 block font-normal">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-normal">
                           ({item.variantName})
                         </span>
                       )}
                       {item.notes && (
-                        <span className="text-[10px] text-amber-700 bg-amber-50 px-1 py-0.5 rounded block w-fit mt-0.5">
+                        <span className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1 py-0.5 rounded block w-fit mt-0.5">
                           {item.notes}
                         </span>
                       )}
                     </div>
-                    <span className="font-bold text-slate-800 tabular-nums">
+                    <span className="font-bold text-slate-800 dark:text-slate-100 tabular-nums">
                       Rp {Number(item.subtotal ?? (Number(item.unitPrice || item.price || 0) * item.quantity)).toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -480,19 +480,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </div>
 
               {/* Financial Calculation */}
-              <div className="pt-3 border-t border-slate-200/80 space-y-1.5 text-xs text-slate-500">
+              <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-semibold text-slate-800 tabular-nums">
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
                     Rp {Number(currentOrder.subtotal || totalAmount).toLocaleString('id-ID')}
                   </span>
                 </div>
 
                 {/* Step Penambahan Diskon di Pop-Up Pembayaran */}
                 {Number(currentOrder.discountAmount || 0) > 0 ? (
-                  <div className="flex justify-between items-center bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-1.5 rounded-lg">
+                  <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 px-2 py-1.5 rounded-lg">
                     <div className="flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                      <Tag className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span className="font-medium text-xs">
                         {currentOrder.discountName || 'Diskon'}
                       </span>
@@ -500,12 +500,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         type="button"
                         disabled={isApplyingDiscount || loading}
                         onClick={handleRemoveDiscount}
-                        className="text-[10px] text-rose-600 hover:text-rose-800 font-semibold underline ml-1 cursor-pointer"
+                        className="text-[10px] text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 font-semibold underline ml-1 cursor-pointer"
                       >
                         Hapus
                       </button>
                     </div>
-                    <span className="font-semibold text-emerald-700 tabular-nums">
+                    <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
                       -Rp {Number(currentOrder.discountAmount).toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -515,7 +515,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       type="button"
                       disabled={isApplyingDiscount || loading}
                       onClick={() => setIsDiscountModalOpen(true)}
-                      className="text-xs text-[#0A574E] hover:underline flex items-center gap-1.5 font-medium cursor-pointer"
+                      className="text-xs text-[#2563EB] dark:text-blue-400 hover:underline flex items-center gap-1.5 font-medium cursor-pointer"
                     >
                       <Tag className="w-3.5 h-3.5" />
                       <span>+ Tambah Diskon / Promo</span>
@@ -526,7 +526,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 {Number(currentOrder.packagingFee || 0) > 0 && (
                   <div className="flex justify-between">
                     <span>Biaya Kemasan</span>
-                    <span className="font-semibold text-slate-800 tabular-nums">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
                       Rp {Number(currentOrder.packagingFee).toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -534,7 +534,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 {Number(currentOrder.serviceCharge || 0) > 0 && (
                   <div className="flex justify-between">
                     <span>Service Charge</span>
-                    <span className="font-semibold text-slate-800 tabular-nums">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
                       Rp {Number(currentOrder.serviceCharge).toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -542,7 +542,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 {Number(currentOrder.taxAmount || 0) > 0 && (
                   <div className="flex justify-between">
                     <span>{currentOrder.taxName || taxName || 'Pajak'}</span>
-                    <span className="font-semibold text-slate-800 tabular-nums">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
                       Rp {Number(currentOrder.taxAmount).toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -551,11 +551,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
 
             {/* Total Grand Banner */}
-            <div className="p-4 bg-white border border-slate-200/90 rounded-xl shadow-2xs">
+            <div className="p-4 bg-white dark:bg-[#101828] border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-2xs">
               <span className="text-[10px] text-slate-400 uppercase tracking-widest block font-bold">
                 Total Pembayaran
               </span>
-              <div className="text-2xl font-bold text-[#0A574E] tabular-nums mt-0.5 tracking-tight">
+              <div className="text-2xl font-bold text-[#2563EB] dark:text-blue-400 tabular-nums mt-0.5 tracking-tight">
                 Rp {totalAmount.toLocaleString('id-ID')}
               </div>
             </div>

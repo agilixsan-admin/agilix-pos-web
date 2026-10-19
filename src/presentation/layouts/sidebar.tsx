@@ -145,7 +145,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       className={`
-        fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200 h-screen flex flex-col select-none transition-all duration-300 ease-in-out shrink-0
+        fixed inset-y-0 left-0 z-50 bg-white dark:bg-[#101828] border-r border-slate-200 dark:border-slate-800/80 h-screen flex flex-col select-none transition-all duration-300 ease-in-out shrink-0
         lg:static lg:z-auto
         ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
         ${isSidebarCollapsed ? 'lg:w-[72px]' : 'w-64'}
@@ -153,13 +153,13 @@ export const Sidebar: React.FC = () => {
     >
       {/* Brand Header */}
       <div
-        className={`h-16 flex items-center border-b border-slate-100 ${
+        className={`h-16 flex items-center border-b border-slate-100 dark:border-slate-800/80 ${
           isSidebarCollapsed ? 'lg:justify-center px-4' : 'justify-between px-5'
         }`}
       >
         <div className="flex items-center gap-3 overflow-hidden">
           {posSettings?.billLogoUrl && !logoError ? (
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0 p-1">
+            <div className="w-9 h-9 rounded-xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center justify-center shrink-0 p-1">
               <img
                 src={posSettings.billLogoUrl}
                 alt="Logo Bisnis"
@@ -168,16 +168,16 @@ export const Sidebar: React.FC = () => {
               />
             </div>
           ) : (
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-b from-[#0E6D62] to-[#0A574E] flex items-center justify-center text-white font-bold text-base shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-[#08453E] shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-b from-[#2563EB] to-[#1D4ED8] flex items-center justify-center text-white font-bold text-base shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-blue-700 shrink-0">
               S
             </div>
           )}
           {(!isSidebarCollapsed || isMobileMenuOpen) && (
             <div className="overflow-hidden">
-              <h1 className="font-bold text-slate-900 text-sm tracking-tight truncate">
+              <h1 className="font-bold text-slate-900 dark:text-white text-sm tracking-tight truncate">
                 SAJI
               </h1>
-              <p className="text-[10px] text-slate-400 font-medium tracking-wide truncate">
+              <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium tracking-wide truncate">
                 POS by Agilix
               </p>
             </div>
@@ -188,7 +188,7 @@ export const Sidebar: React.FC = () => {
         <button
           onClick={closeMobileMenu}
           aria-label="Tutup Menu"
-          className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+          className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -199,11 +199,11 @@ export const Sidebar: React.FC = () => {
         {accessibleGroups.map((group) => (
           <div key={group.groupTitle} className="space-y-1">
             {!isSidebarCollapsed || isMobileMenuOpen ? (
-              <h2 className="px-3 text-[10px] font-bold tracking-widest text-slate-400 uppercase truncate">
+              <h2 className="px-3 text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-400 uppercase truncate">
                 {group.groupTitle}
               </h2>
             ) : (
-              <div className="h-px bg-slate-100 my-2 mx-1.5" />
+              <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-1.5" />
             )}
             <div className="space-y-0.5 pt-0.5">
               {group.items.map((item) => {
@@ -228,27 +228,27 @@ export const Sidebar: React.FC = () => {
                         : 'gap-3 px-3 py-2.5'
                     } ${
                       isActive
-                        ? 'bg-teal-50/80 text-[#0A574E] font-semibold border border-teal-200/60 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
+                        ? 'bg-blue-50/80 dark:bg-blue-950/40 text-[#2563EB] dark:text-blue-400 font-semibold border border-blue-200/60 dark:border-blue-800/50 shadow-2xs'
+                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60 border border-transparent'
                     }`}
                   >
                     <Icon
                       className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                        isActive ? 'text-[#0A574E]' : 'text-slate-400 group-hover:text-slate-700'
+                        isActive ? 'text-[#2563EB] dark:text-blue-400' : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200'
                       }`}
                     />
                     {!isIconOnly && (
                       <span className="truncate">{item.title}</span>
                     )}
                     {!isIconOnly && item.badge && (
-                      <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 shrink-0">
+                      <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 shrink-0">
                         {item.badge}
                       </span>
                     )}
 
                     {/* Tooltip on hover when desktop is in collapsed icon mode */}
                     {isIconOnly && (
-                      <span className="hidden lg:group-hover:flex absolute left-full ml-3 px-2.5 py-1 bg-slate-900 text-white text-xs font-medium rounded-lg whitespace-nowrap shadow-lg z-50 pointer-events-none items-center gap-1.5">
+                      <span className="hidden lg:group-hover:flex absolute left-full ml-3 px-2.5 py-1 bg-slate-900 dark:bg-slate-800 text-white text-xs font-medium rounded-lg whitespace-nowrap shadow-lg z-50 pointer-events-none items-center gap-1.5">
                         {item.title}
                         {item.badge && (
                           <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-500 text-white uppercase">
@@ -266,16 +266,16 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* Footer with Desktop Collapse / Expand Toggle */}
-      <div className="hidden lg:flex border-t border-slate-100 p-2.5">
+      <div className="hidden lg:flex border-t border-slate-100 dark:border-slate-800/80 p-2.5">
         <button
           onClick={toggleSidebarCollapsed}
           title={isSidebarCollapsed ? 'Buka Penuh (Expand)' : 'Perkecil Menu (Collapse)'}
-          className={`w-full flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-[#0A574E] hover:bg-teal-50/70 transition-all active:scale-[0.98] cursor-pointer text-xs font-medium ${
+          className={`w-full flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/70 dark:hover:bg-blue-950/40 transition-all active:scale-[0.98] cursor-pointer text-xs font-medium ${
             isSidebarCollapsed ? 'gap-0' : 'gap-2'
           }`}
         >
           {isSidebarCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-[#0A574E]" />
+            <ChevronRight className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           ) : (
             <>
               <ChevronLeft className="w-4 h-4" />

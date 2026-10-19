@@ -89,40 +89,40 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
     >
       <div className="space-y-4">
         {/* Info Banner */}
-        <div className="p-3.5 bg-teal-50/70 border border-teal-200/80 rounded-xl flex items-center justify-between text-xs">
+        <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800 rounded-xl flex items-center justify-between text-xs">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#0D5C53] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] text-white flex items-center justify-center font-bold text-xs shadow-xs">
               <Store className="w-4 h-4" />
             </div>
             <div>
-              <p className="font-bold text-slate-800">{outletName || 'Cabang POS'}</p>
-              <p className="text-[11px] text-slate-500">
-                Kasir: <strong className="text-slate-700">{user?.name || user?.email}</strong>
+              <p className="font-bold text-slate-800 dark:text-slate-100">{outletName || 'Cabang POS'}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Kasir: <strong className="text-slate-700 dark:text-slate-200">{user?.name || user?.email}</strong>
               </p>
             </div>
           </div>
-          <span className="text-[10px] font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/60 text-[#2563EB] dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
             Shift Baru
           </span>
         </div>
 
         {/* Mandatory Shift Notice */}
-        <div className="p-3 bg-amber-50/80 border border-amber-200/90 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
-          <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        <div className="p-3 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/90 dark:border-amber-800 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+          <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <p className="leading-relaxed">
             <strong>Aturan Kasir:</strong> Transaksi pemesanan meja dan pembayaran tidak dapat dilakukan sebelum shift dibuka. Masukkan modal awal laci untuk mengaktifkan POS.
           </p>
         </div>
 
         {/* Info Saldo Kas Laci di Sistem */}
-        <div className="p-3 bg-emerald-50/80 border border-emerald-200/90 rounded-xl flex items-center justify-between text-xs">
+        <div className="p-3 bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/90 dark:border-emerald-800 rounded-xl flex items-center justify-between text-xs">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
               <Banknote className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[11px] text-slate-500 font-medium">Saldo Kas Laci di Sistem (Kas & Bank)</p>
-              <p className="text-sm font-bold text-emerald-800">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Saldo Kas Laci di Sistem (Kas & Bank)</p>
+              <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
                 Rp {systemDrawerBalance.toLocaleString('id-ID')}
               </p>
             </div>
@@ -134,7 +134,7 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
                 setOpeningCash(systemDrawerBalance);
                 setIsManualEdit(false);
               }}
-              className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/50 hover:bg-emerald-200 dark:hover:bg-emerald-800/60 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
             >
               Samakan
             </button>
@@ -156,7 +156,7 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
 
         {/* Quick Amount Suggestion Chips */}
         <div>
-          <label className="text-[11px] font-semibold text-slate-500 mb-1.5 block">
+          <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block">
             Pilihan Nominal Cepat:
           </label>
           <div className="grid grid-cols-4 gap-2">
@@ -170,8 +170,8 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
                 }}
                 className={`py-1.5 px-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
                   openingCash === amt
-                    ? 'bg-[#0D5C53] text-white border-[#0D5C53] shadow-xs'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                    ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-xs'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
               >
                 Rp {(amt / 1000).toLocaleString('id-ID')}rb
@@ -187,12 +187,12 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Contoh: Pecahan Rp 50.000 x 4 lembar"
-            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+            className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB]"
           />
         </FormField>
 
-        <div className="p-3 bg-amber-50 rounded-xl border border-amber-200/80 flex items-start gap-2 text-xs text-amber-800">
-          <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200/80 dark:border-amber-800 flex items-start gap-2 text-xs text-amber-800 dark:text-amber-200">
+          <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <p className="text-[11px] leading-relaxed">
             Pastikan uang fisik di laci telah dihitung dengan tepat. Selisih kas akan terekam otomatis saat Anda melakukan Tutup Shift.
           </p>

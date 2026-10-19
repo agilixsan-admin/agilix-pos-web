@@ -143,11 +143,11 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
             {openOrders.map((order) => (
               <div
                 key={order.id}
-                className="border border-slate-200 rounded-xl p-4 bg-white hover:border-[#0D5C53]/40 transition-all flex flex-col justify-between"
+                className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900/60 hover:border-blue-400 dark:hover:border-blue-700 transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-slate-900 text-sm">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                       {order.orderNumber || order.id.slice(0, 8)}
                     </span>
                     <div className="flex items-center gap-1.5">
@@ -156,9 +156,9 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
                         title="Kirim ulang tiket ke printer dapur/bar"
                         disabled={dispatchingOrderId === order.id}
                         onClick={() => handleDispatchKitchen(order)}
-                        className="p-1 text-slate-400 hover:text-[#0D5C53] hover:bg-[#0D5C53]/10 rounded-md transition-colors disabled:opacity-50"
+                        className="p-1 text-slate-400 hover:text-[#2563EB] dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-md transition-colors disabled:opacity-50"
                       >
-                        <Printer className={`w-3.5 h-3.5 ${dispatchingOrderId === order.id ? 'animate-pulse text-[#0D5C53]' : ''}`} />
+                        <Printer className={`w-3.5 h-3.5 ${dispatchingOrderId === order.id ? 'animate-pulse text-[#2563EB] dark:text-blue-400' : ''}`} />
                       </button>
                       <Badge variant="warning" dot>
                         {order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber
@@ -170,16 +170,16 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="text-xs text-slate-500 mb-3">
-                    Pelanggan: <span className="text-slate-800 font-semibold">{order.customerName || 'Umum'}</span>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                    Pelanggan: <span className="text-slate-800 dark:text-slate-200 font-semibold">{order.customerName || 'Umum'}</span>
                   </div>
 
                   {/* Order Items Preview */}
-                  <div className="bg-slate-50 rounded-lg p-2.5 space-y-1.5 mb-3 text-xs">
+                  <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-2.5 space-y-1.5 mb-3 text-xs">
                     {order.items
                       ?.filter((item) => !item.status || item.status === 'ACTIVE')
                       .map((item, idx) => (
-                        <div key={item.id || idx} className="flex items-center justify-between text-slate-600">
+                        <div key={item.id || idx} className="flex items-center justify-between text-slate-600 dark:text-slate-300">
                           <span className="truncate pr-2">
                             {item.quantity}x {item.productName}
                             {item.variantName && !item.variantName.trim().toLowerCase().includes('default')
@@ -187,7 +187,7 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
                               : ''}
                           </span>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="font-mono">
+                            <span className="font-mono text-slate-700 dark:text-slate-200">
                               Rp{' '}
                               {Number(
                                 item.subtotal ??
@@ -219,9 +219,9 @@ export const OpenOrdersModal: React.FC<OpenOrdersModalProps> = ({
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center py-2 border-t border-slate-100 text-xs font-bold mb-3">
-                    <span className="text-slate-700">Total Tagihan:</span>
-                    <span className="text-sm text-[#0D5C53]">
+                  <div className="flex justify-between items-center py-2 border-t border-slate-100 dark:border-slate-800 text-xs font-bold mb-3">
+                    <span className="text-slate-700 dark:text-slate-300">Total Tagihan:</span>
+                    <span className="text-sm text-[#2563EB] dark:text-blue-400">
                       Rp {Number(order.totalAmount).toLocaleString('id-ID')}
                     </span>
                   </div>

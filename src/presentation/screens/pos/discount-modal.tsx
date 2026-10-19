@@ -130,31 +130,31 @@ export const DiscountModal: React.FC<DiscountModalProps> = ({
                     }}
                     className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
                       isSelected
-                        ? 'border-[#0D5C53] bg-teal-50 ring-1 ring-[#0D5C53]'
+                        ? 'border-[#2563EB] bg-blue-50/70 dark:bg-blue-950/40 ring-1 ring-[#2563EB]'
                         : isEligible
-                        ? 'border-slate-200 hover:border-[#0D5C53] bg-white cursor-pointer hover:bg-slate-50'
-                        : 'border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed'
+                        ? 'border-slate-200 dark:border-slate-700 hover:border-[#2563EB] dark:hover:border-blue-500 bg-white dark:bg-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-750'
+                        : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-60 cursor-not-allowed'
                     }`}
                   >
                     <div className="flex items-start gap-2.5">
                       <div
                         className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
                           isSelected
-                            ? 'bg-[#0D5C53] text-white'
-                            : 'bg-teal-50 text-[#0D5C53]'
+                            ? 'bg-[#2563EB] text-white'
+                            : 'bg-blue-50 dark:bg-blue-950/60 text-[#2563EB] dark:text-blue-300'
                         }`}
                       >
                         <Tag className="w-4 h-4" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h6 className="font-semibold text-slate-900 text-xs">{d.name}</h6>
+                          <h6 className="font-semibold text-slate-900 dark:text-slate-100 text-xs">{d.name}</h6>
                           <Badge variant={d.type === 'PERCENTAGE' ? 'info' : 'success'} size="sm">
                             {d.type === 'PERCENTAGE' ? `${d.value}%` : `Rp ${d.value.toLocaleString('id-ID')}`}
                           </Badge>
                         </div>
                         {d.minOrderAmount ? (
-                          <span className="text-[10px] text-slate-500 block mt-0.5">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
                             Min. Belanja: Rp {d.minOrderAmount.toLocaleString('id-ID')}
                           </span>
                         ) : null}
@@ -163,7 +163,7 @@ export const DiscountModal: React.FC<DiscountModalProps> = ({
 
                     <div className="text-right">
                       {isEligible ? (
-                        <span className="font-bold text-emerald-600 text-xs">
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
                           -Rp {discountAmount.toLocaleString('id-ID')}
                         </span>
                       ) : (
@@ -180,17 +180,17 @@ export const DiscountModal: React.FC<DiscountModalProps> = ({
         </div>
 
         {/* Custom Discount Input */}
-        <div className="pt-3 border-t border-slate-200">
-          <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+        <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+          <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
             Diskon Manual Kasir
           </h5>
           <div className="flex items-center gap-2">
-            <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={() => setCustomType('PERCENT')}
                 className={`p-1.5 rounded text-xs font-semibold cursor-pointer ${
-                  customType === 'PERCENT' ? 'bg-white text-[#0D5C53] shadow-xs' : 'text-slate-500'
+                  customType === 'PERCENT' ? 'bg-white dark:bg-slate-700 text-[#2563EB] dark:text-blue-400 shadow-xs' : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
                 <Percent className="w-3.5 h-3.5" />
@@ -199,7 +199,7 @@ export const DiscountModal: React.FC<DiscountModalProps> = ({
                 type="button"
                 onClick={() => setCustomType('FIXED')}
                 className={`p-1.5 rounded text-xs font-semibold cursor-pointer ${
-                  customType === 'FIXED' ? 'bg-white text-[#0D5C53] shadow-xs' : 'text-slate-500'
+                  customType === 'FIXED' ? 'bg-white dark:bg-slate-700 text-[#2563EB] dark:text-blue-400 shadow-xs' : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
                 <DollarSign className="w-3.5 h-3.5" />
@@ -222,7 +222,7 @@ export const DiscountModal: React.FC<DiscountModalProps> = ({
                 placeholder="Persen (%)"
                 value={customValue}
                 onChange={(e) => setCustomValue(e.target.value)}
-                className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB]"
               />
             )}
 

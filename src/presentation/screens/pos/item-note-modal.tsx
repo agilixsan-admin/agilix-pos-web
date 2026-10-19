@@ -71,7 +71,7 @@ export const ItemNoteModal: React.FC<ItemNoteModalProps> = ({
       <div className="space-y-3 py-1">
         {/* Quick Suggestion Tags */}
         <div>
-          <span className="text-[11px] font-semibold text-slate-500 block mb-1.5">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
             Pilihan Cepat:
           </span>
           <div className="flex flex-wrap gap-1.5">
@@ -80,7 +80,7 @@ export const ItemNoteModal: React.FC<ItemNoteModalProps> = ({
                 key={tag}
                 type="button"
                 onClick={() => handleAddTag(tag)}
-                className="text-[11px] bg-slate-100 hover:bg-teal-50 hover:text-[#0D5C53] text-slate-600 px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer border border-transparent hover:border-teal-200"
+                className="text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-[#2563EB] dark:hover:text-blue-300 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
               >
                 + {tag}
               </button>
@@ -89,7 +89,7 @@ export const ItemNoteModal: React.FC<ItemNoteModalProps> = ({
         </div>
 
         <div>
-          <span className="text-[11px] font-semibold text-slate-500 block mb-1.5">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
             Tulis Catatan Khusus:
           </span>
           <FormTextarea

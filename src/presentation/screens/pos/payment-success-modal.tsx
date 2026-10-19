@@ -183,12 +183,12 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
         {/* PRINTING LOADING OVERLAY */}
         {printStatus === 'PRINTING' && (
           <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-teal-50 border-2 border-[#0D5C53] flex items-center justify-center animate-pulse">
-              <Printer className="w-8 h-8 text-[#0D5C53] animate-bounce" />
+            <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-950/40 border-2 border-[#2563EB] flex items-center justify-center animate-pulse">
+              <Printer className="w-8 h-8 text-[#2563EB] dark:text-blue-400 animate-bounce" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Mencetak Struk Pembayaran...</h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Mencetak Struk Pembayaran...</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Mohon tunggu, struk transaksi untuk Order #{order.orderNumber || order.id.slice(0, 8)} sedang dikirim ke printer.
               </p>
             </div>
@@ -260,11 +260,11 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
           <div className="space-y-6">
             {/* Header Success Badge */}
             <div className="text-center pt-2">
-              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2.5 shadow-2xs border border-emerald-200/80 ring-4 ring-emerald-50/50">
+              <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-2.5 shadow-2xs border border-emerald-200/80 dark:border-emerald-800 ring-4 ring-emerald-50/50 dark:ring-emerald-950/30">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight">Pembayaran Berhasil!</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Pembayaran Berhasil!</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Transaksi telah selesai dicatat dan stok inventaris otomatis diperbarui.
               </p>
             </div>
@@ -272,24 +272,24 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
             {/* Split Content: Left Details & Right Receipt Preview */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Left Card: Transaction Details */}
-              <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-4 flex flex-col justify-between space-y-4 shadow-2xs">
+              <div className="bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-4 shadow-2xs">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <span className="text-xs font-semibold text-slate-500">ID Transaksi</span>
-                    <span className="text-xs font-mono font-bold text-slate-800">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">ID Transaksi</span>
+                    <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">
                       TRX-{order.id.slice(0, 8).toUpperCase()}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <span className="text-xs font-semibold text-slate-500">No. Order</span>
-                    <span className="text-xs font-mono font-bold text-slate-800">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">No. Order</span>
+                    <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">
                       {order.orderNumber || order.id.slice(0, 8)}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <span className="text-xs font-semibold text-slate-500">Tipe Pesanan</span>
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Tipe Pesanan</span>
                     <Badge variant={order.orderType === 'DINE_IN' ? 'success' : 'info'}>
                       {order.orderType === 'DINE_IN'
                         ? `Dine In (${order.tableName || order.tableNumber || order.table?.name || 'Meja'})`
@@ -297,44 +297,44 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                     </Badge>
                   </div>
 
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <span className="text-xs font-semibold text-slate-500">Kasir</span>
-                    <span className="text-xs font-bold text-slate-800">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Kasir</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                       {cashierName}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <span className="text-xs font-semibold text-slate-500">Metode Bayar</span>
-                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      {isCash ? <Banknote className="w-4 h-4 text-emerald-600" /> : <QrCode className="w-4 h-4 text-teal-600" />}
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Metode Bayar</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      {isCash ? <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <QrCode className="w-4 h-4 text-[#2563EB] dark:text-blue-400" />}
                       {order.paymentMethod || 'CASH'}
                     </span>
                   </div>
                 </div>
 
                 {/* Calculation Box */}
-                <div className="space-y-2 pt-2 border-t border-slate-200/80">
-                  <div className="flex justify-between text-xs text-slate-600">
+                <div className="space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+                  <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                     <span>Total Tagihan</span>
-                    <span className="font-bold text-slate-900 tabular-nums">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                       Rp {totalAmount.toLocaleString('id-ID')}
                     </span>
                   </div>
 
                   {isCash && (
-                    <div className="flex justify-between text-xs text-slate-600">
+                    <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                       <span>Uang Diterima</span>
-                      <span className="font-semibold text-slate-800 tabular-nums">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
                         Rp {paidAmount.toLocaleString('id-ID')}
                       </span>
                     </div>
                   )}
 
                   {isCash && (
-                    <div className="p-3 bg-emerald-50 border border-emerald-200/90 rounded-xl flex items-center justify-between shadow-2xs">
-                      <span className="text-xs font-bold text-emerald-900">Kembalian:</span>
-                      <span className="text-base font-bold text-emerald-700 tabular-nums">
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800 rounded-xl flex items-center justify-between shadow-2xs">
+                      <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300">Kembalian:</span>
+                      <span className="text-base font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
                         Rp {changeAmount.toLocaleString('id-ID')}
                       </span>
                     </div>
@@ -401,7 +401,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                     )}
                     <div className="flex justify-between font-bold text-xs pt-1 border-t border-slate-200">
                       <span>TOTAL</span>
-                      <span className="text-[#0D5C53]">
+                      <span className="text-[#2563EB]">
                         Rp {totalAmount.toLocaleString('id-ID')}
                       </span>
                     </div>
@@ -427,30 +427,30 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
             </div>
 
             {/* Thermal Printer Bar (USB / Bluetooth) */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div
                   className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                     isPrinterConnected
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-slate-200 text-slate-500'
+                      ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
+                      : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                   }`}
                 >
                   {isUsbConnected ? <Usb className="w-4 h-4" /> : <Bluetooth className="w-4 h-4" />}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-slate-800 truncate">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                       {isPrinterConnected ? printerName || (isUsbConnected ? 'Printer USB' : 'Printer Bluetooth') : 'Printer Thermal Kasir'}
                     </span>
                     <span
                       className={`inline-block w-2 h-2 rounded-full ${
-                        isPrinterConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
+                        isPrinterConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'
                       }`}
                     />
                     <span
                       className={`text-[10px] font-semibold uppercase ${
-                        isPrinterConnected ? 'text-emerald-700' : 'text-slate-400'
+                        isPrinterConnected ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'
                       }`}
                     >
                       {isPrinterConnected
@@ -458,12 +458,12 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                         : 'Belum Terhubung'}
                     </span>
                   </div>
-                  <label className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 cursor-pointer">
+                  <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={autoPrintOnPayment}
                       onChange={(e) => setAutoPrint(e.target.checked)}
-                      className="rounded border-slate-300 text-[#0D5C53] focus:ring-[#0D5C53]/20 cursor-pointer"
+                      className="rounded border-slate-300 dark:border-slate-700 text-[#2563EB] focus:ring-[#2563EB]/20 cursor-pointer"
                     />
                     <span>Cetak otomatis saat pembayaran sukses</span>
                   </label>
@@ -475,7 +475,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                   <button
                     type="button"
                     onClick={disconnectPrinter}
-                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                    className="text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-semibold px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                   >
                     Putus
                   </button>
@@ -485,7 +485,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        leftIcon={<Usb className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                        leftIcon={<Usb className="w-3.5 h-3.5 text-[#2563EB] dark:text-blue-400" />}
                         onClick={handleConnectUsb}
                         isLoading={isUsbConnecting}
                         className="text-xs font-bold"
@@ -497,7 +497,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        leftIcon={<Bluetooth className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                        leftIcon={<Bluetooth className="w-3.5 h-3.5 text-[#2563EB] dark:text-blue-400" />}
                         onClick={handleConnectBluetooth}
                         isLoading={isBluetoothConnecting}
                         className="text-xs font-bold"
@@ -511,7 +511,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
             </div>
 
             {/* Bottom Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
               <Button
                 variant="outline"
                 leftIcon={<Eye className="w-4 h-4" />}
@@ -536,7 +536,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                       leftIcon={isUsbConnected ? <Usb className="w-4 h-4" /> : <Printer className="w-4 h-4" />}
                       onClick={handleDirectPrint}
                       isLoading={isPrintingDirect}
-                      className="font-bold shadow-md shadow-teal-900/10"
+                      className="font-bold shadow-md shadow-blue-900/10"
                     >
                       Cetak Struk ({isUsbConnected ? 'USB' : 'Bluetooth'})
                     </Button>
@@ -555,7 +555,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
                   variant="primary"
                   leftIcon={<Plus className="w-4 h-4" />}
                   onClick={onNewOrder}
-                  className={`font-bold shadow-md shadow-teal-900/10 ${isPrinterConnected ? 'bg-slate-800 hover:bg-slate-900 text-white' : ''}`}
+                  className={`font-bold shadow-md shadow-blue-900/10 ${isPrinterConnected ? 'bg-slate-800 hover:bg-slate-900 text-white' : ''}`}
                 >
                   + Pesanan Baru
                 </Button>

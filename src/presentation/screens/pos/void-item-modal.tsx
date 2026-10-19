@@ -108,15 +108,15 @@ export const VoidItemModal: React.FC<VoidItemModalProps> = ({
       }
     >
       <div className="space-y-4 py-1">
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2.5">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800 rounded-xl text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2.5">
+          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <span>
             Menu yang telah disimpan/dikirim ke dapur akan dibatalkan dan dicatat dalam riwayat audit pembatalan.
           </span>
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-slate-700 block mb-1">
+          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
             Pilih Kategori Alasan:
           </label>
           <FormSelect
@@ -132,7 +132,7 @@ export const VoidItemModal: React.FC<VoidItemModalProps> = ({
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-slate-700 block mb-1">
+          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
             Catatan Tambahan (Opsional):
           </label>
           <FormTextarea
@@ -145,7 +145,7 @@ export const VoidItemModal: React.FC<VoidItemModalProps> = ({
 
         {/* Password Authorization Input - 1 Single Column */}
         {isPasswordRequired && (
-          <div className="pt-2 border-t border-slate-100">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
             <FormInput
               type="password"
               label={
@@ -176,8 +176,8 @@ export const VoidItemModal: React.FC<VoidItemModalProps> = ({
         )}
 
         {verificationMode === 'SUPERVISOR_APPROVAL' && isAlreadyApprover && (
-          <div className="p-2.5 bg-teal-50/70 border border-teal-200 rounded-xl text-[11px] text-[#0D5C53] flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-[#0D5C53] shrink-0" />
+          <div className="p-2.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl text-[11px] text-[#2563EB] dark:text-blue-300 flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#2563EB] dark:text-blue-400 shrink-0" />
             <span>
               Akun Anda ({currentUser?.name}) memiliki wewenang approval langsung.
             </span>

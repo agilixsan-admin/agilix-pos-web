@@ -84,12 +84,12 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
   const reservedCount = tables.filter((t) => t.status === 'RESERVED').length;
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-6rem)] overflow-hidden bg-slate-50 p-2 sm:p-4 space-y-3 sm:space-y-4">
+    <div className="flex-1 flex flex-col h-[calc(100vh-6rem)] overflow-hidden bg-slate-50 dark:bg-[#060B19] p-2 sm:p-4 space-y-3 sm:space-y-4">
       {/* Top POS Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-[#101828] p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="flex items-center gap-3">
           {posSettings?.billLogoUrl && !logoError ? (
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0 p-1">
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center justify-center shrink-0 p-1">
               <img
                 src={posSettings.billLogoUrl}
                 alt={effectiveOutlet?.name || 'Logo Outlet'}
@@ -98,25 +98,25 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
               />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-[#0D5C53] text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0">
               {effectiveOutlet?.name?.charAt(0) || 'A'}
             </div>
           )}
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900">{effectiveOutlet?.name || 'Agilix Outlet'}</h2>
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{effectiveOutlet?.name || 'Agilix Outlet'}</h2>
               {currentShift ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   Shift Aktif • {new Date(currentShift.openedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               ) : (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                   Shift Belum Dibuka
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500">
-              Kasir: <span className="font-semibold text-slate-700">{user?.name || user?.email}</span> •{' '}
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Kasir: <span className="font-semibold text-slate-700 dark:text-slate-300">{user?.name || user?.email}</span> •{' '}
               {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
           </div>
@@ -139,16 +139,16 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                 size="sm"
                 leftIcon={<ArrowUpRight className="w-4 h-4 text-rose-600" />}
                 onClick={onPettyCashClick}
-                className="text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200"
+                className="text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900/50"
               >
                 Kas Keluar / Beli Bahan
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                leftIcon={<Lock className="w-4 h-4 text-slate-600" />}
+                leftIcon={<Lock className="w-4 h-4 text-slate-600 dark:text-slate-400" />}
                 onClick={onCloseShiftClick}
-                className="text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700"
               >
                 Tutup Shift
               </Button>
@@ -157,9 +157,9 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
             <Button
               variant="outline"
               size="sm"
-              leftIcon={<Banknote className="w-4 h-4 text-emerald-600" />}
+              leftIcon={<Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
               onClick={onOpenShiftClick}
-              className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-emerald-300"
+              className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-800"
             >
               Buka Shift
             </Button>
@@ -177,7 +177,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
               }
               onNewOrderClick();
             }}
-            className="font-bold shadow-md shadow-teal-900/10"
+            className="font-bold shadow-md shadow-blue-900/10"
           >
             + Buat Pesanan Baru
           </Button>
@@ -213,9 +213,9 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
       {/* Main Split Grid: Active Orders Banner & Table Floor Grid */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
         {/* Left / Main Floor Grid */}
-        <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+        <div className="flex-1 flex flex-col bg-white dark:bg-[#101828] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
           {/* Controls Bar */}
-          <div className="p-4 border-b border-slate-100 space-y-3">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               {/* Dynamic Floor / Section Tabs */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
@@ -223,8 +223,8 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                   onClick={() => setSelectedFloor('ALL')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     selectedFloor === 'ALL'
-                      ? 'bg-[#0D5C53] text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-[#2563EB] text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
                   Semua Area ({tables.length})
@@ -239,8 +239,8 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                       onClick={() => setSelectedFloor(sec)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                         selectedFloor.toLowerCase() === sec.toLowerCase()
-                          ? 'bg-[#0D5C53] text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          ? 'bg-[#2563EB] text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                       }`}
                     >
                       {sec} ({count})
@@ -258,7 +258,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                     placeholder="Cari meja..."
                     value={searchTable}
                     onChange={(e) => setSearchTable(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0D5C53]/20 focus:border-[#0D5C53]"
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB]"
                   />
                 </div>
               </div>
@@ -270,8 +270,8 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                 onClick={() => setStatusFilter('ALL')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                   statusFilter === 'ALL'
-                    ? 'bg-slate-800 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 Semua ({tables.length})
@@ -281,7 +281,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === 'AVAILABLE'
                     ? 'bg-emerald-600 text-white'
-                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -291,11 +291,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                 onClick={() => setStatusFilter('OCCUPIED')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === 'OCCUPIED'
-                    ? 'bg-[#0D5C53] text-white'
-                    : 'bg-teal-50 text-[#0D5C53] hover:bg-teal-100'
+                    ? 'bg-[#2563EB] text-white'
+                    : 'bg-blue-50 dark:bg-blue-950/40 text-[#2563EB] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-[#0D5C53]" />
+                <span className="w-2 h-2 rounded-full bg-[#2563EB]" />
                 Terisi ({occupiedCount})
               </button>
               <button
@@ -303,7 +303,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === 'RESERVED'
                     ? 'bg-amber-600 text-white'
-                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                    : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50'
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-amber-500" />
@@ -360,15 +360,15 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                           }
                           onSelectOpenOrderForAppend(activeOrder);
                         }}
-                        className="bg-[#0D5C53] text-white rounded-2xl p-3.5 flex flex-col justify-between shadow-md hover:shadow-lg transition-all border border-teal-700 cursor-pointer group active:scale-[0.98] min-h-[175px]"
+                        className="bg-gradient-to-br from-blue-700 to-blue-900 dark:from-blue-950 dark:to-slate-900 text-white rounded-2xl p-3.5 flex flex-col justify-between shadow-md hover:shadow-lg transition-all border border-blue-600/50 dark:border-blue-800 cursor-pointer group active:scale-[0.98] min-h-[175px]"
                       >
                         <div className="space-y-1.5">
                           {/* Header: Title & Capacity */}
                           <div className="flex items-center justify-between gap-1.5">
-                            <span className="font-extrabold text-sm text-teal-100 truncate whitespace-nowrap">
+                            <span className="font-extrabold text-sm text-blue-100 truncate whitespace-nowrap">
                               {displayName}
                             </span>
-                            <span className="text-[10px] bg-teal-800/80 text-teal-200 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 shrink-0 whitespace-nowrap">
+                            <span className="text-[10px] bg-blue-800/80 dark:bg-blue-900/60 text-blue-200 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 shrink-0 whitespace-nowrap">
                               <Users className="w-2.5 h-2.5" />
                               {table.capacity} Kursi
                             </span>
@@ -376,7 +376,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
 
                           {/* Section Badge */}
                           <div>
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-teal-200/90 bg-teal-900/50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-200/90 bg-blue-900/50 dark:bg-blue-950/80 px-2 py-0.5 rounded-md whitespace-nowrap">
                               <Layers className="w-2.5 h-2.5 shrink-0" />
                               {table.section || 'Main Area'}
                             </span>
@@ -387,7 +387,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                             <div className="text-xs text-white font-semibold truncate">
                               {activeOrder.customerName || 'Tamu Dine-In'}
                             </div>
-                            <div className="text-[11px] text-teal-200/80 flex items-center gap-1 mt-0.5 whitespace-nowrap">
+                            <div className="text-[11px] text-blue-200/80 flex items-center gap-1 mt-0.5 whitespace-nowrap">
                               <Clock className="w-3 h-3 shrink-0" />
                               <span>
                                 {activeOrder.items?.length || 0} Menu •{' '}
@@ -401,9 +401,9 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                         </div>
 
                         {/* Footer: Bill Amount & Action Buttons */}
-                        <div className="mt-3 pt-2.5 border-t border-teal-700/70 space-y-2">
+                        <div className="mt-3 pt-2.5 border-t border-blue-700/70 dark:border-blue-800/60 space-y-2">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-[10px] text-teal-200/70 uppercase font-semibold">Total Tagihan</span>
+                            <span className="text-[10px] text-blue-200/70 uppercase font-semibold">Total Tagihan</span>
                             <span className="font-extrabold text-white text-xs font-mono">
                               Rp {Number(activeOrder.totalAmount || 0).toLocaleString('id-ID')}
                             </span>
@@ -421,7 +421,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                                 }
                                 onSelectOpenOrderForAppend(activeOrder);
                               }}
-                              className="w-full py-1.5 px-2 bg-teal-800 hover:bg-teal-700 active:bg-teal-900 text-teal-100 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-teal-600/60 text-center flex items-center justify-center gap-1"
+                              className="w-full py-1.5 px-2 bg-blue-800 hover:bg-blue-700 active:bg-blue-900 text-blue-100 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-blue-600/60 text-center flex items-center justify-center gap-1"
                             >
                               <Plus className="w-3 h-3" />
                               Menu
@@ -437,7 +437,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                                 }
                                 onSelectOpenOrderForPayment(activeOrder);
                               }}
-                              className="w-full py-1.5 px-2 bg-white hover:bg-teal-50 active:bg-slate-100 text-[#0D5C53] rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-xs text-center flex items-center justify-center gap-1"
+                              className="w-full py-1.5 px-2 bg-white hover:bg-blue-50 active:bg-slate-100 text-[#2563EB] rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-xs text-center flex items-center justify-center gap-1"
                             >
                               Bayar →
                             </button>
@@ -452,35 +452,35 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                     return (
                       <div
                         key={table.id}
-                        className="bg-amber-50 text-slate-800 rounded-2xl p-3.5 flex flex-col justify-between border-2 border-amber-300 shadow-xs min-h-[175px]"
+                        className="bg-amber-50 dark:bg-amber-950/30 text-slate-800 dark:text-slate-200 rounded-2xl p-3.5 flex flex-col justify-between border-2 border-amber-300 dark:border-amber-700 shadow-xs min-h-[175px]"
                       >
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between gap-1.5">
-                            <span className="font-extrabold text-sm text-slate-800 truncate whitespace-nowrap">
+                            <span className="font-extrabold text-sm text-slate-800 dark:text-slate-100 truncate whitespace-nowrap">
                               {displayName}
                             </span>
-                            <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+                            <span className="text-[10px] bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
                               Terisi
                             </span>
                           </div>
 
                           <div>
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 bg-amber-100 px-2 py-0.5 rounded-md whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 dark:text-slate-400 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-md whitespace-nowrap">
                               <Layers className="w-2.5 h-2.5 text-slate-400 shrink-0" />
                               {table.section || 'Main Area'}
                             </span>
                           </div>
 
-                          <div className="text-xs text-amber-800 font-medium pt-0.5">
+                          <div className="text-xs text-amber-800 dark:text-amber-400 font-medium pt-0.5">
                             Sedang Digunakan
                           </div>
                         </div>
 
-                        <div className="mt-3 pt-2.5 border-t border-amber-200/80 flex items-center justify-between">
-                          <span className="text-[10px] text-amber-800 font-bold flex items-center gap-1">
+                        <div className="mt-3 pt-2.5 border-t border-amber-200/80 dark:border-amber-800/60 flex items-center justify-between">
+                          <span className="text-[10px] text-amber-800 dark:text-amber-400 font-bold flex items-center gap-1">
                             <Lock className="w-3 h-3" /> Terkunci
                           </span>
-                          <span className="text-[10px] text-slate-500 italic">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 italic">
                             Tanpa Pesanan Aktif
                           </span>
                         </div>
@@ -506,17 +506,17 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                       }}
                       className={`rounded-2xl p-3.5 flex flex-col justify-between transition-all border-2 min-h-[175px] ${
                         isReserved
-                          ? 'bg-amber-50/50 border-amber-200 cursor-not-allowed opacity-80'
-                          : 'bg-white border-slate-200 hover:border-[#0D5C53] hover:shadow-md cursor-pointer group active:scale-[0.98]'
+                          ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50 cursor-not-allowed opacity-80'
+                          : 'bg-white dark:bg-[#101828] border-slate-200 dark:border-slate-800 hover:border-[#2563EB] dark:hover:border-blue-500 hover:shadow-md cursor-pointer group active:scale-[0.98]'
                       }`}
                     >
                       <div className="space-y-1.5">
                         {/* Header: Title & Capacity */}
                         <div className="flex items-center justify-between gap-1.5">
-                          <span className="font-extrabold text-sm text-slate-800 truncate whitespace-nowrap">
+                          <span className="font-extrabold text-sm text-slate-800 dark:text-slate-100 truncate whitespace-nowrap">
                             {displayName}
                           </span>
-                          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 shrink-0 whitespace-nowrap">
+                          <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 shrink-0 whitespace-nowrap">
                             <Users className="w-2.5 h-2.5" />
                             {table.capacity} Kursi
                           </span>
@@ -524,25 +524,25 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
 
                         {/* Section Badge */}
                         <div>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md whitespace-nowrap">
                             <Layers className="w-2.5 h-2.5 text-slate-400 shrink-0" />
                             {table.section || 'Main Area'}
                           </span>
                         </div>
 
                         {/* Subtitle */}
-                        <div className="text-xs text-slate-400 pt-0.5">
+                        <div className="text-xs text-slate-400 dark:text-slate-500 pt-0.5">
                           {isReserved ? 'Meja Dipesan' : 'Siap Digunakan'}
                         </div>
                       </div>
 
                       {/* Footer: Status & Tap Action */}
-                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${
                             isReserved
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-emerald-50 text-emerald-700'
+                              ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'
+                              : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
                           }`}
                         >
                           <span
@@ -554,7 +554,7 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                         </span>
 
                         {!isReserved && (
-                          <span className="text-xs text-[#0D5C53] font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-1 whitespace-nowrap">
+                          <span className="text-xs text-[#2563EB] dark:text-blue-400 font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-1 whitespace-nowrap">
                             Pilih Meja <Plus className="w-3 h-3 stroke-[2.5]" />
                           </span>
                         )}
@@ -568,11 +568,11 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
         </div>
 
         {/* Right Panel: Open Orders / Pesanan Berjalan */}
-        <div className="w-full lg:w-80 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col overflow-hidden shrink-0">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="w-full lg:w-80 bg-white dark:bg-[#101828] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs flex flex-col overflow-hidden shrink-0">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-500" />
-              <h3 className="font-bold text-slate-800 text-sm">Pesanan Berjalan</h3>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Pesanan Berjalan</h3>
             </div>
             <Badge variant="warning" size="sm">
               {openOrders.length} Aktif
@@ -582,9 +582,9 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {openOrders.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
-                <Coffee className="w-10 h-10 opacity-30 text-slate-300 mb-2" />
-                <p className="text-xs font-semibold text-slate-600">Tidak Ada Pesanan Aktif</p>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <Coffee className="w-10 h-10 opacity-30 text-slate-300 dark:text-slate-600 mb-2" />
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Tidak Ada Pesanan Aktif</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                   Semua transaksi telah diselesaikan atau belum ada pesanan baru.
                 </p>
               </div>
@@ -593,46 +593,46 @@ export const TableFloorView: React.FC<TableFloorViewProps> = ({
                 <div
                   key={order.id}
                   onClick={() => onSelectOpenOrderForAppend(order)}
-                  className="p-3.5 bg-slate-50 hover:bg-teal-50/50 border border-slate-200 hover:border-teal-400 hover:shadow-xs rounded-xl transition-all space-y-2.5 cursor-pointer group active:scale-[0.99]"
+                  className="p-3.5 bg-slate-50 dark:bg-slate-900/60 hover:bg-blue-50/40 dark:hover:bg-blue-950/30 border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-700 hover:shadow-xs rounded-xl transition-all space-y-2.5 cursor-pointer group active:scale-[0.99]"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-900 group-hover:text-[#0D5C53] transition-colors">
+                    <span className="font-bold text-xs text-slate-900 dark:text-slate-100 group-hover:text-[#2563EB] dark:group-hover:text-blue-400 transition-colors">
                       {order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber
                         ? `Meja ${order.tableName || order.tableNumber || order.table?.name || order.table?.tableNumber}`
                         : order.orderType === 'TAKE_AWAY'
                         ? 'Take Away'
                         : 'Dine In'}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                       {order.orderNumber || order.id.slice(0, 8)}
                     </span>
                   </div>
 
-                  <div className="text-xs text-slate-500">
-                    Pelanggan: <span className="font-semibold text-slate-800">{order.customerName || 'Umum'}</span>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    Pelanggan: <span className="font-semibold text-slate-800 dark:text-slate-200">{order.customerName || 'Umum'}</span>
                   </div>
 
                   {/* Items preview */}
-                  <div className="text-[11px] text-slate-600 space-y-0.5 bg-white p-2 rounded-lg border border-slate-100">
+                  <div className="text-[11px] text-slate-600 dark:text-slate-300 space-y-0.5 bg-white dark:bg-slate-800/70 p-2 rounded-lg border border-slate-100 dark:border-slate-700/60">
                     {order.items?.slice(0, 3).map((item, idx) => (
                       <div key={idx} className="flex justify-between">
                         <span className="truncate pr-1">{item.quantity}x {item.productName}</span>
-                        <span className="font-mono text-slate-700">
+                        <span className="font-mono text-slate-700 dark:text-slate-200">
                           Rp {Number(item.subtotal ?? (Number(item.unitPrice || item.price || 0) * item.quantity)).toLocaleString('id-ID')}
                         </span>
                       </div>
                     ))}
                     {(order.items?.length || 0) > 3 && (
-                      <div className="text-[10px] text-slate-400 italic">
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">
                         + {(order.items?.length || 0) - 3} item lainnya...
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-800">
                     <div>
-                      <span className="text-[10px] text-slate-400 block">Total Tagihan</span>
-                      <span className="text-xs font-bold text-[#0D5C53]">
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 block">Total Tagihan</span>
+                      <span className="text-xs font-bold text-[#2563EB] dark:text-blue-400">
                         Rp {Number(order.totalAmount || 0).toLocaleString('id-ID')}
                       </span>
                     </div>

@@ -118,7 +118,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   leftIcon={isUsbConnected ? <Usb className="w-4 h-4" /> : <Bluetooth className="w-4 h-4" />}
                   onClick={handleDirectPrint}
                   isLoading={isPrinting}
-                  className="font-bold shadow-md shadow-teal-900/10"
+                  className="font-bold shadow-md shadow-blue-900/10"
                 >
                   Cetak ({isUsbConnected ? 'USB' : 'Bluetooth'})
                 </Button>
@@ -129,7 +129,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    leftIcon={<Usb className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                    leftIcon={<Usb className="w-3.5 h-3.5 text-[#2563EB] dark:text-blue-400" />}
                     onClick={handleConnectUsb}
                     isLoading={isUsbConnecting}
                     className="text-xs font-semibold"
@@ -141,7 +141,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    leftIcon={<Bluetooth className="w-3.5 h-3.5 text-[#0D5C53]" />}
+                    leftIcon={<Bluetooth className="w-3.5 h-3.5 text-[#2563EB] dark:text-blue-400" />}
                     onClick={handleConnectBluetooth}
                     isLoading={isBluetoothConnecting}
                     className="text-xs font-semibold"
@@ -164,7 +164,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       }
     >
       {/* Printable Thermal Receipt Area */}
-      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-center">
+      <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-center">
         <div
           id="printable-receipt"
           className="w-full bg-white p-5 shadow-xs border border-slate-200 text-slate-900 font-mono text-xs leading-relaxed"

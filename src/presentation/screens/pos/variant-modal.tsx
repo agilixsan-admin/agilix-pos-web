@@ -34,7 +34,7 @@ export const VariantModal: React.FC<VariantModalProps> = ({
       }
     >
       <div className="space-y-3 py-1">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Silakan pilih ukuran, level, atau tipe varian yang diinginkan:
         </p>
 
@@ -54,16 +54,16 @@ export const VariantModal: React.FC<VariantModalProps> = ({
                 }}
                 className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${
                   isVariantOutOfStock
-                    ? 'border-slate-200 bg-slate-100/60 opacity-60 grayscale cursor-not-allowed select-none'
-                    : 'border-slate-200 hover:border-[#0D5C53] hover:bg-teal-50/40 cursor-pointer group bg-white'
+                    ? 'border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/40 opacity-60 grayscale cursor-not-allowed select-none'
+                    : 'border-slate-200 dark:border-slate-800 hover:border-[#2563EB] dark:hover:border-blue-500 hover:bg-blue-50/40 dark:hover:bg-blue-950/30 cursor-pointer group bg-white dark:bg-slate-850'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                       isVariantOutOfStock
-                        ? 'bg-slate-200 text-slate-400'
-                        : 'bg-slate-100 group-hover:bg-[#0D5C53]/10 text-slate-600 group-hover:text-[#0D5C53]'
+                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                        : 'bg-slate-100 dark:bg-slate-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 text-slate-600 dark:text-slate-400 group-hover:text-[#2563EB] dark:group-hover:text-blue-300'
                     }`}
                   >
                     <Check
@@ -78,7 +78,7 @@ export const VariantModal: React.FC<VariantModalProps> = ({
                     <div className="flex items-center gap-2">
                       <h5
                         className={`font-semibold text-sm ${
-                          isVariantOutOfStock ? 'text-slate-500 line-through' : 'text-slate-800'
+                          isVariantOutOfStock ? 'text-slate-500 line-through' : 'text-slate-800 dark:text-slate-100'
                         }`}
                       >
                         {v.name}
@@ -90,7 +90,7 @@ export const VariantModal: React.FC<VariantModalProps> = ({
                       )}
                     </div>
                     {v.sku && (
-                      <span className="text-[11px] text-slate-400 font-mono">SKU: {v.sku}</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">SKU: {v.sku}</span>
                     )}
                   </div>
                 </div>
@@ -98,13 +98,13 @@ export const VariantModal: React.FC<VariantModalProps> = ({
                 <div className="text-right">
                   <span
                     className={`font-bold text-sm block ${
-                      isVariantOutOfStock ? 'text-slate-400' : 'text-[#0D5C53]'
+                      isVariantOutOfStock ? 'text-slate-400 dark:text-slate-600' : 'text-[#2563EB] dark:text-blue-400'
                     }`}
                   >
                     Rp {Number(v.price).toLocaleString('id-ID')}
                   </span>
                   {v.stock !== undefined && !isVariantOutOfStock && (
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
                       Stok: {v.stock}
                     </span>
                   )}
