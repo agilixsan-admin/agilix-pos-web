@@ -116,10 +116,10 @@ export const StockScreen: React.FC = () => {
   return (
     <div className="space-y-6 pb-16 max-w-7xl mx-auto">
       {/* Top Header with Breadcrumb and Outlet Switcher */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-card">
         <div>
           <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Link to="/inventory/stock" className="hover:text-[#0D5C53]">
+            <Link to="/inventory/stock" className="hover:text-[#0A574E]">
               Inventory
             </Link>
             <span>/</span>
@@ -127,7 +127,7 @@ export const StockScreen: React.FC = () => {
           </div>
           <div className="flex items-center gap-2.5 mt-0.5">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Monitoring Stok Fisik</h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50/90 text-emerald-800 border border-emerald-200/80">
               Multi-Outlet
             </span>
           </div>
@@ -141,7 +141,7 @@ export const StockScreen: React.FC = () => {
           <div className="flex items-center gap-2">
             <CustomSelect
               ariaLabel="Pilih Cabang Stok"
-              icon={<Store className="w-4 h-4 text-[#0D5C53]" />}
+              icon={<Store className="w-4 h-4 text-[#0A574E]" />}
               value={effectiveOutletId}
               onChange={(val) => {
                 setSelectedOutletId(val);
@@ -333,7 +333,7 @@ export const StockScreen: React.FC = () => {
                       <td className="py-3.5 px-4 font-mono text-slate-500 font-semibold">
                         {item.sku || '-'}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold">
+                      <td className="py-3.5 px-4 text-right font-bold tabular-nums">
                         <span
                           className={
                             isOutOfStock
@@ -349,17 +349,17 @@ export const StockScreen: React.FC = () => {
                       <td className="py-3.5 px-4 text-slate-500 font-medium">
                         {item.unit}
                       </td>
-                      <td className="py-3.5 px-4 text-right text-slate-600 font-medium">
+                      <td className="py-3.5 px-4 text-right text-slate-600 font-medium tabular-nums">
                         {Number(item.minimumStock).toLocaleString('id-ID')}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono text-slate-700">
+                      <td className="py-3.5 px-4 text-right text-slate-700 tabular-nums">
                         {item.unitCost > 0 ? (
                           `${formatRupiah(item.unitCost)}/${item.unit}`
                         ) : (
                           <span className="text-slate-400 font-sans font-normal">-</span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold font-mono text-slate-900">
+                      <td className="py-3.5 px-4 text-right font-bold text-slate-900 tabular-nums">
                         {formatRupiah(item.stockValue)}
                       </td>
                       <td className="py-3.5 px-4 text-center">

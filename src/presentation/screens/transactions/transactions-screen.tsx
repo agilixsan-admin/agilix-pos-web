@@ -249,18 +249,18 @@ export const TransactionsScreen: React.FC = () => {
   return (
     <div className="space-y-5 pb-12">
       {/* Page Header with Outlet Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-card">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <History className="w-5 h-5 text-[#0D5C53]" />
+              <History className="w-5 h-5 text-[#0A574E]" />
               Riwayat Transaksi
             </h1>
             <span
               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                 isAllBranches
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : 'bg-teal-50 text-[#0D5C53] border-teal-200'
+                  ? 'bg-emerald-50/90 text-emerald-800 border-emerald-200/80'
+                  : 'bg-teal-50/90 text-[#0A574E] border-teal-200/80'
               }`}
             >
               {isAllBranches ? 'Semua Cabang' : activeBranchName}
@@ -481,9 +481,9 @@ export const TransactionsScreen: React.FC = () => {
                     <tr
                       key={order.id}
                       onClick={() => setSelectedOrder(order)}
-                      className="hover:bg-teal-50/30 transition-colors cursor-pointer group"
+                      className="hover:bg-teal-50/40 transition-colors cursor-pointer group"
                     >
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900 group-hover:text-[#0D5C53]">
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900 group-hover:text-[#0A574E]">
                         {trxNumber}
                       </td>
                       <td className="py-3.5 px-4 font-mono text-slate-600">
@@ -492,7 +492,7 @@ export const TransactionsScreen: React.FC = () => {
                       {isAllBranches && (
                         <td className="py-3.5 px-4">
                           <span className="inline-flex items-center gap-1 font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-[11px] whitespace-nowrap">
-                            <Store className="w-3 h-3 text-[#0D5C53]" />
+                            <Store className="w-3 h-3 text-[#0A574E]" />
                             {order.outlet?.name || '-'}
                           </span>
                         </td>
@@ -526,7 +526,7 @@ export const TransactionsScreen: React.FC = () => {
                           {paymentMethod}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-[#0D5C53] font-mono whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-right font-bold text-[#0A574E] tabular-nums whitespace-nowrap">
                         Rp {Number(order.totalAmount).toLocaleString('id-ID')}
                       </td>
                       <td className="py-3.5 px-4 text-center">

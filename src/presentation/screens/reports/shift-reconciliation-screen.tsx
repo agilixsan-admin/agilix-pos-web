@@ -86,14 +86,14 @@ export const ShiftReconciliationScreen: React.FC = () => {
   return (
     <div className="space-y-6 pb-16 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-card">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <Clock className="w-5 h-5 text-[#0D5C53]" />
+              <Clock className="w-5 h-5 text-[#0A574E]" />
               Laporan Rekonsiliasi Shift
             </h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50/90 text-emerald-800 border border-emerald-200/80">
               Cash Audit POS
             </span>
           </div>
@@ -176,9 +176,9 @@ export const ShiftReconciliationScreen: React.FC = () => {
       </div>
 
       {/* Shifts Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-card space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h3 className="font-bold text-sm text-slate-900">
+          <h3 className="font-bold text-sm text-slate-900 tracking-tight">
             Riwayat Audit Sesi Kasir ({shifts.length})
           </h3>
           <span className="text-xs text-slate-400">
@@ -212,7 +212,7 @@ export const ShiftReconciliationScreen: React.FC = () => {
                   <th className="pb-3 font-semibold text-right">Detail</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-mono">
+              <tbody className="divide-y divide-slate-100 tabular-nums">
                 {shifts.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-3 font-sans text-slate-700">

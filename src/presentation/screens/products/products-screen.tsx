@@ -121,7 +121,7 @@ export const ProductsScreen: React.FC = () => {
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 border border-slate-200 rounded-2xl shadow-xs relative z-30">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 border border-slate-200/80 rounded-2xl shadow-card relative z-30">
         <div className="flex-1 max-w-xs">
           <SearchInput
             value={searchQuery}
@@ -189,10 +189,10 @@ export const ProductsScreen: React.FC = () => {
       )}
 
       {/* Products Table */}
-      <Card padding="none" className="relative z-10">
+      <Card padding="none" className="relative z-10 border border-slate-200/80 rounded-2xl shadow-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+            <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="py-3.5 px-4">SKU</th>
                 <th className="py-3.5 px-4">Nama Produk</th>
@@ -234,7 +234,7 @@ export const ProductsScreen: React.FC = () => {
                       <td className="py-3.5 px-4">
                         <Badge variant="neutral">{catName}</Badge>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-[#0D5C53]">
+                      <td className="py-3.5 px-4 text-right font-bold text-[#0A574E] tabular-nums">
                         {p.minPrice !== undefined && p.maxPrice !== undefined && p.maxPrice > p.minPrice
                           ? `Rp ${Number(p.minPrice).toLocaleString('id-ID')} - ${Number(p.maxPrice).toLocaleString('id-ID')}`
                           : `Rp ${Number(p.price ?? p.minPrice ?? p.variants?.[0]?.price ?? 0).toLocaleString('id-ID')}`}
