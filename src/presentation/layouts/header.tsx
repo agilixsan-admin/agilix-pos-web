@@ -12,8 +12,6 @@ import {
   PanelLeftOpen,
   User,
   KeyRound,
-  Sun,
-  Moon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CustomOutletSelect, ResetPasswordModal } from '@presentation/components/ui';
@@ -26,8 +24,6 @@ export const Header: React.FC = () => {
     isSidebarCollapsed,
     toggleSidebarCollapsed,
     toggleMobileMenu,
-    theme,
-    toggleTheme,
   } = useUiStore();
   const navigate = useNavigate();
 
@@ -102,21 +98,6 @@ export const Header: React.FC = () => {
 
       {/* Right: User Profile & Actions */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Dark / Light Mode Switcher Pill */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label="Ganti Tema Tampilan"
-          title={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
-          className="p-2 text-slate-500 dark:text-amber-400 hover:text-blue-600 dark:hover:text-amber-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl transition-all active:scale-95 cursor-pointer"
-        >
-          {theme === 'dark' ? (
-            <Sun className="w-5 h-5 transition-transform rotate-0 hover:rotate-45" />
-          ) : (
-            <Moon className="w-5 h-5 transition-transform -rotate-12 hover:rotate-0" />
-          )}
-        </button>
-
         {/* User Profile / Avatar Trigger Button */}
         <button
           ref={triggerRef}

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Tenant } from '@model/Auth';
 import { useAuthStore } from '@domain/state/auth-store';
-import { useUiStore } from '@domain/state/ui-store';
 import { authService } from '@domain/services/auth-service';
 import {
   Store,
@@ -13,8 +12,6 @@ import {
   Lock,
   Mail,
   Loader2,
-  Sun,
-  Moon,
 } from 'lucide-react';
 
 const REMEMBERED_EMAIL_KEY = 'agilix_pos_saved_email';
@@ -91,7 +88,6 @@ const getFriendlyErrorMessage = (err: unknown): string => {
 export const LoginScreen: React.FC = () => {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const { theme, toggleTheme } = useUiStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -155,23 +151,14 @@ export const LoginScreen: React.FC = () => {
       <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-gradient-to-b from-blue-600/[0.08] dark:from-blue-500/[0.15] to-transparent rounded-full blur-3xl pointer-events-none" />
 
-      {/* Top Bar / Status & Theme Toggle */}
-      <header className="relative z-10 w-full max-w-[420px] flex items-center justify-between py-2 text-[11px] text-slate-400 dark:text-slate-400 font-medium">
+      {/* Top Bar / Status */}
+      <header className="relative z-10 w-full max-w-[420px] flex items-center justify-between py-2 text-[11px] text-slate-400 font-medium">
         <span className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-sky-400 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
           Terminal POS Siap
         </span>
         <div className="flex items-center gap-3">
           <span>v1.0 Enterprise</span>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label="Ganti Tema Tampilan"
-            title={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
-            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-amber-300 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800/80 transition-all cursor-pointer"
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
-          </button>
         </div>
       </header>
 
